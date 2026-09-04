@@ -1,0 +1,26 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/events" },
+    { "path": "packages/schema" },
+    { "path": "packages/auth" },
+    { "path": "packages/storage" },
+    { "path": "packages/devices" },
+    { "path": "packages/offline" },
+    { "path": "packages/audit" },
+    { "path": "packages/notifications" },
+    { "path": "packages/business/products" },
+    { "path": "packages/business/sales" },
+    { "path": "packages/business/customers" },
+    { "path": "packages/business/debts" },
+    { "path": "packages/lan" },
+    { "path": "packages/sync" },
+    { "path": "packages/subscription" },
+    { "path": "packages/payments" },
+    { "path": "packages/tuma" },
+    { "path": "packages/whatsapp" },
+    { "path": "packages/cloud" },
+    { "path": "packages/desktop-adapter" }
+  ]
+}

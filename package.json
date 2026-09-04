@@ -1,0 +1,27 @@
+{
+  "name": "@soostori/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Soostori shared SDK — canonical contract for Web, Mobile, and Desktop",
+  "type": "module",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "scripts": {
+    "build": "pnpm -r --filter \"./packages/*\" run build",
+    "test": "vitest run",
+    "typecheck": "pnpm -r --filter \"./packages/*\" run typecheck",
+    "lint": "pnpm -r --filter \"./packages/*\" run lint",
+    "publish:packages": "pnpm -r --filter \"./packages/*\" publish --access public --registry https://registry.npmjs.org/"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "private_publish_token_env": "NPM_TOKEN",
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^2.1.9"
+  }
+}

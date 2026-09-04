@@ -1,0 +1,20 @@
+# Build artifacts
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files - NEVER commit secrets
+.env
+.env.local
+.env.*.local
+.npmrc
+
+# OS
+.DS_Store
+Thumbs.db

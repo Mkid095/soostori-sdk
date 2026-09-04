@@ -1,0 +1,115 @@
+/**
+ * Canonical Soostori identity model.
+ *
+ * The chain is:
+ *   FIDScript User ($users)
+ *     ↓
+ *   Company (companies)
+ *     ↓
+ *   Shop (shops)
+ *     ↓
+ *   Employee (employees)
+ *     ↓
+ *   Device (devices)
+ *     ↓
+ *   Authorized Session
+ *
+ * Local PIN is NOT a cloud identity. It only unlocks an already-authorized
+ * employee on a specific device.
+ */
+/** Build a session token from context. */
+export function buildSession(ctx) {
+    const now = new Date();
+    const expires = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    return {
+        userId: ctx.user.id,
+        shopId: ctx.shop.id,
+        employeeId: ctx.employee.id,
+        deviceId: ctx.device.id,
+        email: ctx.user.email,
+        createdAt: now.toISOString(),
+        expiresAt: expires.toISOString(),
+    };
+}
+/** Resolve identity chain — strict ordering check. */
+export function isValidChain(ctx) {
+    const emp = ctx.employee, dev = ctx.device;
+    if (!emp || !dev)
+        return false;
+    // Employee must belong to the shop
+    if (emp.shopId !== ctx.shop?.id)
+        return false;
+    // Device must belong to the same shop as the employee
+    if (dev.shopId !== emp.shopId)
+        return false;
+    // Device must be authorized
+    if (dev.status !== 'authorized')
+        return false;
+    // Session must match
+    if (ctx.session?.userId !== ctx.user?.id)
+        return false;
+    if (!ctx.session || ctx.session.shopId !== ctx.shop.id)
+        return false;
+    if (ctx.session.employeeId !== emp.id)
+        return false;
+    if (ctx.session.deviceId !== dev.id)
+        return false;
+    return true;
+}
+/** Determine the next link needed to complete the chain. */
+export function nextRequiredLink(ctx) {
+    if (!ctx.user)
+        return 'user';
+    if (!ctx.company)
+        return 'company';
+    if (!ctx.shop)
+        return 'shop';
+    if (!ctx.employee)
+        return 'employee';
+    if (!ctx.device)
+        return 'device';
+    if (!ctx.session)
+        return 'session';
+    return null;
+}
+/** Identity reducer — pure function. */
+export function identityReducer(state, action) {
+    switch (action.type) {
+        case 'SIGN_IN': {
+            // SIGN_IN only sets the user state. Session is built later, after
+            // SET_SHOP/SET_EMPLOYEE/SET_DEVICE provide a complete identity chain.
+            return {
+                user: { id: action.userId, email: action.email, type: 'owner' },
+                company: null,
+                shop: null,
+                employee: null,
+                device: null,
+                session: null,
+            };
+        }
+        case 'SET_COMPANY':
+            return state ? { ...state, company: action.company } : null;
+        case 'SET_SHOP':
+            return state ? { ...state, shop: action.shop } : null;
+        case 'SET_EMPLOYEE':
+            return state ? { ...state, employee: action.employee } : null;
+        case 'SET_DEVICE':
+            // Building the session requires all four identity links.
+            // Only build the session when user + shop + employee + device are all present.
+            if (state && state.user && state.shop && state.employee && action.device) {
+                const session = buildSession({
+                    user: state.user,
+                    shop: state.shop,
+                    employee: state.employee,
+                    device: action.device,
+                });
+                return { ...state, device: action.device, session };
+            }
+            return state ? { ...state, device: action.device } : null;
+        case 'SIGN_OUT':
+            return null;
+        default:
+            return state;
+    }
+}
+//# sourceMappingURL=identity.js.map

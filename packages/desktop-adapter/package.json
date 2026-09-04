@@ -1,0 +1,38 @@
+{
+  "name": "@soostori/desktop-adapter",
+  "version": "0.1.0",
+  "description": "Desktop (Electron) platform adapter — implements SDK repository contracts over better-sqlite3",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@soostori/core": "workspace:*",
+    "@soostori/auth": "workspace:*",
+    "@soostori/devices": "workspace:*",
+    "@soostori/storage": "workspace:*",
+    "@soostori/inventory": "workspace:*",
+    "@soostori/business": "workspace:*",
+    "better-sqlite3": "^11.6.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}
