@@ -89,20 +89,14 @@ export interface Device {
   deviceType: DeviceType
   status: 'pending' | 'authorized' | 'revoked' | 'offline'
   isLanHost: boolean
+  /** True once a local PIN has been enrolled on this device. */
+  hasPin?: boolean
+  /** When the PIN was first set on this device. */
+  pinSetupAt?: ISO8601 | null
+  /** True if this is the primary device for the shop (desktop-only). */
+  isPrimary?: boolean
   authorizedAt: ISO8601 | null
   lastSeenAt: ISO8601 | null
-  /**
-   * True once a local PIN has been enrolled on this device.
-   * Written by the backend via consumeEnrollmentToken.
-   * PENDING: requires FIDScript schema addition of devices.hasPin.
-   */
-  hasPin?: boolean
-  /**
-   * When the PIN was first set on this device.
-   * Written by the backend via consumeEnrollmentToken.
-   * PENDING: requires FIDScript schema addition of devices.pinSetupAt.
-   */
-  pinSetupAt?: ISO8601 | null
 }
 
 export interface Invitation {
@@ -273,21 +267,14 @@ export interface SyncEvent {
   entityId: string
   operation: SyncOperation
   payload: Record<string, unknown>
-  /**
-   * Monotonic sequence number — present in FIDScript but NOT unique.
-   * NOT for idempotency. Replace with idempotencyKey (planned) for deduplication.
-   */
   sequenceNumber: number
-  /**
-   * Cloud-side sync timestamp — set when event is confirmed in FIDScript.
-   * Optional in FIDScript schema.
-   */
-  syncedAt?: ISO8601
-  /**
-   * PLANNED — UUID v4 per event: prevents duplicate processing on replay/reconnect.
-   * Add to FIDScript schema: syncEvents { idempotencyKey: string (unique: true) }
-   */
-  idempotencyKey?: UUID
+  syncedAt: ISO8601 | null
+  /** UUID v4 per event — prevents duplicate processing on replay/reconnect. */
+  idempotencyKey: UUID | null
+  /** Cloud-assigned version number for ordering. */
+  version: number | null
+  /** Event timestamp. */
+  timestamp: ISO8601 | null
 }
 
 export interface SyncCursor {
