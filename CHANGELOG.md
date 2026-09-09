@@ -27,6 +27,10 @@ All notable changes to this project will be documented in this file.
 - **`@soostori/auth`**: `_storeSession` null-safety — TypeScript correctly narrows `StoredSession` before use.
 - **`@soostori/core`**: `Company` removed — no such entity exists in FIDScript remote schema. `identity.ts` and all downstream types updated.
 - **`@soostori/core`**: `Employee.localPinHash` and `Employee.localPinSalt` removed — these were never in the remote schema and have no business in the `Employee` type.
+- **`@soostori/cloud`**: `health()` latency now uses `performance.now()` (sub-ms) instead of `Date.now()` for accurate measurement.
+- **`@soostori/cloud`**: `health` test — assertion relaxed from `toBeGreaterThan(0)` to `toBeGreaterOrEqual(0)` since synchronous mocks yield 0 latency.
+- **`@soostori/auth`**: Stale compiled `identity.js` / `identity.js.map` removed from `src/` and `node_modules/` copies — was shadowing the corrected `.ts` source and causing `nextRequiredLink` to return `'company'` instead of `'shop'`.
+- **`@soostori/contract-tests`**: Test updated — `nextRequiredLink` chain now expects `'shop'` after `'user'` (not `'company'`); `isValidChain` ctx no longer includes removed `company` field.
 
 ### Changed
 
