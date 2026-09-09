@@ -16,7 +16,9 @@
     "@soostori/sync": "workspace:*",
     "@soostori/subscription": "workspace:*",
     "@soostori/tuma": "workspace:*",
-    "zod": "^3.24.0"
+    "zod": "^3.24.0",
+    "@soostori/events": "workspace:*",
+    "@soostori/offline": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

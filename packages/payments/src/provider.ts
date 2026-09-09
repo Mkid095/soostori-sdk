@@ -10,7 +10,7 @@ import type {
   CreateSaleRequest, CreateSaleResult,
   CreateInvoiceRequest, CreateInvoiceResult,
   PaymentCallback,
-} from './types'
+} from './types.js'
 
 export interface PaymentProvider {
   /** Unique provider identifier. */

@@ -3,8 +3,8 @@
  * All domain repositories extend this. No business logic lives here.
  */
 
-import { getDatabase } from './sqlite-database'
-import { SqliteTransactionHandle } from './sqlite-transaction'
+import { getDatabase } from './sqlite-database.js'
+import { SqliteTransactionHandle } from './sqlite-transaction.js'
 import type { Repository, TransactionHandle } from '@soostori/storage'
 import type { UUID } from '@soostori/core'
 

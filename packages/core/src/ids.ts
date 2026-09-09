@@ -7,7 +7,6 @@ export type Brand<T, B extends string> = T & { readonly __brand: B }
 
 // Core domain IDs
 export type UserId = Brand<string, 'UserId'>
-export type CompanyId = Brand<string, 'CompanyId'>
 export type ShopId = Brand<string, 'ShopId'>
 export type EmployeeId = Brand<string, 'EmployeeId'>
 export type DeviceId = Brand<string, 'DeviceId'>
@@ -52,7 +51,6 @@ export function newId(): string {
 // In production these should only be called with validated UUIDs.
 
 export const asUserId = (s: string) => s as UserId
-export const asCompanyId = (s: string) => s as CompanyId
 export const asShopId = (s: string) => s as ShopId
 export const asEmployeeId = (s: string) => s as EmployeeId
 export const asDeviceId = (s: string) => s as DeviceId

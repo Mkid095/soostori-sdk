@@ -1,9 +1,14 @@
 packages:
   - 'packages/*'
+  - 'packages/business/*'
 
 allowBuilds:
   esbuild: true
   better-sqlite3: true
+
+minimumReleaseAgeExclude:
+  - '@soostori/core@0.1.0-alpha.2'
+  - '@soostori/schema@0.1.0-alpha.2'
 
 onlyBuiltDependencies:
   - esbuild

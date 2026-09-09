@@ -8,9 +8,10 @@
  * the Primary Device for distributed safety. See @soostori/lan.
  */
 
-import type { Product } from './types'
-import type { ProductRepository } from './repository'
+import type { Product } from './types.js'
+import type { ProductRepository } from './repository.js'
 import type { UUID, Money } from '@soostori/core'
+import { asShopId, asDeviceId, asUserId } from '@soostori/core'
 import {
   createEvent, PRODUCT_CREATED, PRODUCT_UPDATED, PRODUCT_DELETED,
   PRICE_CHANGED,
@@ -29,9 +30,9 @@ export class ProductService {
     const product = await this.repo.create(data)
     await getEventBus().publish(createEvent({
       name: PRODUCT_CREATED,
-      shopId: this.shopId,
-      deviceId: this.deviceId,
-      userId: this.userId,
+      shopId: asShopId(this.shopId),
+      deviceId: asDeviceId(this.deviceId),
+      userId: this.userId ? asUserId(this.userId) : undefined,
       entityId: product.id,
       entity: 'product',
       payload: { productId: product.id, name: product.name },
@@ -46,9 +47,9 @@ export class ProductService {
 
     await getEventBus().publish(createEvent({
       name: PRODUCT_UPDATED,
-      shopId: this.shopId,
-      deviceId: this.deviceId,
-      userId: this.userId,
+      shopId: asShopId(this.shopId),
+      deviceId: asDeviceId(this.deviceId),
+      userId: this.userId ? asUserId(this.userId) : undefined,
       entityId: product.id,
       entity: 'product',
       payload: { productId: product.id, changes },
@@ -58,8 +59,8 @@ export class ProductService {
     if (before.sellingPrice !== product.sellingPrice) {
       await getEventBus().publish(createEvent({
         name: PRICE_CHANGED,
-        shopId: this.shopId,
-        deviceId: this.deviceId,
+        shopId: asShopId(this.shopId),
+        deviceId: asDeviceId(this.deviceId),
         entityId: product.id,
         entity: 'product',
         payload: { productId: product.id, oldPrice: before.sellingPrice, newPrice: product.sellingPrice },
@@ -73,8 +74,8 @@ export class ProductService {
     await this.repo.softDelete(id)
     await getEventBus().publish(createEvent({
       name: PRODUCT_DELETED,
-      shopId: this.shopId,
-      deviceId: this.deviceId,
+      shopId: asShopId(this.shopId),
+      deviceId: asDeviceId(this.deviceId),
       entityId: id,
       entity: 'product',
       payload: { productId: id },

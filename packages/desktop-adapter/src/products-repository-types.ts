@@ -3,8 +3,7 @@
  */
 
 import type { ProductId, CategoryId, ProductVariantId, ISO8601, Money } from '@soostori/core'
-
-export { type ProductId, type CategoryId, type ProductVariantId, type ISO8601, type Money }
+export type { ProductId, CategoryId, ProductVariantId, ISO8601, Money }
 
 /** Full product insert input — includes Desktop-extended fields not in SDK Product. */
 export interface ProductCreateInput {

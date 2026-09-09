@@ -2,31 +2,29 @@
  * Canonical Soostori identity model.
  *
  * The chain is:
- *   FIDScript User ($users)
+ *   FIDScript User ($users) — cloud identity (Google account, email/password)
+ *     ↓ cloudId link
+ *   Employee (employees) — shop membership with roles/permissions
+ *     ↓ deviceId link
+ *   Device (devices) — enrolled device with local PIN verifier
  *     ↓
- *   Company (companies)
- *     ↓
- *   Shop (shops)
- *     ↓
- *   Employee (employees)
- *     ↓
- *   Device (devices)
- *     ↓
- *   Authorized Session
+ *   OperationalSession — local PIN verified, can make mutations
  *
  * Local PIN is NOT a cloud identity. It only unlocks an already-authorized
- * employee on a specific device.
+ * employee on a specific device. The cloud stores only `Device.hasPin`.
+ *
+ * NOTE: Company (companies) was removed — no such entity exists in the
+ * FIDScript remote schema. Shops are the top-level business entity.
  */
 
 import type {
-  UserId, CompanyId, ShopId, EmployeeId, DeviceId,
-  User, Company, Shop, Employee, Device, AuthSession,
+  UserId, ShopId, EmployeeId, DeviceId,
+  User, Shop, Employee, Device, AuthSession,
 } from '@soostori/core'
 
 /** Identity context — fully resolved after sign-in. */
 export interface IdentityContext {
   user: User
-  company: Company | null
   shop: Shop | null
   employee: Employee | null
   device: Device | null
@@ -69,7 +67,6 @@ export function isValidChain(ctx: Partial<IdentityContext>): ctx is IdentityCont
 /** Determine the next link needed to complete the chain. */
 export function nextRequiredLink(ctx: Partial<IdentityContext>): string | null {
   if (!ctx.user) return 'user'
-  if (!ctx.company) return 'company'
   if (!ctx.shop) return 'shop'
   if (!ctx.employee) return 'employee'
   if (!ctx.device) return 'device'
@@ -80,7 +77,6 @@ export function nextRequiredLink(ctx: Partial<IdentityContext>): string | null {
 /** Identity state transitions. */
 export type IdentityAction =
   | { type: 'SIGN_IN'; userId: UserId; email: string }
-  | { type: 'SET_COMPANY'; company: Company }
   | { type: 'SET_SHOP'; shop: Shop }
   | { type: 'SET_EMPLOYEE'; employee: Employee }
   | { type: 'SET_DEVICE'; device: Device }
@@ -93,26 +89,19 @@ export function identityReducer(
 ): IdentityContext | null {
   switch (action.type) {
     case 'SIGN_IN': {
-      // SIGN_IN only sets the user state. Session is built later, after
-      // SET_SHOP/SET_EMPLOYEE/SET_DEVICE provide a complete identity chain.
       return {
         user: { id: action.userId, email: action.email, type: 'owner' },
-        company: null,
         shop: null,
         employee: null,
         device: null,
         session: null,
       }
     }
-    case 'SET_COMPANY':
-      return state ? { ...state, company: action.company } : null
     case 'SET_SHOP':
       return state ? { ...state, shop: action.shop } : null
     case 'SET_EMPLOYEE':
       return state ? { ...state, employee: action.employee } : null
     case 'SET_DEVICE':
-      // Building the session requires all four identity links.
-      // Only build the session when user + shop + employee + device are all present.
       if (state && state.user && state.shop && state.employee && action.device) {
         const session = buildSession({
           user: state.user,

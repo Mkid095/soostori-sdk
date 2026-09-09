@@ -5,8 +5,8 @@
  * SDK Repository<T> interface. No existing IPC handlers or table schemas are modified.
  */
 
-export { ProductsRepository } from './products-repository'
-export { CategoriesRepository } from './categories-repository'
-export { CustomersRepository } from './customers-repository'
-export { DesktopSalesRepository, type PaymentMethod } from './sales-repository'
-export { DebtsRepository } from './debts-repository'
+export { ProductsRepository } from './products-repository.js'
+export { CategoriesRepository } from './categories-repository.js'
+export { CustomersRepository } from './customers-repository.js'
+export { DesktopSalesRepository, type PaymentMethod } from './sales-repository.js'
+export { DebtsRepository } from './debts-repository.js'

@@ -10,8 +10,8 @@
  */
 
 import { randomUUID } from 'crypto'
-import { getDatabase } from './sqlite-database'
-import type { ProductId } from './products-repository-types'
+import { getDatabase } from './sqlite-database.js'
+import type { ProductId } from './products-repository-types.js'
 
 export class ProductsStockRepository {
   async decrementStock(

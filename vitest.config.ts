@@ -15,6 +15,7 @@ export default defineConfig({
       '@soostori/events': resolve(ROOT, 'packages/events/src/index.ts'),
       '@soostori/schema': resolve(ROOT, 'packages/schema/src/index.ts'),
       '@soostori/auth': resolve(ROOT, 'packages/auth/src/index.ts'),
+      '@soostori/auth/pin-node': resolve(ROOT, 'packages/auth/src/pin-node.ts'),
       '@soostori/storage': resolve(ROOT, 'packages/storage/src/index.ts'),
       '@soostori/devices': resolve(ROOT, 'packages/devices/src/index.ts'),
       '@soostori/offline': resolve(ROOT, 'packages/offline/src/index.ts'),
@@ -33,6 +34,7 @@ export default defineConfig({
       '@soostori/customers': resolve(ROOT, 'packages/business/customers/src/index.ts'),
       '@soostori/debts': resolve(ROOT, 'packages/business/debts/src/index.ts'),
       '@soostori/business': resolve(ROOT, 'packages/business/src/index.ts'),
+      '@soostori/updates': resolve(ROOT, 'packages/updates/src/index.ts'),
     },
   },
 })

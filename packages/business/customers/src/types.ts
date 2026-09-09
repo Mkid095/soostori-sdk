@@ -29,3 +29,9 @@ export interface CustomerRiskFlag {
   /** When the flag was acknowledged/cleared. */
   clearedAt: ISO8601 | null
 }
+
+/** Pagination options for repository queries. */
+export interface PaginationOptions {
+  limit?: number
+  offset?: number
+}

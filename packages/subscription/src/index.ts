@@ -1,3 +1,3 @@
-export * from './entitlement'
-export * from './enforcement'
-export * from './cache'
+export * from './entitlement.js'
+export * from './enforcement.js'
+export * from './cache.js'

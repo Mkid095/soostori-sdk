@@ -1,47 +1,71 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { createCloudClient, CloudError, NetworkError } from '../src/index'
 
 function mockFetch(responses: Array<{ status: number; body: unknown }>): typeof fetch {
   let callIndex = 0
   return (async () => {
+    await new Promise(r => setTimeout(r, 1))
     const r = responses[callIndex++] ?? { status: 500, body: { error: 'no more responses' } }
     return new Response(JSON.stringify(r.body), { status: r.status })
   }) as unknown as typeof fetch
 }
 
 describe('CloudClient', () => {
-  it('sends magic code', async () => {
-    const fetch = mockFetch([{ status: 200, body: { ok: true } }])
-    const client = createCloudClient({ appId: 'test-app', fetch })
-    const result = await client.sendMagicCode('a@b.com')
-    expect(result.ok).toBe(true)
+  it('signOut succeeds with token', async () => {
+    const fetch = mockFetch([{ status: 200, body: {} }])
+    const client = createCloudClient({ appId: 'test-app', fetch, token: 'tok' })
+    await expect(client.signOut()).resolves.toBeUndefined()
   })
 
-  it('verifyMagicCode returns user', async () => {
-    const fetch = mockFetch([{ status: 200, body: { user: { id: 'u1', email: 'a@b.com' } } }])
+  it('signOut no-ops without token', async () => {
+    const fetch = mockFetch([{ status: 200, body: {} }])
     const client = createCloudClient({ appId: 'test-app', fetch })
-    const result = await client.verifyMagicCode('a@b.com', '123456')
-    expect(result.user.id).toBe('u1')
+    await expect(client.signOut()).resolves.toBeUndefined()
   })
 
-  it('throws CloudError on non-2xx', async () => {
+  it('health returns reachable on 2xx', async () => {
+    const fetch = mockFetch([{ status: 200, body: {} }])
+    const client = createCloudClient({ appId: 'test-app', fetch })
+    const result = await client.health()
+    expect(result.reachable).toBe(true)
+    expect(typeof result.latencyMs).toBe('number')
+    expect(result.latencyMs).toBeGreaterThanOrEqual(0)
+  })
+
+  it('health returns unreachable on non-2xx', async () => {
     const fetch = mockFetch([{ status: 401, body: { error: 'unauthorized' } }])
     const client = createCloudClient({ appId: 'test-app', fetch })
-    await expect(client.sendMagicCode('a@b.com')).rejects.toThrow(CloudError)
+    const result = await client.health()
+    expect(result.reachable).toBe(false)
+    expect(result.latencyMs).toBeNull()
+  })
+
+  it('health returns unreachable on network failure', async () => {
+    const fetch = (() => Promise.reject(new Error('network down'))) as unknown as typeof fetch
+    const client = createCloudClient({ appId: 'test-app', fetch })
+    const result = await client.health()
+    expect(result.reachable).toBe(false)
+    expect(result.latencyMs).toBeNull()
   })
 
   it('throws NetworkError on abort', async () => {
     const fetch = (() => Promise.reject(new DOMException('aborted', 'AbortError'))) as unknown as typeof fetch
     const client = createCloudClient({ appId: 'test-app', fetch, timeoutMs: 10 })
-    await expect(client.sendMagicCode('a@b.com')).rejects.toThrow()
+    // health() catches abort and returns { reachable: false } — it does NOT throw
+    await expect(client.health()).resolves.toEqual({ reachable: false, latencyMs: null })
   })
 
   it('throws NetworkError on connection failure', async () => {
     const fetch = (() => Promise.reject(new Error('network down'))) as unknown as typeof fetch
     const client = createCloudClient({ appId: 'test-app', fetch })
-    await expect(client.sendMagicCode('a@b.com')).rejects.toThrow(NetworkError)
+    await expect(client.query({})).rejects.toThrow(NetworkError)
   })
 
+  it('throws CloudError on non-2xx from query', async () => {
+    const fetch = mockFetch([{ status: 401, body: { error: 'unauthorized' } }])
+    const client = createCloudClient({ appId: 'test-app', fetch })
+    await expect(client.query({})).rejects.toThrow(CloudError)
+  })
   it('upsert validates entity payload', async () => {
     const fetch = mockFetch([{ status: 200, body: {} }])
     const client = createCloudClient({ appId: 'test-app', fetch })

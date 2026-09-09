@@ -16,11 +16,11 @@ import type { ShopId, DeviceId, UUID } from '@soostori/core'
 import type { SoostoriEvent } from '@soostori/events'
 import {
   DiscoveryAdvert, DiscoveryRequest, ClientMessage, ServerMessage,
-} from './messages'
-import { DISCOVERY_MAGIC, DISCOVERY_VERSION } from './messages'
+} from './messages.js'
+import { DISCOVERY_MAGIC, DISCOVERY_VERSION } from './messages.js'
 import {
   DISCOVERY_PORT, SYNC_PORT, HEARTBEAT_INTERVAL_MS,
-} from './protocol'
+} from './protocol.js'
 
 /** Transport injection point — platform implementations provide these. */
 export interface LanTransport {

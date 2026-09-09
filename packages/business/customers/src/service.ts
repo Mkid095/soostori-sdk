@@ -1,6 +1,7 @@
-import type { Customer } from './types'
-import type { CustomersRepository } from './repository'
+import type { Customer } from './types.js'
+import type { CustomersRepository } from './repository.js'
 import type { UUID } from '@soostori/core'
+import { asShopId, asDeviceId, asUserId } from '@soostori/core'
 import { createEvent, CUSTOMER_CREATED, CUSTOMER_UPDATED, CUSTOMER_FLAGGED } from '@soostori/events'
 import { getEventBus } from '@soostori/events'
 
@@ -16,7 +17,7 @@ export class CustomersService {
     const customer = await this.repo.create(data)
     await getEventBus().publish(createEvent({
       name: CUSTOMER_CREATED,
-      shopId: this.shopId, deviceId: this.deviceId, userId: this.userId,
+      shopId: asShopId(this.shopId), deviceId: asDeviceId(this.deviceId), userId: this.userId ? asUserId(this.userId) : undefined,
       entityId: customer.id, entity: 'customer',
       payload: { customerId: customer.id, name: customer.name },
     }))
@@ -27,7 +28,7 @@ export class CustomersService {
     const customer = await this.repo.update(id, changes)
     await getEventBus().publish(createEvent({
       name: CUSTOMER_UPDATED,
-      shopId: this.shopId, deviceId: this.deviceId, userId: this.userId,
+      shopId: asShopId(this.shopId), deviceId: asDeviceId(this.deviceId), userId: this.userId ? asUserId(this.userId) : undefined,
       entityId: customer.id, entity: 'customer',
       payload: { customerId: customer.id },
     }))
@@ -43,7 +44,7 @@ export class CustomersService {
     })
     await getEventBus().publish(createEvent({
       name: CUSTOMER_FLAGGED,
-      shopId: this.shopId, deviceId: this.deviceId, userId: this.userId,
+      shopId: asShopId(this.shopId), deviceId: asDeviceId(this.deviceId), userId: this.userId ? asUserId(this.userId) : undefined,
       entityId: customerId, entity: 'customer',
       payload: { customerId, reason },
     }))

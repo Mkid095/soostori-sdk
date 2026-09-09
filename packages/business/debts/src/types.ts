@@ -32,3 +32,9 @@ export interface DebtPayment {
   createdAt: ISO8601
   userId: UUID
 }
+
+/** Pagination options for repository queries. */
+export interface PaginationOptions {
+  limit?: number
+  offset?: number
+}

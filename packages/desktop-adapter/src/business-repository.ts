@@ -8,7 +8,7 @@
  * contracts from @soostori/business are deferred to Phase 9.2.
  */
 
-import { getDatabase } from './sqlite-database'
+import { getDatabase } from './sqlite-database.js'
 import type { UUID, ShopId } from '@soostori/core'
 import { asShopId } from '@soostori/core'
 

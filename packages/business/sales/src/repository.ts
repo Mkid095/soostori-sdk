@@ -2,8 +2,8 @@
  * Sales repository — local persistence abstraction.
  */
 
-import type { Sale, SaleItem, HeldSale } from './types'
-import type { UUID, Money, ISO8601, PaginationOptions } from '@soostori/core'
+import type { Sale, SaleItem, HeldSale, PaginationOptions } from './types.js'
+import type { UUID, Money, ISO8601 } from '@soostori/core'
 
 export interface SaleFilter {
   status?: Sale['status']

@@ -15,8 +15,9 @@ import {
 import { cloudEntities, validateEntity, SCHEMA_VERSION } from '@soostori/schema'
 import {
   buildSession, isValidChain, nextRequiredLink,
-  hasPermission, verifyPin, hashPin,
+  hasPermission,
 } from '@soostori/auth'
+import { verifyPin, hashPin } from '@soostori/auth/pin-node'
 import { createCloudClient } from '@soostori/cloud'
 import { STOCK_SENSITIVE_EVENTS } from '@soostori/sync'
 import {
@@ -92,7 +93,6 @@ describe('contract: Employee', () => {
     const deviceId = DEVICE
     const ctx = {
       user: { id: userId, email: 'a@b.com', type: 'owner' as const },
-      company: null,
       shop: { id: businessId, name: 'X', slug: 'x', taxRate: 0, plan: 'free', subscriptionExpiry: null, status: 'active' as const },
       employee: { id: employeeId, shopId: businessId, name: 'John', role: 'cashier' as const },
       device: { id: deviceId, shopId: businessId, deviceName: 'POS', deviceType: 'desktop' as const, status: 'authorized' as const, isPrimary: false },
@@ -103,7 +103,7 @@ describe('contract: Employee', () => {
 
   it('nextRequiredLink walks the chain in order', () => {
     expect(nextRequiredLink({})).toBe('user')
-    expect(nextRequiredLink({ user: { id: 'u' as any, email: '', type: 'owner' } })).toBe('company')
+    expect(nextRequiredLink({ user: { id: 'u' as any, email: '', type: 'owner' } })).toBe('shop')
   })
 })
 

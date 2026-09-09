@@ -1,5 +1,6 @@
-import type { Debt, DebtPayment } from './types'
-import type { UUID, Money, ISO8601, PaginationOptions } from '@soostori/core'
+import type { Debt, DebtPayment } from './types.js'
+import type { PaginationOptions } from './types.js'
+import type { UUID, Money, ISO8601 } from '@soostori/core'
 
 export interface DebtFilter {
   customerId?: UUID

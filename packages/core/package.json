@@ -1,6 +1,6 @@
 {
   "name": "@soostori/core",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.3",
   "description": "Canonical Soostori core: branded IDs, domain types, validation, errors, constants",
   "type": "module",
   "main": "./dist/index.js",
@@ -8,8 +8,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.js"
     }
   },
   "files": [
@@ -42,6 +41,10 @@
     "inventory",
     "sync"
   ],
-  "license": "UNLICENSED",
-  "private_publish_token_env": "NPM_TOKEN"
+  "license": "BSL-1.1",
+  "private_publish_token_env": "NPM_TOKEN",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mkid095/soostori-sdk.git"
+  }
 }

@@ -1,18 +1,30 @@
 {
   "name": "@soostori/auth",
-  "version": "0.1.0",
-  "description": "Canonical identity model: User → Company → Shop → Employee → Device → Session",
+  "version": "0.1.0-alpha.6",
+  "description": "Cloud auth (Google OAuth, email/password, session) + OperationalAuth (device-local PIN, enrollment)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "react-native": {
+        "default": "./dist/pin-rn.js"
+      },
+      "default": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    },
+    "./pin-node": {
+      "types": "./dist/pin-node.d.ts",
+      "default": "./dist/pin-node.js"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
@@ -24,7 +36,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@soostori/core": "workspace:*",
+    "@soostori/core": "^0.1.0-alpha.2",
     "zod": "^3.24.0"
   },
   "devDependencies": {
@@ -32,6 +44,10 @@
     "vitest": "^2.1.0",
     "@types/node": "^22.0.0"
   },
-  "license": "UNLICENSED",
-  "private_publish_token_env": "NPM_TOKEN"
+  "license": "BSL-1.1",
+  "private_publish_token_env": "NPM_TOKEN",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mkid095/soostori-sdk.git"
+  }
 }

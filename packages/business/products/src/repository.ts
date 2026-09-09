@@ -8,7 +8,9 @@
  * SDK isn't tied to SQLite.
  */
 
-import type { Product, Category, ProductVariant, Money, ISO8601 } from '@soostori/core'
+import type { Product, ProductVariant } from './types.js'
+import type { Money, ISO8601 } from '@soostori/core'
+import type { Category } from '@soostori/core'
 import type { UUID } from '@soostori/core'
 
 export interface ProductFilter {

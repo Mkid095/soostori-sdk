@@ -2,14 +2,14 @@
  * Products write operations — creates, updates, deletes.
  */
 
-import { getDatabase } from './sqlite-database'
+import { getDatabase } from './sqlite-database.js'
 import { randomUUID } from 'crypto'
 import { asProductId, asCategoryId } from '@soostori/core'
 import type { Product, Category } from '@soostori/core'
-import type { ProductCreateInput, CategoryCreateInput } from './products-repository-types'
-import type { ProductId, CategoryId } from './products-repository-types'
-import type { ProductRow, CategoryRow } from './products-repository-mappers'
-import { rowToProduct, rowToCategory } from './products-repository-mappers'
+import type { ProductCreateInput, CategoryCreateInput } from './products-repository-types.js'
+import type { ProductId, CategoryId } from './products-repository-types.js'
+import type { ProductRow, CategoryRow } from './products-repository-mappers.js'
+import { rowToProduct, rowToCategory } from './products-repository-mappers.js'
 
 const fieldMap: Array<[keyof Partial<ProductCreateInput>, string]> = [
   ['name', 'name'], ['categoryId', 'category_id'], ['sku', 'sku'],

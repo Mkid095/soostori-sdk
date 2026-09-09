@@ -1,6 +1,6 @@
 {
   "name": "@soostori/lan",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.1",
   "description": "LAN discovery + WebSocket protocol — extracted from Desktop's sync infrastructure",
   "type": "module",
   "main": "./dist/index.js",
@@ -8,16 +8,19 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-      "typecheck": "tsc --noEmit -p tsconfig.json",
-      "test": "vitest run",
-      "lint": "echo 'lint placeholder'"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "lint": "echo 'lint placeholder'"
   },
   "publishConfig": {
     "access": "public",
@@ -36,6 +39,10 @@
     "@types/node": "^22.0.0",
     "@types/ws": "^8.5.10"
   },
-  "license": "UNLICENSED",
-  "private_publish_token_env": "NPM_TOKEN"
+  "license": "BSL-1.1",
+  "private_publish_token_env": "NPM_TOKEN",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mkid095/soostori-sdk.git"
+  }
 }

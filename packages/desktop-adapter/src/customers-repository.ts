@@ -8,7 +8,7 @@
  * Soft-delete is used (is_active flag) rather than hard delete.
  */
 
-import { getDatabase } from './sqlite-database'
+import { getDatabase } from './sqlite-database.js'
 import type { Customer, CustomerId, ShopId, ISO8601 } from '@soostori/core'
 import { asCustomerId } from '@soostori/core'
 

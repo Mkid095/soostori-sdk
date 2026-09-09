@@ -51,13 +51,6 @@ export const cloudEntities: Record<string, EntitySchema> = {
   },
 
   // Management ─────────────────────────────────────────────────────────
-  companies: {
-    id: uuid({ required: true, unique: true }),
-    name: str({ required: true }),
-    slug: str({ indexed: true }),
-    taxRate: num({ default: 0 }),
-  },
-
   shops: {
     id: uuid({ required: true, unique: true }),
     name: str({ required: true }),

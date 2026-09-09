@@ -10,7 +10,7 @@
  *   - Desktop: WebSocket subscription (TBD) or polling at 5s intervals
  */
 
-import type { CloudClient } from './client'
+import type { CloudClient } from './client.js'
 
 export interface RealtimeSubscriptionOptions {
   entity: string

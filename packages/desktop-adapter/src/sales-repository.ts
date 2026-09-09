@@ -12,7 +12,7 @@
  */
 
 import { randomUUID } from 'crypto'
-import { getDatabase } from './sqlite-database'
+import { getDatabase } from './sqlite-database.js'
 import type { SaleId, ShopId, UserId, DeviceId, CustomerId, ISO8601, Money, UUID } from '@soostori/core'
 import { asSaleId, asShopId } from '@soostori/core'
 

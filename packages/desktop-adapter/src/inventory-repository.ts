@@ -8,7 +8,7 @@
  * adapter — they are deprecated in favor of inventory_transactions.
  */
 
-import { getDatabase } from './sqlite-database'
+import { getDatabase } from './sqlite-database.js'
 import type { InventoryRepository, MovementFilter } from '@soostori/inventory'
 import type { StockMovement, StockBalance, StockReservation, StockSummary } from '@soostori/inventory'
 import type { UUID, ISO8601 } from '@soostori/core'

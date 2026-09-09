@@ -8,9 +8,9 @@
  * the operation is a no-op (returns the existing movement).
  */
 
-import type { InventoryRepository } from './repository'
-import type { StockMovement, StockBalance, StockReservation } from './types'
-import { InsufficientStockError } from './repository'
+import type { InventoryRepository } from './repository.js'
+import type { StockMovement, StockBalance, StockReservation } from './types.js'
+import { InsufficientStockError } from './repository.js'
 import type { UUID, ISO8601 } from '@soostori/core'
 import { newId } from '@soostori/core'
 
@@ -171,7 +171,7 @@ export class StockMovementLedger {
   }
 
   /** Get the ledger history for a product. */
-  async getHistory(productId: UUID, pagination?: import('./repository').PaginationOptions): Promise<StockMovement[]> {
+  async getHistory(productId: UUID, pagination?: import('./repository.js').PaginationOptions): Promise<StockMovement[]> {
     return this.repo.listMovements({ productId }, pagination)
   }
 }

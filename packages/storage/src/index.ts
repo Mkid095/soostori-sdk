@@ -1,2 +1,2 @@
-export * from './repository'
-export * from './queue'
+export * from './repository.js'
+export * from './queue.js'

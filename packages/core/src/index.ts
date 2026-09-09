@@ -3,8 +3,8 @@
  * Single source of truth for branded IDs, domain types, validation, errors, constants.
  */
 
-export * from './ids'
-export * from './types'
-export * from './constants'
-export * from './errors'
-export * from './validation'
+export * from './ids.js'
+export * from './types.js'
+export * from './constants.js'
+export * from './errors.js'
+export * from './validation.js'

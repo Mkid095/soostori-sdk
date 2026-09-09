@@ -17,7 +17,7 @@
  * Primary creates worse problems than temporarily restricting stock ops.
  */
 
-import type { Device, Heartbeat, PrimaryDeviceState } from './types'
+import type { Device, Heartbeat, PrimaryDeviceState } from './types.js'
 import type { UUID, ShopId, ISO8601 } from '@soostori/core'
 import { addMilliseconds, asDeviceId } from '@soostori/core'
 import {

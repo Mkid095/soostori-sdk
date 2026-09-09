@@ -18,8 +18,8 @@
 import type { SoostoriEvent, SoostoriEventName } from '@soostori/events'
 import type { ShopId, UserId, UUID } from '@soostori/core'
 import { newId } from '@soostori/core'
-import { NotificationChannel, Notification, NotificationChannelRegistry } from './channel'
-import { defaultChannelsFor } from './preferences'
+import { NotificationChannel, Notification, NotificationChannelRegistry } from './channel.js'
+import { defaultChannelsFor } from './preferences.js'
 
 /** Mapping from event name to (title, body, priority). */
 type PayloadFn = (e: SoostoriEvent) => string

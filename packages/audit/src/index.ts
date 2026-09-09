@@ -1,2 +1,2 @@
-export * from './types'
-export * from './recorder'
+export * from './types.js'
+export * from './recorder.js'

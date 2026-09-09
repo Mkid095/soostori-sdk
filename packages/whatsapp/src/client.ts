@@ -5,7 +5,7 @@
  * NEVER hardcode secrets in source.
  */
 
-import { WhatsAppError } from './errors'
+import { WhatsAppError } from './errors.js'
 
 export const EVOLUTION_DEFAULT_URL = 'http://localhost:8080' as const
 

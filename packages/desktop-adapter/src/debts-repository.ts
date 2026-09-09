@@ -4,7 +4,7 @@
  *          debt_payments(id, debt_id, amount, payment_method, reference, notes, created_at)
  */
 
-import { getDatabase } from './sqlite-database'
+import { getDatabase } from './sqlite-database.js'
 import type { DebtId, DebtPaymentId, CustomerId, SaleId, ISO8601 } from '@soostori/core'
 import { newId, asDebtId } from '@soostori/core'
 

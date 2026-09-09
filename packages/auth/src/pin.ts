@@ -1,30 +1,34 @@
 /**
- * Local PIN hashing — uses Node `crypto` (Node-only).
- * For browser/React Native, platform implementations are provided separately.
+ * PIN hashing — platform stub.
  *
- * PIN is a LOCAL credential only. It unlocks an already-authorized employee.
- * It NEVER becomes the cloud identity.
+ * This file is a no-op shim for React Native / browser environments.
+ * It exists to prevent Metro from failing when it resolves this module.
+ *
+ * PIN operations are NOT part of the @soostori/auth cross-platform contract.
+ * Platform implementations must provide their own PBKDF2-compatible hashing.
+ *
+ * For Node.js / Desktop: use `@soostori/auth/pin-node`
+ *   import { hashPin, verifyPin } from '@soostori/auth/pin-node'
+ *
+ * IMPORTANT: PIN security semantics are NOT implemented here.
+ * Do NOT replace this stub with a JavaScript-only hash — that would weaken
+ * PIN security. The platform must provide a PBKDF2-compatible implementation.
  */
 
-import { pbkdf2Sync, randomBytes, timingSafeEqual } from 'crypto'
-import { PIN_PBKDF2_ITERATIONS, EMPLOYEE_PIN_LENGTH } from '@soostori/core'
-
-const KEY_LENGTH = 32
-const DIGEST = 'sha256'
-
-export function hashPin(pin: string, saltHex?: string): { hash: string; salt: string } {
-  if (pin.length !== EMPLOYEE_PIN_LENGTH) {
-    throw new Error(`PIN must be ${EMPLOYEE_PIN_LENGTH} digits`)
-  }
-  const salt = saltHex ?? randomBytes(16).toString('hex')
-  const hash = pbkdf2Sync(pin, salt, PIN_PBKDF2_ITERATIONS, KEY_LENGTH, DIGEST).toString('hex')
-  return { hash, salt }
+export function hashPin(_pin: string, _saltHex?: string): { hash: string; salt: string } {
+  throw new Error(
+    '@soostori/auth: PIN operations require a platform-specific implementation.\n' +
+    'On Desktop/Node, install the SDK and import from "@soostori/auth/pin-node".\n' +
+    'For React Native, use a PBKDF2-compatible crypto library such as\n' +
+    'react-native-quick-crypto and implement hashPin/verifyPin locally.',
+  )
 }
 
-export function verifyPin(pin: string, hashHex: string, saltHex: string): boolean {
-  if (pin.length !== EMPLOYEE_PIN_LENGTH) return false
-  const computed = pbkdf2Sync(pin, saltHex, PIN_PBKDF2_ITERATIONS, KEY_LENGTH, DIGEST)
-  const expected = Buffer.from(hashHex, 'hex')
-  if (computed.length !== expected.length) return false
-  return timingSafeEqual(computed, expected)
+export function verifyPin(_pin: string, _hashHex: string, _saltHex: string): boolean {
+  throw new Error(
+    '@soostori/auth: PIN operations require a platform-specific implementation.\n' +
+    'On Desktop/Node, install the SDK and import from "@soostori/auth/pin-node".\n' +
+    'For React Native, use a PBKDF2-compatible crypto library such as\n' +
+    'react-native-quick-crypto and implement hashPin/verifyPin locally.',
+  )
 }

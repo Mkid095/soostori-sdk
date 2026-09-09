@@ -12,7 +12,7 @@
  * Desktop is_host (boolean) → SDK isPrimary (boolean): same semantics.
  */
 
-import { getDatabase } from './sqlite-database'
+import { getDatabase } from './sqlite-database.js'
 import type { DevicesRepository } from '@soostori/devices'
 import type { Device, DeviceIdentity, PrimaryDeviceState } from '@soostori/devices'
 import type { UUID, ShopId, ISO8601 } from '@soostori/core'

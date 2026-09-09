@@ -2,11 +2,12 @@
  * Product variant operations.
  */
 
-import { getDatabase } from './sqlite-database'
+import { getDatabase } from './sqlite-database.js'
 import { randomUUID } from 'crypto'
-import type { ProductVariant, ProductVariantId, ProductId } from './products-repository-types'
-import type { VariantRow } from './products-repository-mappers'
-import { rowToVariant } from './products-repository-mappers'
+import type { ProductVariant } from './products-repository-types.js'
+import type { ProductVariantId, ProductId } from './products-repository-types.js'
+import type { VariantRow } from './products-repository-mappers.js'
+import { rowToVariant } from './products-repository-mappers.js'
 
 export class ProductsVariantRepository {
   async findVariants(productId: ProductId): Promise<ProductVariant[]> {
@@ -17,7 +18,7 @@ export class ProductsVariantRepository {
   }
 
   async createVariant(data: {
-    productId: ProductId
+    productId: import('@soostori/core').UUID
     name: string
     sku?: string | null
     barcode?: string | null

@@ -1,3 +1,3 @@
-export * from './types'
-export * from './primary'
-export * from './repository'
+export * from './types.js'
+export * from './primary.js'
+export * from './repository.js'

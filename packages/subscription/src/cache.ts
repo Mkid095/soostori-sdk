@@ -3,7 +3,7 @@
  */
 
 import type { SubscriptionEntitlement } from '@soostori/core'
-import { defaultEntitlement, computeState, type CachedEntitlement, type SubscriptionState } from './entitlement'
+import { defaultEntitlement, computeState, type CachedEntitlement, type SubscriptionState } from './entitlement.js'
 
 export interface EntitlementCacheStorage {
   get(key: string): string | null | Promise<string | null>

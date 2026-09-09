@@ -15,7 +15,7 @@
  * Stock reservation happens at phase 1 (locked by Primary).
  */
 
-import type { Sale, SaleRequest, SaleResponse, SaleRejectionReason } from './types'
+import type { Sale, SaleRequest, SaleResponse, SaleRejectionReason } from './types.js'
 import type { ProductRepository } from '@soostori/products'
 import type { UUID } from '@soostori/core'
 import { newId } from '@soostori/core'

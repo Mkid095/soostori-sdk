@@ -113,3 +113,9 @@ export type SaleRejectionReason =
   | 'SUBSCRIPTION_EXPIRED'
   | 'PRODUCT_DISABLED'
   | 'PRIMARY_UNAVAILABLE_OFFLINE_TOO_LONG'
+
+/** Pagination options for repository queries. */
+export interface PaginationOptions {
+  limit?: number
+  offset?: number
+}

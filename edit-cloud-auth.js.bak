@@ -1,0 +1,98 @@
+const fs = require('fs');
+
+const path = 'C:\\Users\\Administrator\\Documents\\GitHub\\soostori-sdk\\packages\\auth\\src\\cloud-auth.ts';
+let content = fs.readFileSync(path, 'utf8');
+const lines = content.split('\n');
+
+let modified = false;
+
+// Edit 1: Add accountStatus to GoogleSignInResult after isNewUser line
+for (let i = 0; i < lines.length; i++) {
+  if (lines[i].includes('isNewUser: boolean') && !lines[i].includes('GoogleSignInResult')) {
+    if (lines[i].trim().endsWith('}')) {
+      lines[i] = lines[i].replace(/\s*}$/, '\n  accountStatus?: \'provisioned\' | \'active\'\n}');
+    } else if (lines[i+1] && lines[i+1].trim() === '}') {
+      lines[i+1] = '  accountStatus?: \'provisioned\' | \'active\'\n}';
+    }
+    console.log('Edit1: Added accountStatus at line', i+1, ':', lines[i].substring(0,60));
+    modified = true;
+    break;
+  }
+}
+
+// Edit 2: Add signInWithIdToken to AuthApiClient after linkGoogleAccount
+for (let i = 0; i < lines.length; i++) {
+  if (lines[i].includes('linkGoogleAccount(idToken: string, sessionAccessToken: string)')) {
+    const insert = [
+      '',
+      '  /**',
+      '   * Sign in with a Google ID token (Mobile flow).',
+      '   * `clientName` is the configured FIDScript client name (e.g. "soostoriandroid").',
+      '   * `idToken` is obtained from `GoogleSignin.signIn()`.',
+      '   */',
+      '  signInWithIdToken(clientName: string, idToken: string): Promise<AuthApiResponse<GoogleSignInResult>>',
+    ];
+    lines.splice(i+1, 0, ...insert);
+    console.log('Edit2: Added signInWithIdToken after line', i+1);
+    modified = true;
+    break;
+  }
+}
+
+content = lines.join('\n');
+lines = content.split('\n');
+
+// Edit 3: Add signInWithGoogleIdToken to CloudAuth after handleOAuthCallback
+for (let i = 0; i < lines.length; i++) {
+  if (lines[i].includes('async handleOAuthCallback(')) {
+    let braceCount = 0;
+    let endIdx = i;
+    for (let j = i; j < lines.length; j++) {
+      braceCount += (lines[j].match(/{/g) || []).length;
+      braceCount -= (lines[j].match(/}/g) || []).length;
+      if (braceCount === 0 && j > i) {
+        endIdx = j;
+        break;
+      }
+    }
+    const newMethod = `
+  /**
+   * Sign in with a Google ID token (Mobile flow).
+   *
+   * Mobile platforms use \`GoogleSignin.signIn()\` to obtain an ID token,
+   * then pass it here along with the configured FIDScript \`clientName\`.
+   *
+   * This is the Mobile equivalent of \`signInWithGoogle\` + \`handleOAuthCallback\`
+   * but bypasses the browser PKCE redirect flow entirely.
+   *
+   * On success, emits \`SIGNED_IN\`.
+   */
+  async signInWithGoogleIdToken(params: { idToken: string; clientName: string }): Promise<AuthResult<GoogleSignInResult>> {
+    this._syncNetworkStatus()
+    if (!this._networkStatus.isOnline) {
+      return { ok: false, error: error('NETWORK_OFFLINE', 'Google Sign-In requires an internet connection') }
+    }
+    try {
+      const result = await this.api.signInWithIdToken(params.clientName, params.idToken)
+      if (result.error) return { ok: false, error: this._mapApiError(result.error) }
+      const data = result.data!
+      const session = await this._storeSession(data.userId, data.accessToken, data.idToken)
+      this.emit({ type: 'SIGNED_IN', session })
+      return { ok: true, data: { userId: data.userId, email: data.email, displayName: data.displayName, idToken: data.idToken, accessToken: data.accessToken, isNewUser: data.isNewUser, accountStatus: data.accountStatus } }
+    } catch (e) {
+      return { ok: false, error: error('OAUTH_ERROR', String(e)) }
+    }
+  }`;
+    lines.splice(endIdx + 1, 0, newMethod);
+    console.log('Edit3: Added signInWithGoogleIdToken after line', endIdx+1);
+    modified = true;
+    break;
+  }
+}
+
+if (modified) {
+  fs.writeFileSync(path, lines.join('\n'), 'utf8');
+  console.log('File written successfully.');
+} else {
+  console.log('No changes made - check patterns.');
+}

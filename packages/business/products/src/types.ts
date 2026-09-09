@@ -4,7 +4,7 @@
  * Fields mirror Desktop exactly so contracts don't drift from implementation.
  */
 
-import type { Money, ISO8601, UUID } from '@soostori/core'
+import type { Money, ISO8601, UUID, CategoryId, ShopId } from '@soostori/core'
 
 /** Product unit of measure. */
 export type ProductUnit = 'piece' | 'kg' | 'g' | 'l' | 'ml' | 'pack' | 'box' | 'carton' | 'bottle' | 'bag'
@@ -73,8 +73,8 @@ export interface Product {
 
 /** Product category. */
 export interface Category {
-  id: UUID
-  shopId: UUID
+  id: CategoryId
+  shopId: ShopId
   name: string
   description: string | null
   icon: string | null

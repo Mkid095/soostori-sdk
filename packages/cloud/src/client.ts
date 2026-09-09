@@ -86,16 +86,6 @@ export class CloudClient {
 
   // ── Auth ────────────────────────────────────────────────────────────
 
-  /** Request a magic code to be sent to the user's email. */
-  async sendMagicCode(email: string): Promise<{ ok: boolean; error?: string }> {
-    return this.request('POST', `/api/v1/apps/${this.appId}/auth/magic-code`, { email, type: 'email' })
-  }
-
-  /** Verify the magic code and obtain a cloud session. */
-  async verifyMagicCode(email: string, code: string): Promise<{ user: { id: string; email: string } }> {
-    return this.request('POST', `/api/v1/apps/${this.appId}/auth/magic-code/verify`, { email, code })
-  }
-
   /** Sign out — invalidates the current cloud session. */
   async signOut(): Promise<void> {
     if (!this._token) return
@@ -138,10 +128,10 @@ export class CloudClient {
 
   /** Health check. */
   async health(): Promise<{ reachable: boolean; latencyMs: number | null }> {
-    const t0 = Date.now()
+    const t0 = performance.now()
     try {
       await this.request('GET', `/api/v1/apps/${this.appId}`)
-      return { reachable: true, latencyMs: Date.now() - t0 }
+      return { reachable: true, latencyMs: Math.round(performance.now() - t0) }
     } catch {
       return { reachable: false, latencyMs: null }
     }

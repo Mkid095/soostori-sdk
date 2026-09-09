@@ -3,7 +3,7 @@
  * Implements @soostori/storage's TransactionHandle interface.
  */
 
-import { getDatabase } from './sqlite-database'
+import { getDatabase } from './sqlite-database.js'
 import type { TransactionHandle } from '@soostori/storage'
 import type { UUID } from '@soostori/core'
 

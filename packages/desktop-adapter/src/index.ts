@@ -14,23 +14,23 @@
  *   import { DesktopDevicesRepository, DesktopBusinessRepository } from '@soostori/desktop-adapter'
  */
 
-export { setDatabase, getDatabase, isDatabaseSet } from './sqlite-database'
-export { SqliteRepository } from './sqlite-repository'
-export { SqliteTransactionHandle } from './sqlite-transaction'
-export { DesktopDevicesRepository } from './devices-repository'
-export { DesktopBusinessRepository } from './business-repository'
+export { setDatabase, getDatabase, isDatabaseSet } from './sqlite-database.js'
+export { SqliteRepository } from './sqlite-repository.js'
+export { SqliteTransactionHandle } from './sqlite-transaction.js'
+export { DesktopDevicesRepository } from './devices-repository.js'
+export { DesktopBusinessRepository } from './business-repository.js'
 export {
   ProductsRepository,
   CategoriesRepository,
   CustomersRepository,
   DesktopSalesRepository,
   type PaymentMethod,
-} from './domain-repositories'
-export { DesktopInventoryRepository } from './inventory-repository'
+} from './domain-repositories.js'
+export { DesktopInventoryRepository } from './inventory-repository.js'
 export {
   hashPin,
   verifyPin,
   ROLE_PERMISSIONS,
   hasPermission,
-} from './auth-pin'
+} from './auth-pin.js'
 export { asUserId, asShopId, asEmployeeId, asDeviceId, asProductId, asCategoryId } from '@soostori/core'

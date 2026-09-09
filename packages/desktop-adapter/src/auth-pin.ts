@@ -9,7 +9,8 @@
  * not here — this file is platform-agnostic.
  */
 
-import { hashPin, verifyPin, ROLE_PERMISSIONS, hasPermission } from '@soostori/auth'
+import { hashPin, verifyPin } from '@soostori/auth/pin-node'
+import { ROLE_PERMISSIONS, hasPermission } from '@soostori/auth'
 import type { SessionStorage } from '@soostori/auth'
 
 export { hashPin, verifyPin, ROLE_PERMISSIONS, hasPermission }

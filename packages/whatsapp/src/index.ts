@@ -1,3 +1,3 @@
-export * from './client'
-export * from './channel'
-export * from './errors'
+export * from './client.js'
+export * from './channel.js'
+export * from './errors.js'

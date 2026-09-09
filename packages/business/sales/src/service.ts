@@ -6,11 +6,12 @@
  * via @soostori/lan; this service runs only on the Primary.
  */
 
-import type { SaleRequest, SaleResponse } from './types'
-import type { SalesRepository } from './repository'
+import type { SaleRequest, SaleResponse } from './types.js'
+import type { SalesRepository } from './repository.js'
 import type { ProductRepository } from '@soostori/products'
-import { checkStockForSale, computeSaleTotals } from './state-machine'
-import { newId, type UUID, type Money } from '@soostori/core'
+import { checkStockForSale, computeSaleTotals } from './state-machine.js'
+import { newId, type UUID, type Money, type UserId } from '@soostori/core'
+import { asShopId, asDeviceId, asUserId } from '@soostori/core'
 import { createEvent, SALE_PENDING, SALE_CONFIRMED, SALE_REJECTED, SALE_COMPLETED, SALE_REFUNDED } from '@soostori/events'
 import { getEventBus } from '@soostori/events'
 
@@ -40,8 +41,8 @@ export class SalesService {
     if (!stockCheck.ok) {
       await getEventBus().publish(createEvent({
         name: SALE_REJECTED,
-        shopId: this.shopId,
-        deviceId: this.primaryDeviceId,
+        shopId: asShopId(this.shopId),
+        deviceId: asDeviceId(this.primaryDeviceId),
         entityId: request.idempotencyKey,
         entity: 'sale',
         payload: {
@@ -64,8 +65,8 @@ export class SalesService {
 
     await getEventBus().publish(createEvent({
       name: SALE_CONFIRMED,
-      shopId: this.shopId,
-      deviceId: this.primaryDeviceId,
+      shopId: asShopId(this.shopId),
+      deviceId: asDeviceId(this.primaryDeviceId),
       entityId: request.idempotencyKey,
       entity: 'sale',
       payload: {
@@ -115,12 +116,12 @@ export class SalesService {
     // directly in offline/host mode without going through authorize().
     const stockCheck = await checkStockForSale({
       idempotencyKey: saleId,
-      shopId: this.shopId,
+      shopId: asShopId(this.shopId),
       items: args.items.map(i => ({ productId: i.productId, quantity: i.quantity })),
       paymentMethod: args.paymentMethod,
       paidAmount: args.paidAmount,
-      deviceId: this.primaryDeviceId,
-      userId: args.userId,
+      deviceId: asDeviceId(this.primaryDeviceId),
+      userId: String(args.userId ?? ''),
     }, this.products)
     if (!stockCheck.ok) {
       throw Object.assign(
@@ -136,11 +137,11 @@ export class SalesService {
 
     await this.sales.create({
       id: saleId,
-      shopId: this.shopId,
+      shopId: asShopId(this.shopId),
       type: 'retail',
       status: 'completed',
-      userId: args.userId,
-      deviceId: args.deviceId,
+      userId: String(args.userId ?? ''),
+      deviceId: asDeviceId(args.deviceId),
       authorizedBy: this.primaryDeviceId,
       subtotal,
       discountAmount: args.discountAmount ?? 0,
@@ -175,8 +176,8 @@ export class SalesService {
 
     await getEventBus().publish(createEvent({
       name: SALE_COMPLETED,
-      shopId: this.shopId,
-      deviceId: args.deviceId,
+      shopId: asShopId(this.shopId),
+      deviceId: asDeviceId(args.deviceId),
       entityId: saleId,
       entity: 'sale',
       payload: { saleId, total },
@@ -191,8 +192,8 @@ export class SalesService {
     await this.sales.update(saleId, { status: 'refunded' })
     await getEventBus().publish(createEvent({
       name: SALE_REFUNDED,
-      shopId: this.shopId,
-      deviceId: this.primaryDeviceId,
+      shopId: asShopId(this.shopId),
+      deviceId: asDeviceId(this.primaryDeviceId),
       entityId: saleId,
       entity: 'sale',
       payload: { saleId, amount: sale.totalAmount },

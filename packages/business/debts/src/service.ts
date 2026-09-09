@@ -1,6 +1,7 @@
-import type { Debt, DebtPayment } from './types'
-import type { DebtsRepository } from './repository'
+import type { Debt, DebtPayment } from './types.js'
+import type { DebtsRepository } from './repository.js'
 import type { UUID, Money } from '@soostori/core'
+import { asShopId, asDeviceId, asUserId } from '@soostori/core'
 import {
   createEvent, DEBT_CREATED, DEBT_PAYMENT_RECORDED, DEBT_WRITTEN_OFF,
 } from '@soostori/events'
@@ -18,7 +19,7 @@ export class DebtsService {
     const debt = await this.repo.create(data)
     await getEventBus().publish(createEvent({
       name: DEBT_CREATED,
-      shopId: this.shopId, deviceId: this.deviceId, userId: this.userId,
+      shopId: asShopId(this.shopId), deviceId: asDeviceId(this.deviceId), userId: this.userId ? asUserId(this.userId) : undefined,
       entityId: debt.id, entity: 'debt',
       payload: { debtId: debt.id, customerId: debt.customerId, amount: debt.amount },
     }))
@@ -43,7 +44,7 @@ export class DebtsService {
 
     await getEventBus().publish(createEvent({
       name: DEBT_PAYMENT_RECORDED,
-      shopId: this.shopId, deviceId: this.deviceId, userId: this.userId,
+      shopId: asShopId(this.shopId), deviceId: asDeviceId(this.deviceId), userId: this.userId ? asUserId(this.userId) : undefined,
       entityId: debtId, entity: 'debt',
       payload: { debtId, paymentId: payment.id, amount },
     }))
@@ -54,7 +55,7 @@ export class DebtsService {
     const updated = await this.repo.update(debtId, { status: 'written_off' })
     await getEventBus().publish(createEvent({
       name: DEBT_WRITTEN_OFF,
-      shopId: this.shopId, deviceId: this.deviceId, userId: this.userId,
+      shopId: asShopId(this.shopId), deviceId: asDeviceId(this.deviceId), userId: this.userId ? asUserId(this.userId) : undefined,
       entityId: debtId, entity: 'debt',
       payload: { debtId, reason },
     }))

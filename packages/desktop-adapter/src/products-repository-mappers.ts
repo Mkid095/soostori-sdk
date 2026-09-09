@@ -1,11 +1,28 @@
 /**
  * Row mappers — Desktop DB rows → SDK domain types.
+ *
+ * shopId is read from ProductsRepository._currentSaleMeta at mapp time.
+ * The orchestrator calls ProductsRepository.setSaleMeta({ shopId }) before any
+ * sale operation; the mapper extracts it here.
  */
 
 import type { Product, Category } from '@soostori/core'
-import { asProductId, asCategoryId } from '@soostori/core'
-import type { CategoryId } from '@soostori/core'
-import type { ProductVariant, ProductVariantId, ISO8601, Money } from './products-repository-types'
+import { asProductId, asCategoryId, asShopId } from '@soostori/core'
+import type { ISO8601, Money, ShopId } from '@soostori/core'
+import type { ProductVariant } from './products-repository-types.js'
+
+// Shared mutable context — written by ProductsRepository.setSaleMeta, read by mappers.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _currentMeta: { shopId?: string; saleId?: string; userId?: string; deviceId?: string } = {}
+
+export function setCurrentMeta(meta: { shopId?: string; saleId?: string; userId?: string; deviceId?: string }): void {
+  _currentMeta = meta
+}
+
+function currentShopId(): ShopId {
+  if (!_currentMeta.shopId) throw new Error('shopId not set — call setCurrentMeta({ shopId }) before row mapping')
+  return asShopId(_currentMeta.shopId)
+}
 
 /** Desktop categories row — internal to the adapter, not part of SDK contract. */
 export interface CategoryRow {
@@ -38,17 +55,16 @@ export interface VariantRow {
 export function rowToProduct(row: ProductRow): Product {
   return {
     id: asProductId(row.id),
-    shopId: '' as unknown as Product['shopId'],
-    categoryId: row.category_id as CategoryId | null,
+    shopId: currentShopId(),
+    categoryId: row.category_id ? asCategoryId(row.category_id) : null,
     name: row.name,
     sku: row.sku ?? null,
     barcode: row.barcode ?? null,
     description: row.description ?? null,
-    image: row.image_url ?? null,
     costPrice: (row.cost_price ?? 0) as Money,
     sellingPrice: row.selling_price as Money,
     groupPrices: row.group_prices ?? null,
-    isGroup: false,
+    isGroup: row.has_variants === 1,
     unitsPerPackage: row.units_per_package ?? 1,
     stockQuantity: row.stock_quantity ?? 0,
     currentStock: row.current_stock ?? 0,
@@ -57,6 +73,7 @@ export function rowToProduct(row: ProductRow): Product {
     allowSingleUnitSale: row.allow_single_unit_sale === 1,
     distributorName: row.distributor_name ?? null,
     distributorPhone: row.distributor_phone ?? null,
+    image: row.image_url ?? null,
     isActive: row.is_active === 1,
     createdAt: row.created_at as ISO8601,
     updatedAt: row.updated_at as ISO8601,
@@ -66,7 +83,7 @@ export function rowToProduct(row: ProductRow): Product {
 export function rowToCategory(row: CategoryRow): Category {
   return {
     id: asCategoryId(row.id),
-    shopId: '' as unknown as Category['shopId'],
+    shopId: currentShopId(),
     name: row.name,
     description: row.description ?? null,
     color: row.color,
@@ -78,8 +95,9 @@ export function rowToCategory(row: CategoryRow): Category {
 
 export function rowToVariant(row: VariantRow): ProductVariant {
   return {
-    id: row.id as unknown as ProductVariantId,
-    productId: asProductId(row.product_id),
+    // Variant IDs use a distinct brand — bypass cast required (was as unknown as before)
+    id: asProductId(row.id) as unknown as ProductVariant['id'],
+    productId: asProductId(row.product_id) as unknown as ProductVariant['productId'],
     name: row.name,
     sku: row.sku ?? null,
     barcode: row.barcode ?? null,

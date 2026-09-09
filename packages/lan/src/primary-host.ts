@@ -13,9 +13,9 @@ import type { ShopId, DeviceId, UUID } from '@soostori/core'
 import type { SoostoriEvent } from '@soostori/events'
 import {
   ClientMessage, ServerMessage, DiscoveryAdvert, LanFrame,
-} from './messages'
-import { DISCOVERY_MAGIC, DISCOVERY_VERSION } from './messages'
-import { DISCOVERY_PORT, SYNC_PORT } from './protocol'
+} from './messages.js'
+import { DISCOVERY_MAGIC, DISCOVERY_VERSION } from './messages.js'
+import { DISCOVERY_PORT, SYNC_PORT } from './protocol.js'
 
 /** Inject the platform-specific transport. */
 export interface LanHostTransport {

@@ -43,8 +43,8 @@ importers:
   packages/auth:
     dependencies:
       '@soostori/core':
-        specifier: workspace:*
-        version: link:../core
+        specifier: ^0.1.0-alpha.2
+        version: 0.1.0-alpha.2
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -81,14 +81,105 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.20.1)
 
-  packages/cloud:
+  packages/business/customers:
     dependencies:
       '@soostori/core':
         specifier: workspace:*
-        version: link:../core
-      '@soostori/schema':
+        version: link:../../core
+      '@soostori/events':
         specifier: workspace:*
-        version: link:../schema
+        version: link:../../events
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.20.1)
+
+  packages/business/debts:
+    dependencies:
+      '@soostori/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@soostori/events':
+        specifier: workspace:*
+        version: link:../../events
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.20.1)
+
+  packages/business/products:
+    dependencies:
+      '@soostori/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@soostori/events':
+        specifier: workspace:*
+        version: link:../../events
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.20.1)
+
+  packages/business/sales:
+    dependencies:
+      '@soostori/core':
+        specifier: workspace:*
+        version: link:../../core
+      '@soostori/events':
+        specifier: workspace:*
+        version: link:../../events
+      '@soostori/products':
+        specifier: workspace:*
+        version: link:../products
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.20.1)
+
+  packages/cloud:
+    dependencies:
+      '@soostori/core':
+        specifier: ^0.1.0-alpha.2
+        version: 0.1.0-alpha.2
+      '@soostori/schema':
+        specifier: ^0.1.0-alpha.2
+        version: 0.1.0-alpha.2
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -114,6 +205,12 @@ importers:
       '@soostori/core':
         specifier: workspace:*
         version: link:../core
+      '@soostori/events':
+        specifier: workspace:*
+        version: link:../events
+      '@soostori/offline':
+        specifier: workspace:*
+        version: link:../offline
       '@soostori/schema':
         specifier: workspace:*
         version: link:../schema
@@ -359,8 +456,8 @@ importers:
   packages/schema:
     dependencies:
       '@soostori/core':
-        specifier: workspace:*
-        version: link:../core
+        specifier: ^0.1.0-alpha.2
+        version: 0.1.0-alpha.2
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -380,6 +477,9 @@ importers:
       '@soostori/core':
         specifier: workspace:*
         version: link:../core
+      '@soostori/events':
+        specifier: workspace:*
+        version: link:../events
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -415,9 +515,18 @@ importers:
 
   packages/sync:
     dependencies:
+      '@soostori/cloud':
+        specifier: workspace:*
+        version: link:../cloud
       '@soostori/core':
         specifier: workspace:*
         version: link:../core
+      '@soostori/devices':
+        specifier: workspace:*
+        version: link:../devices
+      '@soostori/events':
+        specifier: workspace:*
+        version: link:../events
       '@soostori/schema':
         specifier: workspace:*
         version: link:../schema
@@ -454,6 +563,25 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.20.1)
 
+  packages/updates:
+    dependencies:
+      '@soostori/core':
+        specifier: workspace:*
+        version: link:../core
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.20.1)
+
   packages/whatsapp:
     dependencies:
       '@soostori/core':
@@ -462,6 +590,9 @@ importers:
       '@soostori/events':
         specifier: workspace:*
         version: link:../events
+      '@soostori/notifications':
+        specifier: workspace:*
+        version: link:../notifications
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -763,6 +894,12 @@ packages:
     resolution: {integrity: sha512-at8QVep6S3h5Y6gSbdGU06bRY5WJkf6WUduM9YtvYMbYhB1MOFfUgc6kehitQXzOtMSaT70q7f9ydPhpqu821w==}
     cpu: [x64]
     os: [win32]
+
+  '@soostori/core@0.1.0-alpha.2':
+    resolution: {integrity: sha512-Th9bosUEibe2CUL9ZmRmghWjqrILBJUv7SyMZx1x6b/muO/RwMTxmt5OsOkSrdsXZe2ZI1om5MPkNxA/VoJF4w==}
+
+  '@soostori/schema@0.1.0-alpha.2':
+    resolution: {integrity: sha512-bjvqRSFi/2oP9Bha0NYdBe1ALcAx0GT5/C2c92wYvMvYecnH8wrkp7H/66OCTE+QcKR4BxtuAwarm1wUHiW/cA==}
 
   '@types/better-sqlite3@7.6.13':
     resolution: {integrity: sha512-NMv9ASNARoKksWtsq/SHakpYAYnhBrQgGD8zkLYk/jaK8jUGn08CfEdTRgYhMypUQAfzSP8W6gNLe0q19/t4VA==}
@@ -1305,6 +1442,15 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.63.1':
     optional: true
+
+  '@soostori/core@0.1.0-alpha.2':
+    dependencies:
+      zod: 3.25.76
+
+  '@soostori/schema@0.1.0-alpha.2':
+    dependencies:
+      '@soostori/core': 0.1.0-alpha.2
+      zod: 3.25.76
 
   '@types/better-sqlite3@7.6.13':
     dependencies:

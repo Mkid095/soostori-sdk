@@ -2,7 +2,7 @@
  * Repository contract for business/person/membership persistence.
  */
 
-import type { Person, Business, Membership, PersonMemberships } from './types'
+import type { Person, Business, Membership, PersonMemberships } from './types.js'
 import type { UUID } from '@soostori/core'
 
 /** Pagination options — defined locally since core has no equivalent. */

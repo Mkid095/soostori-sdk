@@ -5,11 +5,10 @@ import {
   hasPermission, checkPermission,
   isSessionExpired, isSessionExpiringSoon, serializeSession, deserializeSession,
 } from '../src/index'
-import type { User, Company, Shop, Employee, Device } from '@soostori/core'
-import { newId, asUserId, asShopId, asEmployeeId, asDeviceId, asCompanyId } from '@soostori/core'
+import type { User, Shop, Employee, Device } from '@soostori/core'
+import { newId, asUserId, asShopId, asEmployeeId, asDeviceId } from '@soostori/core'
 
 const makeUser = (): User => ({ id: asUserId(newId()), email: 'a@b.com', type: 'owner' })
-const makeCompany = (): Company => ({ id: asCompanyId(newId()), name: 'Co', slug: 'co', taxRate: 0 })
 const makeShop = (id?: string): Shop => ({
   id: id ? asShopId(id) : asShopId(newId()),
   name: 'Shop', slug: 'shop', taxRate: 0, plan: 'free',
@@ -20,7 +19,7 @@ const makeEmployee = (shopId: string): Employee => ({
   shopId: asShopId(shopId),
   name: 'John', email: null, phone: null,
   role: 'cashier', permissions: null,
-  cloudId: null, status: 'active',
+  cloudId: '', status: 'active',
 })
 const makeDevice = (shopId: string): Device => ({
   id: asDeviceId(newId()),
@@ -29,7 +28,6 @@ const makeDevice = (shopId: string): Device => ({
   status: 'authorized', isLanHost: false,
   authorizedAt: new Date().toISOString(),
   lastSeenAt: new Date().toISOString(),
-  lastSyncAt: null, tokenRef: null,
 })
 
 describe('identity chain', () => {
@@ -42,14 +40,13 @@ describe('identity chain', () => {
 
   it('nextRequiredLink walks the chain', () => {
     expect(nextRequiredLink({})).toBe('user')
-    expect(nextRequiredLink({ user: makeUser() })).toBe('company')
-    expect(nextRequiredLink({ user: makeUser(), company: makeCompany() })).toBe('shop')
+    expect(nextRequiredLink({ user: makeUser() })).toBe('shop')
+    expect(nextRequiredLink({ user: makeUser(), shop: makeShop() })).toBe('employee')
   })
 
   it('isValidChain rejects mismatched shop ids', () => {
     const ctx = {
       user: makeUser(),
-      company: makeCompany(),
       shop: makeShop('shop-1'),
       employee: makeEmployee('shop-DIFFERENT'),
       device: makeDevice('shop-1'),
@@ -72,11 +69,11 @@ describe('identity reducer', () => {
     expect(state).toBeNull()
   })
 
-  it('chains SET_COMPANY after SET_SHOP', () => {
+  it('chains SET_SHOP then SET_EMPLOYEE', () => {
     let s = identityReducer(null, { type: 'SIGN_IN', userId: asUserId('u1'), email: 'a@b.com' })
     s = identityReducer(s, { type: 'SET_SHOP', shop: makeShop() })
-    s = identityReducer(s, { type: 'SET_COMPANY', company: makeCompany() })
-    expect(s?.company).not.toBeNull()
+    s = identityReducer(s, { type: 'SET_EMPLOYEE', employee: makeEmployee('s1') })
+    expect(s?.employee).not.toBeNull()
   })
 })
 

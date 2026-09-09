@@ -1,2 +1,2 @@
-export * from './client'
-export * from './callback'
+export * from './client.js'
+export * from './callback.js'

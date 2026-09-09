@@ -18,7 +18,7 @@
  */
 
 import { newId, type ISO8601, type UUID, type ShopId, type DeviceId, type UserId } from '@soostori/core'
-import type { SoostoriEventName } from './catalog'
+import type { SoostoriEventName } from './catalog.js'
 
 export interface SoostoriEvent<T = unknown> {
   /** UUID v4 — unique across all events. */

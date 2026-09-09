@@ -7,7 +7,7 @@
  * Desktop-only fields (not in SDK): icon, display_order — surfaced in metadata for round-trip fidelity.
  */
 
-import { SqliteRepository } from './sqlite-repository'
+import { SqliteRepository } from './sqlite-repository.js'
 import type { Category, CategoryId, ShopId, ISO8601 } from '@soostori/core'
 import { asCategoryId } from '@soostori/core'
 
@@ -36,7 +36,7 @@ export class CategoriesRepository extends SqliteRepository<Category> {
   }
 
   async findByName(name: string): Promise<Category | null> {
-    const { getDatabase } = await import('./sqlite-database')
+    const { getDatabase } = await import('./sqlite-database.js')
     const row = getDatabase()
       .prepare('SELECT * FROM categories WHERE name = ? COLLATE NOCASE')
       .get(name) as CategoryRow | undefined

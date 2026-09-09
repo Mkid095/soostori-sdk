@@ -2,7 +2,7 @@
  * Inventory repository contract — append-only ledger + cached balances.
  */
 
-import type { StockMovement, StockBalance, StockReservation, StockSummary } from './types'
+import type { StockMovement, StockBalance, StockReservation, StockSummary } from './types.js'
 import type { UUID, ISO8601 } from '@soostori/core'
 
 /** Pagination options — defined locally since core has no equivalent. */

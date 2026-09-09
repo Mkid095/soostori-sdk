@@ -2,12 +2,12 @@
  * Products read operations — queries only, no side effects.
  */
 
-import { getDatabase } from './sqlite-database'
+import { getDatabase } from './sqlite-database.js'
 import { asProductId, asCategoryId } from '@soostori/core'
 import type { Product, Category } from '@soostori/core'
-import type { ProductId, CategoryId } from './products-repository-types'
-import type { ProductRow, CategoryRow } from './products-repository-mappers'
-import { rowToProduct, rowToCategory } from './products-repository-mappers'
+import type { ProductId, CategoryId } from './products-repository-types.js'
+import type { ProductRow, CategoryRow } from './products-repository-mappers.js'
+import { rowToProduct, rowToCategory } from './products-repository-mappers.js'
 
 export class ProductsReadRepository {
   async findById(id: ProductId): Promise<Product | null> {

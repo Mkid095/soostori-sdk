@@ -1,2 +1,2 @@
-export * from './client'
-export * from './realtime'
+export * from './client.js'
+export * from './realtime.js'

@@ -11,7 +11,7 @@
  */
 
 import { SoostoriError } from '@soostori/core'
-import type { SubscriptionState } from './entitlement'
+import type { SubscriptionState } from './entitlement.js'
 
 export class SubscriptionExpiredError extends SoostoriError {
   constructor(message: string) {

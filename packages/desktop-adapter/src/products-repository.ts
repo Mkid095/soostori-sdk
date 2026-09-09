@@ -10,17 +10,20 @@
  *   products-repository-types   — shared interfaces
  */
 
-export type { ProductCreateInput, CategoryCreateInput, ProductVariant } from './products-repository-types'
-export type { ProductId, CategoryId, ProductVariantId, ISO8601, Money } from './products-repository-types'
+export type { ProductCreateInput, CategoryCreateInput, ProductVariant } from './products-repository-types.js'
+export type { ProductId, CategoryId, ProductVariantId, ISO8601, Money } from './products-repository-types.js'
 
-import { ProductsReadRepository } from './products-repository-read'
-import { ProductsWriteRepository } from './products-repository-write'
-import { ProductsStockRepository } from './products-repository-stock'
-import { ProductsVariantRepository } from './products-repository-variants'
+import { ProductsReadRepository } from './products-repository-read.js'
+import { ProductsWriteRepository } from './products-repository-write.js'
+import { ProductsStockRepository } from './products-repository-stock.js'
+import { ProductsVariantRepository } from './products-repository-variants.js'
+import { setCurrentMeta } from './products-repository-mappers.js'
 import type { Product, Category } from '@soostori/core'
-import type { ProductId, CategoryId } from './products-repository-types'
-import type { ProductVariant } from './products-repository-types'
+import type { ProductId, CategoryId } from './products-repository-types.js'
+import type { ProductVariant } from './products-repository-types.js'
 import type { UUID } from '@soostori/core'
+
+export { setCurrentMeta }
 
 export class ProductsRepository {
   private read = new ProductsReadRepository()
@@ -54,6 +57,7 @@ export class ProductsRepository {
   /** Set sale context before calling commit(). Used by the orchestrator. */
   static setSaleMeta(meta: { saleId?: string; userId?: string; deviceId?: string; shopId?: string }): void {
     ProductsRepository._currentSaleMeta = meta
+    setCurrentMeta(meta)
   }
 
   private static _currentSaleMeta = {}

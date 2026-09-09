@@ -3,7 +3,7 @@
  */
 
 import type { NotificationChannel, Notification } from '@soostori/notifications'
-import { EvolutionClient } from './client'
+import { EvolutionClient } from './client.js'
 
 export class WhatsAppChannel implements NotificationChannel {
   readonly channelName = 'whatsapp'

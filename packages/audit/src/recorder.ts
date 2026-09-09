@@ -4,7 +4,7 @@
  * Subscribes to the event bus and emits audit entries.
  */
 
-import type { AuditEntry, AuditStorage, AuditFilter } from './types'
+import type { AuditEntry, AuditStorage, AuditFilter } from './types.js'
 import type { SoostoriEvent, SoostoriEventName } from '@soostori/events'
 import type { UUID } from '@soostori/core'
 import { newId } from '@soostori/core'

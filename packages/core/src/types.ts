@@ -5,10 +5,10 @@
  */
 
 import type {
-  UserId, CompanyId, ShopId, EmployeeId, DeviceId,
+  UserId, ShopId, EmployeeId, DeviceId,
   ProductId, CategoryId, CustomerId, SaleId, PlanId, SubscriptionId,
   InvitationId, SyncEventId,
-} from './ids'
+} from './ids.js'
 
 // ── Timestamp / value types ────────────────────────────────────────────────────
 
@@ -50,13 +50,6 @@ export interface User {
   type: UserType
 }
 
-export interface Company {
-  id: CompanyId
-  name: string
-  slug: string
-  taxRate: number
-}
-
 export interface Shop {
   id: ShopId
   name: string
@@ -77,12 +70,14 @@ export interface Employee {
   role: EmployeeRole
   /** Optional fine-grained permission flags. */
   permissions?: Record<string, boolean> | null
-  /** Cloud user ID if this employee is linked to a cloud account. */
-  cloudId?: string | null
+  /**
+   * Links this employee record to the FIDScript $users.id.
+   * Required for cloud authentication — this is how we connect an Employee
+   * to their Google/email cloud identity.
+   * Present in live FIDScript schema (confirmed via /instant-self).
+   */
+  cloudId: string
   status: 'active' | 'inactive'
-  /** Local credential — never synced to cloud. */
-  localPinHash?: string | null
-  localPinSalt?: string | null
   createdBy?: UserId | null
   invitedBy?: UserId | null
 }
@@ -92,13 +87,22 @@ export interface Device {
   shopId: ShopId
   deviceName: string
   deviceType: DeviceType
-  status: DeviceStatus
+  status: 'pending' | 'authorized' | 'revoked' | 'offline'
   isLanHost: boolean
   authorizedAt: ISO8601 | null
   lastSeenAt: ISO8601 | null
-  lastSyncAt: ISO8601 | null
-  /** Reference to the cloud device authorization. */
-  tokenRef?: string | null
+  /**
+   * True once a local PIN has been enrolled on this device.
+   * Written by the backend via consumeEnrollmentToken.
+   * PENDING: requires FIDScript schema addition of devices.hasPin.
+   */
+  hasPin?: boolean
+  /**
+   * When the PIN was first set on this device.
+   * Written by the backend via consumeEnrollmentToken.
+   * PENDING: requires FIDScript schema addition of devices.pinSetupAt.
+   */
+  pinSetupAt?: ISO8601 | null
 }
 
 export interface Invitation {
@@ -269,14 +273,21 @@ export interface SyncEvent {
   entityId: string
   operation: SyncOperation
   payload: Record<string, unknown>
-  /** ISO timestamp when the event was created on the source device. */
-  timestamp: ISO8601
-  /** Monotonic version for ordering. */
-  version: number
-  /** UUID v4 — prevents duplicate processing on replay/reconnect. */
-  idempotencyKey: UUID
-  /** Cloud-side sync timestamp. */
+  /**
+   * Monotonic sequence number — present in FIDScript but NOT unique.
+   * NOT for idempotency. Replace with idempotencyKey (planned) for deduplication.
+   */
+  sequenceNumber: number
+  /**
+   * Cloud-side sync timestamp — set when event is confirmed in FIDScript.
+   * Optional in FIDScript schema.
+   */
   syncedAt?: ISO8601
+  /**
+   * PLANNED — UUID v4 per event: prevents duplicate processing on replay/reconnect.
+   * Add to FIDScript schema: syncEvents { idempotencyKey: string (unique: true) }
+   */
+  idempotencyKey?: UUID
 }
 
 export interface SyncCursor {

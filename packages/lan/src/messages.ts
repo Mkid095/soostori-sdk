@@ -6,7 +6,7 @@
 
 import type { ShopId, DeviceId, ISO8601, UUID } from '@soostori/core'
 import type { SoostoriEvent } from '@soostori/events'
-import { DISCOVERY_MAGIC, DISCOVERY_VERSION } from './protocol'
+import { DISCOVERY_MAGIC, DISCOVERY_VERSION } from './protocol.js'
 
 export { DISCOVERY_MAGIC, DISCOVERY_VERSION }
 

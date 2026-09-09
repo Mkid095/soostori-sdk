@@ -1,5 +1,6 @@
-import type { Customer, CustomerRiskFlag } from './types'
-import type { UUID, PaginationOptions } from '@soostori/core'
+import type { Customer, CustomerRiskFlag } from './types.js'
+import type { PaginationOptions } from './types.js'
+import type { UUID } from '@soostori/core'
 
 export interface CustomerFilter {
   search?: string

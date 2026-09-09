@@ -5,7 +5,7 @@
  * For cross-device/cross-app sync, use @soostori/sync.
  */
 
-import type { SoostoriEvent } from './envelope'
+import type { SoostoriEvent } from './envelope.js'
 
 type EventHandler<T = unknown> = (event: SoostoriEvent<T>) => void | Promise<void>
 

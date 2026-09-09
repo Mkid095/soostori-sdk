@@ -6,8 +6,8 @@
  * fully isolated — no data crosses between them.
  */
 
-import type { Person, Business, Membership } from './types'
-import type { BusinessRepository } from './repository'
+import type { Person, Business, Membership } from './types.js'
+import type { BusinessRepository } from './repository.js'
 import type { UUID } from '@soostori/core'
 import { newId, asShopId, asDeviceId } from '@soostori/core'
 import {

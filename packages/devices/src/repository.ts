@@ -2,7 +2,7 @@
  * Device repository — local persistence for device identity.
  */
 
-import type { Device, DeviceIdentity, PrimaryDeviceState } from './types'
+import type { Device, DeviceIdentity, PrimaryDeviceState } from './types.js'
 import type { UUID, ShopId, ISO8601 } from '@soostori/core'
 
 export interface DevicesRepository {

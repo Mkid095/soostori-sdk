@@ -8,8 +8,8 @@ import { PrimaryDeviceCoordinator, type PrimaryDeviceState } from '@soostori/dev
 import {
   createEvent, type SoostoriEvent, type SoostoriEventName,
 } from '@soostori/events'
-import { OfflineQueue, type QueueStorage } from './queue'
-import { StockAuthorizationError } from './errors'
+import { OfflineQueue, type QueueStorage } from './queue.js'
+import { StockAuthorizationError } from './errors.js'
 
 /**
  * Minimal CloudClient contract used by the sync engine.
