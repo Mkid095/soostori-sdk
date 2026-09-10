@@ -4,8 +4,8 @@
 
 export const SDK_VERSION = '0.1.0' as const
 
-/** Cloud app ID — same value used across all three apps. */
-export const CLOUD_APP_ID = '0808ca7d-b0ba-4541-8906-48f7d0403950' as const
+/** Cloud app ID — canonical Soostori FIDScript app ID (shared by Mobile, Desktop, Web, SDK). */
+export const CLOUD_APP_ID = '487be5c5-7615-4bbd-b3b7-3aa97154ca99' as const
 
 /** Self-hosted FIDScript REST API base. */
 export const FIDSCRIPT_API_BASE = 'https://apiinstant.fidscript.com' as const

@@ -3,7 +3,7 @@
  */
 export declare const SDK_VERSION: "0.1.0";
 /** Cloud app ID — same value used across all three apps. */
-export declare const CLOUD_APP_ID: "0808ca7d-b0ba-4541-8906-48f7d0403950";
+export declare const CLOUD_APP_ID: "487be5c5-7615-4bbd-b3b7-3aa97154ca99";
 /** Self-hosted FIDScript REST API base. */
 export declare const FIDSCRIPT_API_BASE: "https://apiinstant.fidscript.com";
 /** LAN discovery broadcast port. */

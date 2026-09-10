@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-alpha.8] — 2025-09-10
+
+### Fixed
+- **`CLOUD_APP_ID`**: aligned to `'487be5c5-7615-4bbd-b3b7-3aa97154ca99'` (the canonical Soostori FIDScript app ID per Ken; matches the ID used by soostori-mobile, soostori-desktop, and soostori-web). Closes the cross-app inconsistency where SDK consumers wrote to a different FIDScript app than the apps consumed from (Question 3 from Cycle 02 audit).
+
 ## [0.1.0-alpha.7] — 2025-09-10
 
 ### Added
