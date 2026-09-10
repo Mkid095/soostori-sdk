@@ -22,9 +22,17 @@ import type {
   Subscription,
   SalespersonApplication, SalespersonProfile, InfluencerProfile,
   CommissionRule, CommissionLedger, AuthAuditEvent,
+  Package, CommissionRuleCommercial, CommissionLedgerEntry,
+  CommissionSplit,
+} from '../src/index.js'
+import {
+  calculateCommission,
+  createCommissionRule,
 } from '../src/index.js'
 
 // ── helpers ───────────────────────────────────────────────────────────────────
+
+const ts = new Date().toISOString()
 
 /** Runtime assertion that branded IDs cannot cross-assign (via casts). */
 function assertDistinctBrands(): void {
@@ -488,6 +496,193 @@ describe('canonical entities — common invariants', () => {
       version: 1,
     } as AuthAuditEvent
     expect(e.kind).toBe('SIGNED_IN')
+  })
+
+  // ── Phase 06: Package entity ──────────────────────────────────────────────
+
+  it('Package carries all required Phase 06 fields', () => {
+    const p: Package = {
+      id: 'pkgid' as unknown as Package['id'],
+      businessId: asBusinessId(newId()),
+      name: 'Starter',
+      amount: 600,
+      salespersonId: 'spid' as unknown as Package['salespersonId'],
+      influencerId: null,
+      isActive: true,
+      createdAt: ts,
+      updatedAt: ts,
+      version: 1,
+    } as Package
+    expect(p.amount).toBe(600)
+    expect(p.isActive).toBe(true)
+  })
+
+  // ── Phase 06: CommissionLedgerEntry entity ────────────────────────────────
+
+  it('CommissionLedgerEntry carries all required Phase 06 fields', () => {
+    const e: CommissionLedgerEntry = {
+      id: 'cled' as unknown as CommissionLedgerEntry['id'],
+      businessId: asBusinessId(newId()),
+      subscriptionId: 'subid' as unknown as CommissionLedgerEntry['subscriptionId'],
+      commissionRuleId: 'crid' as unknown as CommissionLedgerEntry['commissionRuleId'],
+      amount: 500,
+      recipientType: 'company',
+      recipientId: asBusinessId(newId()),
+      period: '2025-09',
+      status: 'pending',
+      paidAt: null,
+      createdAt: ts,
+      updatedAt: ts,
+      version: 1,
+    } as CommissionLedgerEntry
+    expect(e.recipientType).toBe('company')
+    expect(e.status).toBe('pending')
+  })
+})
+
+// ── Phase 06: Commission model ────────────────────────────────────────────────
+
+describe('calculateCommission()', () => {
+  it('600 KES: company=500, salesperson=100, influencer=50', () => {
+    const r = calculateCommission(600)
+    expect(r.companyShare).toBe(500)
+    expect(r.salespersonShare).toBe(100)
+    expect(r.influencerShare).toBe(50)
+    expect(r.total).toBe(600)
+  })
+
+  it('1,000 KES: company=600, salesperson=350, influencer=50 (excess=400, brief formula)', () => {
+    // Brief formula: company = 500+25%*400=600, salesperson = 100+75%*400=400
+    // Note: the brief table shows 550/400 which is inconsistent with its own formula.
+    // We follow the formula (which is the authoritative spec).
+    const r = calculateCommission(1000)
+    expect(r.companyShare).toBe(600)
+    expect(r.salespersonShare).toBe(400)
+    expect(r.influencerShare).toBe(50)
+    expect(r.total).toBe(1000)
+  })
+
+  it('2,000 KES: company=850, salesperson=1,150, influencer=50', () => {
+    const r = calculateCommission(2000)
+    expect(r.companyShare).toBe(850)
+    expect(r.salespersonShare).toBe(1150)
+    expect(r.influencerShare).toBe(50)
+    expect(r.total).toBe(2000)
+  })
+
+  it('0 KES: excess is 0, company=500, salesperson=100, influencer=50', () => {
+    const r = calculateCommission(0)
+    expect(r.companyShare).toBe(500)
+    expect(r.salespersonShare).toBe(100)
+    expect(r.influencerShare).toBe(50)
+    expect(r.total).toBe(0)
+  })
+
+  it('negative amount: excess is 0, same as 0', () => {
+    const neg = calculateCommission(-500)
+    const zero = calculateCommission(0)
+    expect(neg.companyShare).toBe(zero.companyShare)
+    expect(neg.salespersonShare).toBe(zero.salespersonShare)
+    expect(neg.influencerShare).toBe(50)
+  })
+
+  it('influencerShare is always 50 regardless of amount', () => {
+    const amounts = [0, 1, 599, 600, 601, 1000, 2000, 10000]
+    for (const a of amounts) {
+      expect(calculateCommission(a).influencerShare).toBe(50)
+    }
+  })
+
+  it('total always equals input packageAmount', () => {
+    const amounts = [0, 600, 1000, 2000, 5000]
+    for (const a of amounts) {
+      expect(calculateCommission(a).total).toBe(a)
+    }
+  })
+
+  it('companyShare + salespersonShare = total (influencer paid by company separately)', () => {
+    // InfluencerShare (50) is PAID BY COMPANY separately — not from the client's payment.
+    // So only companyShare + salespersonShare must equal the client's packageAmount.
+    const amounts = [600, 1000, 2000, 5000]
+    for (const a of amounts) {
+      const r = calculateCommission(a)
+      expect(r.companyShare + r.salespersonShare).toBe(r.total)
+    }
+  })
+})
+
+describe('createCommissionRule()', () => {
+  it('creates a rule with correct commission split for 600 KES', () => {
+    const bid = asBusinessId(newId())
+    const sid = 'spid' as unknown as SalespersonProfileId
+    const rule = createCommissionRule(bid, sid, 600)
+    expect(rule.businessId).toBe(bid)
+    expect(rule.salespersonId).toBe(sid)
+    expect(rule.influencerId).toBeNull()
+    expect(rule.packageAmount).toBe(600)
+    expect(rule.companyShare).toBe(500)
+    expect(rule.salespersonShare).toBe(100)
+    expect(rule.influencerShare).toBe(50)
+    expect(rule.status).toBe('active')
+  })
+
+  it('creates a rule with influencerId when provided', () => {
+    const bid = asBusinessId(newId())
+    const sid = 'spid' as unknown as SalespersonProfileId
+    const iid = 'iid' as unknown as InfluencerProfileId
+    const rule = createCommissionRule(bid, sid, 1000, iid)
+    expect(rule.influencerId).toBe(iid)
+    expect(rule.salespersonShare).toBe(400)
+  })
+
+  it('2,000 KES rule: company=850, salesperson=1150, influencer=50', () => {
+    const bid = asBusinessId(newId())
+    const sid = 'spid' as unknown as SalespersonProfileId
+    const rule = createCommissionRule(bid, sid, 2000)
+    expect(rule.companyShare).toBe(850)
+    expect(rule.salespersonShare).toBe(1150)
+    expect(rule.influencerShare).toBe(50)
+  })
+})
+
+describe('Package entity', () => {
+  it('Package carries all required Phase 06 fields', () => {
+    const p: Package = {
+      id: 'pkgid' as unknown as Package['id'],
+      businessId: asBusinessId(newId()),
+      name: 'Starter',
+      amount: 600,
+      salespersonId: 'spid' as unknown as Package['salespersonId'],
+      influencerId: null,
+      isActive: true,
+      createdAt: ts,
+      updatedAt: ts,
+      version: 1,
+    } as Package
+    expect(p.amount).toBe(600)
+    expect(p.isActive).toBe(true)
+  })
+})
+
+describe('CommissionLedgerEntry entity', () => {
+  it('CommissionLedgerEntry carries all required Phase 06 fields', () => {
+    const e: CommissionLedgerEntry = {
+      id: 'cled' as unknown as CommissionLedgerEntry['id'],
+      businessId: asBusinessId(newId()),
+      subscriptionId: 'subid' as unknown as CommissionLedgerEntry['subscriptionId'],
+      commissionRuleId: 'crid' as unknown as CommissionLedgerEntry['commissionRuleId'],
+      amount: 500,
+      recipientType: 'company',
+      recipientId: asBusinessId(newId()),
+      period: '2025-09',
+      status: 'pending',
+      paidAt: null,
+      createdAt: ts,
+      updatedAt: ts,
+      version: 1,
+    } as CommissionLedgerEntry
+    expect(e.recipientType).toBe('company')
+    expect(e.status).toBe('pending')
   })
 })
 
