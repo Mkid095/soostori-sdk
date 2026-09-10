@@ -36,4 +36,10 @@ export declare const PRIMARY_HEARTBEAT_FRESH_MS = 15000;
 export declare const PRIMARY_LOST_GRACE_MS = 60000;
 /** Add milliseconds to ISO timestamp. */
 export declare function addMilliseconds(iso: string, ms: number): string;
+/**
+ * Contact phone shown to a person who authenticated successfully but has no
+ * business membership in the system (the §29 "person not found" UX).
+ * Mobile, Web, and Desktop must read this constant rather than hardcoding it.
+ */
+export declare const UNAUTHORIZED_LOGIN_CONTACT_PHONE = "+254 732 203 353";
 //# sourceMappingURL=constants.d.ts.map

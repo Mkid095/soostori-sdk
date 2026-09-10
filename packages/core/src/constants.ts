@@ -56,3 +56,10 @@ export const PRIMARY_LOST_GRACE_MS = 60_000
 export function addMilliseconds(iso: string, ms: number): string {
   return new Date(new Date(iso).getTime() + ms).toISOString()
 }
+
+/**
+ * Contact phone shown to a person who authenticated successfully but has no
+ * business membership in the system (the §29 "person not found" UX).
+ * Mobile, Web, and Desktop must read this constant rather than hardcoding it.
+ */
+export const UNAUTHORIZED_LOGIN_CONTACT_PHONE = '+254 732 203 353'
