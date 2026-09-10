@@ -1,5 +1,21 @@
 # Changelog
-All notable changes to this project will be documented in this file.
+|All notable changes to this project will be documented in this file.
+
+## [0.1.0-alpha.10] — 2025-09-10 (Phase 04 RBAC)
+### Added
+- **Canonical capability registry** (`packages/auth/src/permissions.ts`): all 45 Phase 04 capabilities declared as `CAPABILITIES` const (`products.*`, `inventory.*`, `sales.*`, `customers.*`, `debts.*`, `expenses.*`, `team.*`, `reports.*`, `devices.*`, `settings.*`, `business.*`).
+- **`ROLE_DEFAULT_CAPABILITIES`**: role bundles for `owner` (all 45), `manager` (all except `business.update`, `team.assign_permission`), `cashier` (sales/customers/inventory/products basics), `attendant` (inventory/products/customers view), `viewer` (products/inventory/reports view).
+- **`hasCapability(member, capability)`**: checks `memberCapabilityOverrides` first, then role bundle. Override takes absolute precedence.
+- **`can(member, capability)`**: convenience boolean wrapper for guard expressions.
+- **`Member` interface**: `{ role, permissions?, memberCapabilityOverrides? }` — canonical member type.
+- **`Capability` type**: `typeof CAPABILITIES[keyof typeof CAPABILITIES]`.
+- **`EmployeeRole` extended** (`packages/core/src/types.ts`): added `'viewer'` role.
+- **38 capability tests** (`packages/auth/test/capabilities.test.ts`): covers all roles, all capabilities, override precedence, null/undefined member guard, `can()` wrapper, `ROLE_DEFAULT_CAPABILITIES` arrays.
+- **Legacy back-compat**: `hasPermission()` and `checkPermission()` preserved unchanged for existing consumers.
+
+### Changed
+- `packages/auth/src/index.ts`: re-exports `Capability` and `Member` types.
+- `packages/auth/src/permissions.d.ts`: regenerated with all Phase 04 exports.
 
 ## [0.1.0-alpha.2] — 2025-09-10 (contracts)
 ### Added
