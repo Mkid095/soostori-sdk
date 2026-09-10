@@ -119,12 +119,10 @@ export interface SyncEngine {
  *   - pull    → `[]`
  *   - apply   → `{ state: 'no_op' }`
  *
- * Replace in Sub-cycle F or later. The shape is the contract; the behaviour
- * is intentionally minimal so feature work can call `syncEngine.enqueue(event)`
- * without depending on a real backend.
+ * Back-compat re-export of the class instance. The full implementation
+ * (queue introspection, `defaultSyncEngine` singleton, class form) lives
+ * in `./sync-stub.ts`. The shape is the contract; the behaviour is
+ * intentionally minimal so feature work can call
+ * `syncEngine.enqueue(event)` without depending on a real backend.
  */
-export const NoOpSyncEngine: SyncEngine = {
-  enqueue: async () => ({ state: 'queued' }),
-  pull: async () => [],
-  apply: () => ({ state: 'no_op' }),
-}
+export { NoOpSyncEngine, NoOpSyncEngineClass, defaultSyncEngine, type QueuedSyncEvent } from './sync-stub.js'
