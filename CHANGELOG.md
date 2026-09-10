@@ -1,5 +1,19 @@
 # Changelog
-|All notable changes to this project will be documented in this file.
+
+All notable changes to this project will be documented in this file.
+
+## [0.1.0-alpha.13] — 2025-09-10 (Phase 09 Inventory SDK)
+### Added
+- **`InventoryService`** (`packages/inventory/src/InventoryService.ts`): `receiveStock`, `adjustStock`, `transferStock`, `countStock`, `getLowStockProducts`, `getInventoryValuation` — all stock-movement operations with businessId isolation.
+- **SyncEvent emission**: `inventory.received`, `inventory.adjusted`, `inventory.transferred`, `inventory.counted` emitted via `SyncEngine.enqueue()` on every mutation.
+- **`ReceiveStockInput`**, **`AdjustStockInput`**, **`TransferStockInput`**, **`StockCountInput`** interfaces.
+- **`AdjustStockReason`** type: `'breakage' | 'theft' | 'correction' | 'return' | 'other'`.
+- **`LowStockAlert`** interface: `productId`, `productName`, `currentStock`, `threshold`.
+- **`InventoryValuationEntry`** interface: `productId`, `name`, `quantity`, `costPrice`, `value`.
+- **17 tests** (`packages/inventory/test/InventoryService.test.ts`): receiveStock creates movement + updates product stock; adjustStock ± delta; adjustStock negative rejects if result < 0 (InsufficientStockError); transferStock creates from/to movements linked by referenceType=transfer; countStock creates variance adjustments, skips zero-variance; getLowStockProducts returns only quantity ≤ threshold; getInventoryValuation returns quantity × costPrice; SyncEvent emitted on each mutation; businessId isolation on all operations.
+
+### Changed
+- **`packages/inventory/src/index.ts`**: exports `InventoryService` and its input/alert types.
 
 ## [0.1.0-alpha.12] — 2025-09-10 (Phase 08 Products SDK)
 ### Added
