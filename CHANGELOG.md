@@ -1,6 +1,20 @@
 # Changelog
 |All notable changes to this project will be documented in this file.
 
+## [0.1.0-alpha.12] — 2025-09-10 (Phase 08 Products SDK)
+### Added
+- **`ProductService`** (`packages/inventory/src/ProductService.ts`): `createProduct`, `getProduct`, `listProducts`, `archiveProduct`, `adjustStock` — full product CRUD with business-scoped isolation.
+- **`CategoryService`** (`packages/inventory/src/CategoryService.ts`): `createCategory`, `listCategories` — category management.
+- **SyncEvent emission**: `product.created`, `product.updated`, `product.archived`, `category.created` events emitted via `SyncEngine.enqueue()` on every mutation.
+- **`CreateProductInput`** interface: `businessId`, `categoryId`, `name`, `sku?`, `description?`, `costPrice`, `sellingPrice`, `initialStock?`, `lowStockThreshold?`.
+- **`CreateCategoryInput`** interface: `businessId`, `name`, `description?`, `parentId?`.
+- **`ProductResult`** interface: `{ product, category }` returned from `createProduct`.
+- **16 tests** (`packages/inventory/test/ProductService.test.ts`): covers createProduct fields, getProduct null/not-found, listProducts businessId filter, archiveProduct isActive, adjustStock ±, InsufficientStockError, SyncEvent emission per mutation, businessId isolation across get/archive/adjustStock.
+- **Added `@soostori/contracts` devDependency** to `packages/inventory/package.json` for SyncEvent + NoOpSyncEngineClass types.
+
+### Changed
+- **`packages/inventory/src/index.ts`**: re-exports `ProductService`, `CategoryService`, and their input/store types.
+
 ## [0.1.0-alpha.11] — 2025-09-10 (Phase 06 Commercial)
 ### Added
 - **`Package` entity** (`packages/contracts/src/data-contract-4a-platform.ts`): `id`, `businessId`, `name`, `amount` (KES), `salespersonId`, `influencerId`, `isActive`, `createdAt`, `updatedAt`, `version`.
