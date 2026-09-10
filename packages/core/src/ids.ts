@@ -95,6 +95,7 @@ export const asCustomerId = (s: string) => s as CustomerId
 export const asSaleId = (s: string) => s as SaleId
 export const asDebtId = (s: string) => s as DebtId
 export const asDebtPaymentId = (s: string) => s as DebtPaymentId
+export const asExpenseId = (s: string) => s as ExpenseId
 export const asPlanId = (s: string) => s as PlanId
 export const asSubscriptionId = (s: string) => s as SubscriptionId
 export const asInvitationId = (s: string) => s as InvitationId
