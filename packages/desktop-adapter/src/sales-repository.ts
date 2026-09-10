@@ -184,8 +184,8 @@ export class DesktopSalesRepository {
     )
 
     const insertItem = db.prepare(`
-      INSERT INTO sale_items (id, sale_id, product_id, variation_name, product_name, quantity, unit_price, discount, total_price, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO sale_items (id, sale_id, product_id, variation_name, product_name, quantity, unit_price, discount, total_price, shop_id, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
     for (const item of items) {
       insertItem.run(
@@ -198,6 +198,7 @@ export class DesktopSalesRepository {
         item.unitPrice,
         item.discount,
         item.totalPrice,
+        sale.shopId as string,
         now,
       )
     }
