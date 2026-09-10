@@ -12,3 +12,4 @@
 export * from './data-contract.js'
 export * from './sync-contract.js'
 export { SyncEngineClass, NoopInstantClient, type InstantClient } from './sync-engine.js'
+export { NoOpSyncEngineClass, NoOpSyncEngine, type QueuedSyncEvent } from './sync-stub.js'

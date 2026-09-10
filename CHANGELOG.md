@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-alpha.14] — 2025-09-10 (Phase 10 Sales SDK)
+### Added
+- **`SaleService`** (`packages/sales/src/SaleService.ts`): `createSale`, `voidSale`, `refundSale`, `getSale`, `listSales` — POS sale operations with businessId isolation.
+- **`createSale`**: computes subtotal, per-item discounts, whole-sale discount, tax, total, change given; persists `Sale` + `SaleItem` records; emits `sale.created` SyncEvent.
+- **`voidSale`**: marks sale status `voided`, appends reason to notes, emits `sale.voided` SyncEvent; idempotent.
+- **`refundSale`**: full or partial refund, creates `Refund` record, marks sale `refunded`, emits `sale.refunded` SyncEvent.
+- **`ReceiptFormatter`** (`packages/sales/src/ReceiptFormatter.ts`): `formatReceipt(sale, items, business, cashierName, refund?)` — plain-text receipt with business name/address, date, register ID, cashier, line items (name/qty/unit price/discount/total), subtotal, sale discount, tax, total, payment method, amount tendered, change given, notes, footer.
+- **SyncEvent emission**: `sale.created`, `sale.voided`, `sale.refunded` emitted via `SyncEngine.enqueue()` on every mutation.
+- **`CreateSaleInput`**, **`RefundSaleInput`**, **`Sale`**, **`SaleItem`**, **`Refund`**, **`Receipt`**, **`Business`** interfaces.
+- **`SaleNotFoundError`** custom error class.
+- **`packages/sales`** package: `package.json`, `tsconfig.json`, `src/types.ts`, `src/SaleService.ts`, `src/ReceiptFormatter.ts`, `src/index.ts`.
+- **10+ tests** (`packages/sales/test/SaleService.test.ts`): createSale fields/totals/change + sale.created SyncEvent; createSale with sale-level discount; voidSale sets status + emits sale.voided + idempotent; refundSale partial (correct amount + status) + full (sale.refunded SyncEvent); getSale null/not-found; listSales all + date filter + empty date; businessId isolation on create/void/get/list; SaleNotFoundError on void/refund; Receipt formatReceipt fields.
+- **`NoOpSyncEngineClass`** + **`QueuedSyncEvent`** re-exported from `@soostori/contracts` (was missing from index.ts, added for SDK test compatibility).
+
 ## [0.1.0-alpha.13] — 2025-09-10 (Phase 09 Inventory SDK)
 ### Added
 - **`InventoryService`** (`packages/inventory/src/InventoryService.ts`): `receiveStock`, `adjustStock`, `transferStock`, `countStock`, `getLowStockProducts`, `getInventoryValuation` — all stock-movement operations with businessId isolation.
