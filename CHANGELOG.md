@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-alpha.15] — 2025-09-10 (Phase 11 Customers & Debts SDK)
+### Added
+- **`CustomerService`** (`packages/customers/src/CustomerService.ts`): full CRUD — `createCustomer`, `getCustomer`, `listCustomers`, `updateCustomer`, `archiveCustomer`, `getCustomerByPhone` — with businessId isolation, idempotency by key, and version-based last-writer-wins.
+- **SyncEvent emission**: `customer.created`, `customer.updated`, `customer.archived`, `customer.sale_assigned` emitted via `SyncEngine.enqueue()` on every mutation.
+- **`CreateCustomerInput`**, **`UpdateCustomerInput`** interfaces exported from `@soostori/customers`.
+- **`DebtService`** (`packages/debts/src/DebtService.ts`): debt & payment operations — `createDebt`, `getDebt`, `listDebts`, `getCustomerDebts`, `recordDebtPayment`, `settleDebt`, `getDebtSummary`.
+- **`CreateDebtInput`**, **`RecordDebtPaymentInput`**, **`DebtType`** interfaces.
+- **`DebtRepository`** contract (`packages/debts/src/repository.ts`): idempotent debt/payment upsert, filtered list queries, customer-debt lookup.
+- **SyncEvent emission**: `debt.created`, `debt.payment`, `debt.settled` emitted via `SyncEngine.enqueue()` on every mutation.
+- **`packages/debts`** package: `package.json`, `tsconfig.json`, `src/types.ts`, `src/repository.ts`, `src/DebtService.ts`, `src/index.ts`.
+- **10+ tests** (`packages/debts/test/DebtService.test.ts`): createDebt fields + debt.created SyncEvent; partial payment (balance decreases, status=partial); full payment (status=paid); debt.payment SyncEvent; payment idempotency; settleDebt (balance=0, status=paid); debt.settled SyncEvent; settleDebt idempotent; listDebts filtered by businessId + status; getCustomerDebts filtered by customerId; getDebtSummary correct totals/overdueCount/partialCount; businessId isolation on getDebt/recordDebtPayment/settleDebt.
+- **`packages/customers/src/index.ts`**: now exports `CustomerService` class directly (was only exporting types).
+
 ## [0.1.0-alpha.14] — 2025-09-10 (Phase 10 Sales SDK)
 ### Added
 - **`SaleService`** (`packages/sales/src/SaleService.ts`): `createSale`, `voidSale`, `refundSale`, `getSale`, `listSales` — POS sale operations with businessId isolation.
