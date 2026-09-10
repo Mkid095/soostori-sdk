@@ -34,6 +34,7 @@ export default defineConfig({
       '@soostori/customers': resolve(ROOT, 'packages/business/customers/src/index.ts'),
       '@soostori/debts': resolve(ROOT, 'packages/business/debts/src/index.ts'),
       '@soostori/business': resolve(ROOT, 'packages/business/src/index.ts'),
+      '@soostori/contracts': resolve(ROOT, 'packages/contracts/src/index.ts'),
       '@soostori/updates': resolve(ROOT, 'packages/updates/src/index.ts'),
     },
   },

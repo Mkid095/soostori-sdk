@@ -14,6 +14,7 @@
     { "path": "packages/business/sales" },
     { "path": "packages/business/customers" },
     { "path": "packages/business/debts" },
+    { "path": "packages/contracts" },
     { "path": "packages/lan" },
     { "path": "packages/sync" },
     { "path": "packages/subscription" },

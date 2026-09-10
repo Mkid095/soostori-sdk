@@ -1,7 +1,7 @@
 {
-  "name": "@soostori/core",
-  "version": "0.1.0-alpha.9",
-  "description": "Canonical Soostori core: branded IDs, domain types, validation, errors, constants",
+  "name": "@soostori/contracts",
+  "version": "0.1.0-alpha.1",
+  "description": "Canonical Soostori data contract — all 22 entities + sync/event contract + NoOpSyncEngine stub. Source of truth for Web, Desktop, Mobile.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -27,8 +27,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@soostori/contracts": "workspace:*",
-    "zod": "^3.24.0"
+    "@soostori/core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
@@ -37,10 +36,9 @@
   },
   "keywords": [
     "soostori",
-    "pos",
-    "crm",
-    "inventory",
-    "sync"
+    "data-contract",
+    "sync",
+    "entities"
   ],
   "license": "BSL-1.1",
   "private_publish_token_env": "NPM_TOKEN",
