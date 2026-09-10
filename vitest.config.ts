@@ -8,6 +8,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     exclude: ['**/desktop-orchestrator.test.ts'],
+    cache: false,
   },
   resolve: {
     alias: {

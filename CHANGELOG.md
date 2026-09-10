@@ -1,6 +1,20 @@
 # Changelog
 |All notable changes to this project will be documented in this file.
 
+## [0.1.0-alpha.11] — 2025-09-10 (Phase 06 Commercial)
+### Added
+- **`Package` entity** (`packages/contracts/src/data-contract-4a-platform.ts`): `id`, `businessId`, `name`, `amount` (KES), `salespersonId`, `influencerId`, `isActive`, `createdAt`, `updatedAt`, `version`.
+- **`CommissionRuleCommercial` entity** (`packages/contracts/src/data-contract-4a-platform.ts`): per-business commission rule with `packageAmount`, `companyShare`, `salespersonShare`, `influencerShare`, `effectiveFrom`, `effectiveTo`, `status`.
+- **`CommissionLedgerEntry` entity** (`packages/contracts/src/data-contract-4a-platform.ts`): `id`, `businessId`, `subscriptionId`, `commissionRuleId`, `amount`, `recipientType` (`'company'|'salesperson'|'influencer'`), `recipientId`, `period` (YYYY-MM), `status` (`'pending'|'paid'`), `paidAt`.
+- **`calculateCommission(packageAmount)`**: returns `{ companyShare, salespersonShare, influencerShare, total }` — base=600 KES, `companyShare=500+25%×excess`, `salespersonShare=100+75%×excess`, `influencerShare=50` flat (paid by company separately).
+- **`createCommissionRule(businessId, salespersonId, packageAmount, influencerId?)`**: creates a `CommissionRuleCommercial` from a package amount.
+- **`PackageId` branded ID** (`packages/core/src/ids.ts`): `PackageId = Brand<string, 'PackageId'>` with `asPackageId()` cast helper.
+- **12 new tests** covering commission calculation at 0/600/1000/2000 KES, edge cases, `createCommissionRule`, `Package`, and `CommissionLedgerEntry` entities.
+
+### Notes
+- Influencer share (50 KES) is paid **by company** separately — `companyShare + salespersonShare = total` (not `+ influencerShare`).
+- Brief table shows 1,000 KES→(company=550, salesperson=400) but the formula gives (600, 400). SDK follows the formula.
+
 ## [0.1.0-alpha.10] — 2025-09-10 (Phase 04 RBAC)
 ### Added
 - **Canonical capability registry** (`packages/auth/src/permissions.ts`): all 45 Phase 04 capabilities declared as `CAPABILITIES` const (`products.*`, `inventory.*`, `sales.*`, `customers.*`, `debts.*`, `expenses.*`, `team.*`, `reports.*`, `devices.*`, `settings.*`, `business.*`).

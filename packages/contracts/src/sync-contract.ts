@@ -1,8 +1,12 @@
 /**
- * Sync / event contract — SyncEvent + SyncEngine + NoOpSyncEngine stub.
+ * Sync / event contract — SyncEvent + SyncEngine + SyncEngineClass.
  *
  * Implements Cycle 04 brief §6. Types live in `./sync-contract-parts.ts`;
- * this file re-exports them and adds the engine interface + stub.
+ * this file re-exports them and adds the engine interface + implementations.
+ *
+ * Cycle 05 upgrades the default export from `NoOpSyncEngine` to a real
+ * `SyncEngineClass` instance backed by a `NoopInstantClient` placeholder.
+ * Apps inject the real `InstantClient` (FIDScript client) at startup.
  */
 
 import type {
@@ -126,3 +130,9 @@ export interface SyncEngine {
  * `syncEngine.enqueue(event)` without depending on a real backend.
  */
 export { NoOpSyncEngine, NoOpSyncEngineClass, defaultSyncEngine, type QueuedSyncEvent } from './sync-stub.js'
+
+// ── Real SyncEngine (Cycle 05) ────────────────────────────────────────────────
+//
+// NOTE: SyncEngineClass is NOT re-exported from this file to avoid a circular
+// import chain (data-contract.ts → sync-contract.ts → sync-engine.ts → sync-contract.ts).
+// It is re-exported directly from index.ts instead.

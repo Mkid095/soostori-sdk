@@ -8,7 +8,7 @@
 import type {
   BusinessId, SubscriptionId, PlanId, SalespersonApplicationId,
   SalespersonProfileId, InfluencerProfileId, CommissionRuleId,
-  UserId,
+  CommissionLedgerId, UserId, PackageId,
   ISO8601, Money,
 } from '@soostori/core'
 
@@ -122,6 +122,150 @@ export interface InfluencerProfile {
   defaultCommissionRate: number
   /** CommissionRule currently applied (cached FK). */
   activeCommissionRuleId?: CommissionRuleId | null
+  createdAt: ISO8601
+  updatedAt: ISO8601
+  version: number
+}
+
+// ── Package (§24, Phase 06) ────────────────────────────────────────────────────
+
+/**
+ * Package — commercial onboarding subscription package.
+ *
+ * Assigned by a salesperson to an enrolled client business. Drives the
+ * commission split via the linked CommissionRule.
+ */
+export interface Package {
+  id: PackageId
+  businessId: BusinessId
+  name: string
+  /** Monthly package amount in KES. Minimum enforced at 600 KES. */
+  amount: Money
+  /** Salesperson who enrolled this client. */
+  salespersonId: SalespersonProfileId
+  /** Influencer who recruited the salesperson (if any). */
+  influencerId?: InfluencerProfileId | null
+  isActive: boolean
+  createdAt: ISO8601
+  updatedAt: ISO8601
+  version: number
+}
+
+// ── Commission calculation helpers (Phase 06) ─────────────────────────────────
+
+const BASE_PACKAGE_AMOUNT = 600
+
+/**
+ * Commission split result for a given package amount.
+ *
+ * companyShare  = 500 + 25% × max(0, amount − 600)
+ * salespersonShare = 100 + 75% × max(0, amount − 600)
+ * influencerShare = 50 flat (paid BY COMPANY, not from client payment)
+ */
+export interface CommissionSplit {
+  companyShare: Money
+  salespersonShare: Money
+  influencerShare: Money
+  /** Always equals the input packageAmount. */
+  total: Money
+}
+
+/**
+ * Calculate the commission split for a given package amount.
+ *
+ * @param packageAmount - Monthly package amount in KES (must be ≥ 0)
+ */
+export function calculateCommission(packageAmount: Money): CommissionSplit {
+  const base = BASE_PACKAGE_AMOUNT
+  const excess = Math.max(0, packageAmount - base)
+  const companyShare = 500 + 0.25 * excess
+  const salespersonShare = 100 + 0.75 * excess
+  const influencerShare = 50
+  return {
+    companyShare,
+    salespersonShare,
+    influencerShare,
+    total: packageAmount,
+  }
+}
+
+/**
+ * CommissionRule — commercial Phase 06 commission rule.
+ *
+ * Attaches a concrete commission split to a specific business+ salesperson+influencer
+ * combination, derived from a Package amount via `calculateCommission()`.
+ */
+export interface CommissionRuleCommercial {
+  id: CommissionRuleId
+  businessId: BusinessId
+  /** The salesperson who enrolled the client. */
+  salespersonId: SalespersonProfileId
+  /** The influencer who recruited the salesperson (optional). */
+  influencerId?: InfluencerProfileId | null
+  /** Package amount this rule was computed from. */
+  packageAmount: Money
+  companyShare: Money
+  salespersonShare: Money
+  influencerShare: Money
+  effectiveFrom: ISO8601
+  effectiveTo?: ISO8601 | null
+  status: 'active' | 'suspended'
+  createdAt: ISO8601
+  updatedAt: ISO8601
+  version: number
+}
+
+/**
+ * Create a Phase 06 CommissionRuleCommercial from a package amount.
+ */
+export function createCommissionRule(
+  businessId: BusinessId,
+  salespersonId: SalespersonProfileId,
+  packageAmount: Money,
+  influencerId?: InfluencerProfileId | null,
+): Omit<CommissionRuleCommercial, 'id' | 'createdAt' | 'updatedAt' | 'version'> {
+  const split = calculateCommission(packageAmount)
+  const now: ISO8601 = new Date().toISOString()
+  return {
+    businessId,
+    salespersonId,
+    influencerId: influencerId ?? null,
+    packageAmount,
+    companyShare: split.companyShare,
+    salespersonShare: split.salespersonShare,
+    influencerShare: split.influencerShare,
+    effectiveFrom: now,
+    effectiveTo: null,
+    status: 'active',
+  }
+}
+
+// ── CommissionLedgerEntry (Phase 06) ──────────────────────────────────────────
+
+export type CommissionRecipientType = 'company' | 'salesperson' | 'influencer'
+export type CommissionLedgerEntryStatus = 'pending' | 'paid'
+
+/**
+ * CommissionLedgerEntry — a single commission payment record.
+ *
+ * Created per recipient (company / salesperson / influencer) per billing period.
+ * Paid status is tracked separately per entry; the influencer entry is
+ * always 50 KES (paid by company, not deducted from client payment).
+ */
+export interface CommissionLedgerEntry {
+  id: CommissionLedgerId
+  businessId: BusinessId
+  subscriptionId: SubscriptionId
+  commissionRuleId: CommissionRuleId
+  /** Amount paid to this specific recipient. */
+  amount: Money
+  recipientType: CommissionRecipientType
+  /** ID of the recipient (BusinessId | SalespersonProfileId | InfluencerProfileId). */
+  recipientId: string
+  /** Billing period in YYYY-MM format. */
+  period: string
+  status: CommissionLedgerEntryStatus
+  paidAt?: ISO8601 | null
   createdAt: ISO8601
   updatedAt: ISO8601
   version: number

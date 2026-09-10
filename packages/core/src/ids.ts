@@ -65,6 +65,8 @@ export type SalespersonApplicationId = Brand<string, 'SalespersonApplicationId'>
 export type SalespersonProfileId = Brand<string, 'SalespersonProfileId'>
 /** InfluencerProfileId — admin-only recruiter profile (§70–§73). */
 export type InfluencerProfileId = Brand<string, 'InfluencerProfileId'>
+/** PackageId — commercial onboarding package (§24, Phase 06). */
+export type PackageId = Brand<string, 'PackageId'>
 /** AuthAuditEventId — append-only auth/security event log (§78). */
 export type AuthAuditEventId = Brand<string, 'AuthAuditEventId'>
 
@@ -107,4 +109,5 @@ export const asCommissionLedgerId = (s: string) => s as CommissionLedgerId
 export const asSalespersonApplicationId = (s: string) => s as SalespersonApplicationId
 export const asSalespersonProfileId = (s: string) => s as SalespersonProfileId
 export const asInfluencerProfileId = (s: string) => s as InfluencerProfileId
+export const asPackageId = (s: string) => s as PackageId
 export const asAuthAuditEventId = (s: string) => s as AuthAuditEventId
