@@ -1,6 +1,22 @@
 # Changelog
-
 All notable changes to this project will be documented in this file.
+
+## [0.1.0-alpha.9] — 2025-09-10 (core)
+### Added
+- Branded IDs added to `@soostori/core/ids`: `PersonId`, `BusinessId`, `MembershipId`, `IdempotencyKey`, `SyncCursorId`, `StockMovementId`, `CommissionRuleId`, `CommissionLedgerId`, `SalespersonApplicationId`, `SalespersonProfileId`, `InfluencerProfileId`, `AuthAuditEventId`, plus matching `as*()` cast helpers.
+- `ShopId` is now a type alias to `BusinessId` (legacy brand preserved; canonical name per Cycle 04 §10 is `BusinessId`).
+- Adds `@soostori/contracts` as a workspace dependency in preparation for Sub-cycle B reconciliation.
+
+### Deferred
+- `@soostori/contracts` is NOT yet re-exported through `@soostori/core`. The legacy types in `packages/core/src/types.ts` overlap with the new contract; Sub-cycle B will reconcile. Downstream consumers should `import { … } from '@soostori/contracts'` directly.
+
+## [0.1.0-alpha.1] — 2025-09-10 (contracts, first release)
+### Added
+- New workspace package `@soostori/contracts` — canonical data + sync contract for all 22 Soostori entities: Person, Business, Membership, Employee, Device, Invitation, Product, Category, StockMovement, Sale, SaleLineItem, Customer, Debt, DebtPayment, Expense, Subscription, SalespersonApplication, SalespersonProfile, InfluencerProfile, CommissionLedger, CommissionRule, AuthAuditEvent.
+- `SyncEvent` contract + `SyncEngine` interface + `NoOpSyncEngine` stub returning the documented responses (Cycle 04 Sub-cycle E requirement).
+- `SyncApplyResult` discriminated union: `no_op | applied | conflict_replay | version_older`.
+- Conflict-resolution principles documented in `packages/contracts/docs/sync-semantics.md` with citations to the §vision sections.
+- Type-level + runtime tests in `packages/contracts/test/` (`data-contract.test.ts`, `sync-contract.test.ts`).
 
 ## [0.1.0-alpha.8] — 2025-09-10
 
