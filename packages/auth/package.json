@@ -36,13 +36,13 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@soostori/core": "^0.1.0-alpha.2",
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@soostori/core": "workspace:^",
+    "@types/node": "^22.0.0",
     "typescript": "^5.7.0",
-    "vitest": "^2.1.0",
-    "@types/node": "^22.0.0"
+    "vitest": "^2.1.0"
   },
   "license": "BSL-1.1",
   "private_publish_token_env": "NPM_TOKEN",

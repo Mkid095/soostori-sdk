@@ -25,7 +25,7 @@ export type UUID = string
 
 export type UserType = 'owner' | 'manager' | 'attendant'
 
-export type EmployeeRole = 'owner' | 'manager' | 'cashier' | 'attendant'
+export type EmployeeRole = 'owner' | 'manager' | 'cashier' | 'attendant' | 'viewer'
 
 export type DeviceType = 'desktop' | 'mobile'
 

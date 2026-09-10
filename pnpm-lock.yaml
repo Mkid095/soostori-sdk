@@ -42,13 +42,13 @@ importers:
 
   packages/auth:
     dependencies:
-      '@soostori/core':
-        specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.2
       zod:
         specifier: ^3.24.0
         version: 3.25.76
     devDependencies:
+      '@soostori/core':
+        specifier: workspace:^
+        version: link:../core
       '@types/node':
         specifier: ^22.0.0
         version: 22.20.1

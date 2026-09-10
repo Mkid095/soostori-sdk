@@ -1,6 +1,7 @@
 export * from './identity.js'
 export * from './session.js'
 export * from './permissions.js'
+export type { Capability, Member } from './permissions.js'
 export * from './cloud-auth.js'
 export * from './operational-auth.js'
 export type { SessionStorage } from './session.js'
