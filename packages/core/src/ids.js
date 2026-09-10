@@ -7,7 +7,7 @@ export function newId() {
     if (typeof globalThis.crypto?.randomUUID === 'function') {
         return globalThis.crypto.randomUUID();
     }
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
         const r = (Math.random() * 16) | 0;
         return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
     });
@@ -15,8 +15,10 @@ export function newId() {
 // ── ID cast helpers — used by platform code that already has a string ID ──
 // In production these should only be called with validated UUIDs.
 export const asUserId = (s) => s;
-export const asCompanyId = (s) => s;
 export const asShopId = (s) => s;
+export const asBusinessId = (s) => s;
+export const asPersonId = (s) => s;
+export const asMembershipId = (s) => s;
 export const asEmployeeId = (s) => s;
 export const asDeviceId = (s) => s;
 export const asProductId = (s) => s;
@@ -29,4 +31,12 @@ export const asPlanId = (s) => s;
 export const asSubscriptionId = (s) => s;
 export const asInvitationId = (s) => s;
 export const asSyncEventId = (s) => s;
+export const asStockMovementId = (s) => s;
+export const asIdempotencyKey = (s) => s;
+export const asCommissionRuleId = (s) => s;
+export const asCommissionLedgerId = (s) => s;
+export const asSalespersonApplicationId = (s) => s;
+export const asSalespersonProfileId = (s) => s;
+export const asInfluencerProfileId = (s) => s;
+export const asAuthAuditEventId = (s) => s;
 //# sourceMappingURL=ids.js.map

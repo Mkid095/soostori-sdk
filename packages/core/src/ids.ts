@@ -7,7 +7,12 @@ export type Brand<T, B extends string> = T & { readonly __brand: B }
 
 // Core domain IDs
 export type UserId = Brand<string, 'UserId'>
-export type ShopId = Brand<string, 'ShopId'>
+/**
+ * ShopId is the legacy brand name; the canonical name is BusinessId.
+ * Kept as a type alias to BusinessId so existing code compiles unchanged.
+ * Cycle 04 §10: Business is the canonical tenant entity.
+ */
+export type ShopId = BusinessId
 export type EmployeeId = Brand<string, 'EmployeeId'>
 export type DeviceId = Brand<string, 'DeviceId'>
 
@@ -36,6 +41,33 @@ export type PaymentId = Brand<string, 'PaymentId'>
 export type InvitationId = Brand<string, 'InvitationId'>
 export type DeviceAuthorizationId = Brand<string, 'DeviceAuthorizationId'>
 
+// ── Multi-business model IDs (Cycle 04) ──────────────────────────────────────
+// Person is the cloud identity; Business is the tenant; Membership is the link.
+export type PersonId = Brand<string, 'PersonId'>
+export type BusinessId = Brand<string, 'BusinessId'>
+export type MembershipId = Brand<string, 'MembershipId'>
+
+// ── Sync / contract IDs (Cycle 04) ──────────────────────────────────────────
+/** UUIDv7 — time-ordered per the Cycle 04 brief §6. */
+export type IdempotencyKey = Brand<string, 'IdempotencyKey'>
+export type SyncCursorId = Brand<string, 'SyncCursorId'>
+
+// ── Domain IDs added by Cycle 04 Sub-cycle A ────────────────────────────────
+/** StockMovementId — append-only inventory ledger row (Cycle 04 §11). */
+export type StockMovementId = Brand<string, 'StockMovementId'>
+/** CommissionRuleId — admin-configurable rate rows (Cycle 04 §75). */
+export type CommissionRuleId = Brand<string, 'CommissionRuleId'>
+/** CommissionLedgerId — salesperson-attributed sale event row (Cycle 04 §76). */
+export type CommissionLedgerId = Brand<string, 'CommissionLedgerId'>
+/** SalespersonApplicationId — applicant state machine row (§19/§20). */
+export type SalespersonApplicationId = Brand<string, 'SalespersonApplicationId'>
+/** SalespersonProfileId — post-approval training/active state (§21/§22). */
+export type SalespersonProfileId = Brand<string, 'SalespersonProfileId'>
+/** InfluencerProfileId — admin-only recruiter profile (§70–§73). */
+export type InfluencerProfileId = Brand<string, 'InfluencerProfileId'>
+/** AuthAuditEventId — append-only auth/security event log (§78). */
+export type AuthAuditEventId = Brand<string, 'AuthAuditEventId'>
+
 /** Generate a new UUID v4 — uses crypto.randomUUID when available, else Math.random fallback. */
 export function newId(): string {
   if (typeof globalThis.crypto?.randomUUID === 'function') {
@@ -52,6 +84,9 @@ export function newId(): string {
 
 export const asUserId = (s: string) => s as UserId
 export const asShopId = (s: string) => s as ShopId
+export const asBusinessId = (s: string) => s as BusinessId
+export const asPersonId = (s: string) => s as PersonId
+export const asMembershipId = (s: string) => s as MembershipId
 export const asEmployeeId = (s: string) => s as EmployeeId
 export const asDeviceId = (s: string) => s as DeviceId
 export const asProductId = (s: string) => s as ProductId
@@ -64,3 +99,11 @@ export const asPlanId = (s: string) => s as PlanId
 export const asSubscriptionId = (s: string) => s as SubscriptionId
 export const asInvitationId = (s: string) => s as InvitationId
 export const asSyncEventId = (s: string) => s as SyncEventId
+export const asStockMovementId = (s: string) => s as StockMovementId
+export const asIdempotencyKey = (s: string) => s as IdempotencyKey
+export const asCommissionRuleId = (s: string) => s as CommissionRuleId
+export const asCommissionLedgerId = (s: string) => s as CommissionLedgerId
+export const asSalespersonApplicationId = (s: string) => s as SalespersonApplicationId
+export const asSalespersonProfileId = (s: string) => s as SalespersonProfileId
+export const asInfluencerProfileId = (s: string) => s as InfluencerProfileId
+export const asAuthAuditEventId = (s: string) => s as AuthAuditEventId
