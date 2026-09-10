@@ -1,6 +1,6 @@
 {
   "name": "@soostori/core",
-  "version": "0.1.0-alpha.3",
+  "version": "0.1.0-alpha.7",
   "description": "Canonical Soostori core: branded IDs, domain types, validation, errors, constants",
   "type": "module",
   "main": "./dist/index.js",

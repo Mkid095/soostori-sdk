@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-alpha.7] — 2025-09-10
+
+### Added
+- **`@soostori/core`**: `UNAUTHORIZED_LOGIN_CONTACT_PHONE = '+254 732 203 353'` constant in `@soostori/core/constants` for the §29 "person not found" UX. Consumed by Mobile in this cycle; Desktop and Web will follow.
+- **`@soostori/core`**: Updated committed `src/constants.js` and `src/constants.d.ts` to mirror the new `src/constants.ts` export (these companion compiled artifacts are committed to this repo and were stale).
+
 ## [Unreleased]
 
 ### Added
