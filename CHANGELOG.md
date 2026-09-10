@@ -1,6 +1,19 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-alpha.2] — 2025-09-10 (contracts)
+### Added
+- **`NoOpSyncEngine` class impl** (`packages/contracts/src/sync-stub.ts`): `NoOpSyncEngineClass` — fresh instances per test/worker, exposes `pending` (readonly queue) + `size` + `reset()` for diagnostics. The existing const `NoOpSyncEngine` is preserved (Sub-cycle A back-compat: `NoOpSyncEngine.enqueue(event)` still works) and now delegates to a shared class instance.
+- **`defaultSyncEngine` singleton** — apps import this today. Replace the binding to upgrade to the real engine; no consumer code changes required.
+- **`QueuedSyncEvent` type** — `{ event: SyncEvent; enqueuedAt: number }` — the per-event record stored in the stub's queue. Mirrors what a real engine would persist to SQLite.
+- **Sync round-trip tests** (`packages/contracts/test/sync-roundtrip.test.ts`, 15 new tests): confirms `enqueue` stores `state:'pending'`, `pull` returns `[]`, `apply` returns `{state:'no_op'}`; the back-compat const surface still works; and three canonical entities (`Product`, `Sale`, `Customer`) survive a full enqueue → pull → apply round-trip with their typed payloads intact.
+- **Cross-platform contract matrix** synthesized at `reports/2025-cycle-04/E-contract-matrix.md`: 22-entity × 5-layer (SDK / Cloud / Web / Desktop / Mobile) table + status summary + critical gaps + handoff list.
+
+### Notes
+- The stub honours all 6 conflict-resolution principles documented in `docs/sync-semantics.md` by returning `no_op` on `apply`. The real engine — version compare, idempotency dedup, tombstone cascade, `(serverReceivedAt, originatingDeviceId, clientSequence)` ordering, retry-as-acked — ships in Cycle 05+ without changing the contract.
+- No entity was redesigned; the matrix is a synthesis of Sub-cycles A, B, C, D.
+- 13 / 22 entities are end-to-end (locally mapped in both Desktop and Mobile); 9 / 22 are cloud-anchored by design (documented deferrals, not omissions). 0 conflicts at the entity level.
+
 ## [0.1.0-alpha.9] — 2025-09-10 (core)
 ### Added
 - Branded IDs added to `@soostori/core/ids`: `PersonId`, `BusinessId`, `MembershipId`, `IdempotencyKey`, `SyncCursorId`, `StockMovementId`, `CommissionRuleId`, `CommissionLedgerId`, `SalespersonApplicationId`, `SalespersonProfileId`, `InfluencerProfileId`, `AuthAuditEventId`, plus matching `as*()` cast helpers.
