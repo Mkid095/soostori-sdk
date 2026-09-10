@@ -26,6 +26,7 @@ export type SaleItemId = Brand<string, 'SaleItemId'>
 export type DebtId = Brand<string, 'DebtId'>
 export type DebtPaymentId = Brand<string, 'DebtPaymentId'>
 export type ExpenseId = Brand<string, 'ExpenseId'>
+export type RecurringExpenseId = Brand<string, 'RecurringExpenseId'>
 export type ExpenseCategoryId = Brand<string, 'ExpenseCategoryId'>
 export type InventoryTransactionId = Brand<string, 'InventoryTransactionId'>
 
@@ -98,6 +99,7 @@ export const asSaleId = (s: string) => s as SaleId
 export const asDebtId = (s: string) => s as DebtId
 export const asDebtPaymentId = (s: string) => s as DebtPaymentId
 export const asExpenseId = (s: string) => s as ExpenseId
+export const asRecurringExpenseId = (s: string) => s as RecurringExpenseId
 export const asPlanId = (s: string) => s as PlanId
 export const asSubscriptionId = (s: string) => s as SubscriptionId
 export const asInvitationId = (s: string) => s as InvitationId

@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-alpha.16] — 2025-09-10 (Phase 12 Expense SDK)
+### Added
+- **`packages/expenses`** package: `package.json`, `tsconfig.json`, `src/ExpenseRepository.ts`, `src/ExpenseService.ts`, `src/index.ts`.
+- **`ExpenseService`** (`packages/expenses/src/ExpenseService.ts`): expense operations — `createExpense`, `approveExpense`, `markExpensePaid`, `listExpenses`, `getExpenseSummary`, `createRecurringExpense`, `listRecurringExpenses` — with businessId isolation, idempotency by key, and version-based last-writer-wins.
+- **`CreateExpenseInput`**, **`CreateRecurringExpenseInput`** interfaces exported from `@soostori/expenses`.
+- **`ExpenseRepository`** contract (`packages/expenses/src/ExpenseRepository.ts`): idempotent expense upsert, filtered list by month, recurring expense management.
+- **SyncEvent emission**: `expense.created`, `expense.approved`, `expense.paid` emitted via `SyncEngine.enqueue()` on every mutation.
+- **`ExpenseStatus`** type (`@soostori/contracts`): `'pending' | 'approved' | 'paid'`.
+- **`Expense.status`** and **`Expense.paidAt`** fields added to the canonical `Expense` entity in `@soostori/contracts`.
+- **`RecurringExpenseId`** + **`asRecurringExpenseId`** added to `@soostori/core`.
+- **12 tests** (`packages/expenses/test/ExpenseService.test.ts`): createExpense fields; createExpense expense.created SyncEvent; approveExpense status=approved + version increment; approveExpense expense.approved SyncEvent; markExpensePaid status=paid + version increment; markExpensePaid expense.paid SyncEvent; listExpenses filtered by businessId + month; getExpenseSummary correct totals/byCategory/pendingCount; businessId isolation on create/list/approve; cannot approve non-pending; cannot mark paid non-approved; createRecurringExpense fields; listRecurringExpenses.
+
 ## [0.1.0-alpha.15] — 2025-09-10 (Phase 11 Customers & Debts SDK)
 ### Added
 - **`CustomerService`** (`packages/customers/src/CustomerService.ts`): full CRUD — `createCustomer`, `getCustomer`, `listCustomers`, `updateCustomer`, `archiveCustomer`, `getCustomerByPhone` — with businessId isolation, idempotency by key, and version-based last-writer-wins.

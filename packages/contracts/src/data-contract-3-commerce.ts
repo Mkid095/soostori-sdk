@@ -118,6 +118,8 @@ export interface DebtPayment {
 }
 
 // ── Expense (§19) ─────────────────────────────────────────────────────────────
+export type ExpenseStatus = 'pending' | 'approved' | 'paid'
+
 export interface Expense {
   id: ExpenseId
   businessId: BusinessId
@@ -129,6 +131,9 @@ export interface Expense {
   date: string
   /** Free-form external reference (receipt number, transfer ref). */
   reference?: string | null
+  status: ExpenseStatus
+  /** Set when status transitions to 'paid'. */
+  paidAt?: ISO8601 | null
   createdAt: ISO8601
   updatedAt: ISO8601
   version: number
