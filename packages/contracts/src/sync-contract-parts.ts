@@ -45,6 +45,7 @@ export type EntityKind =
   | 'salespersonApplication' | 'salespersonProfile' | 'influencerProfile'
   | 'commissionRule' | 'commissionLedger'
   | 'authAuditEvent'
+  | 'teamInvitation' | 'teamMembership'
 
 // ── Payload ───────────────────────────────────────────────────────────────────
 

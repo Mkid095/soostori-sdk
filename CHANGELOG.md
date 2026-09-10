@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-alpha.18] — 2025-09-10 (Phase 14 Team Management SDK)
+### Added
+- **`packages/team`** new package: Phase 14 canonical team invitation + membership management.
+- **`TeamInvitation`** entity (`packages/team/src/types.ts`): `id`, `businessId`, `invitedByEmployeeId`, `email`, `role`, `status(pending|accepted|expired)`, `expiresAt`, `acceptedAt`, `createdAt`.
+- **`TeamMembership`** entity (`packages/team/src/types.ts`): `id`, `businessId`, `personId`, `employeeId`, `role`, `permissions(Capability[]|null)`, `joinedAt`.
+- **`TeamInvitationStatus`**, **`TeamPermission`** types.
+- **`TeamService`** (`packages/team/src/TeamService.ts`): `inviteMember`, `acceptInvitation`, `removeMember`, `updateMemberRole`, `assignPermission`, `listPendingInvitations`, `listMembers` — with businessId isolation, idempotency by key, and version-based sync events.
+- **SyncEvent emission**: `team.invitation.created`, `team.invitation.accepted`, `team.invitation.expired`, `team.invitation.revoked`, `team.member.removed`, `team.member.role_changed`, `team.member.permission_changed` — emitted via `syncEngine.enqueue()` on every mutation.
+- **`TeamRepository`** contract — repository interface for team storage.
+- **`TeamService`** barrel export from `@soostori/team`.
+- **`packages/team`** added to root `tsconfig.json` project references.
+- **`packages/team`** added to `vitest.config.ts` path alias.
+- **`teamInvitation`**, **`teamMembership`** added to `EntityKind` union in `@soostori/contracts`.
+- **Team event payloads** added to `@soostori/events` `EventPayloadMap`.
+- **Team event constants** added to `@soostori/events` catalog (`TEAM_INVITATION_CREATED`, etc.) and `ALL_EVENTS`.
+- Pre-existing export bug in `@soostori/contracts`: removed phantom `NoopInstantClient` re-export from `sync-engine.js` (was referenced in `index.ts` but never existed — build was already broken before this change).
+- **10+ unit tests** (`packages/team/test/TeamService.test.ts`): inviteMember fields + idempotency + business isolation; acceptInvitation membership creation + events + expired; removeMember delete + events + idempotency; updateMemberRole role change + events; assignPermission grant/revoke + events; listPendingInvitations; listMembers.
+
+## [0.1.0-alpha.17] — 2025-09-10 (Phase 13 Reports & Dashboards SDK)
+### Added
+- **`ReportService`** (`packages/reports/src/ReportService.ts`): Phase 13 flat-report entry points — `getDashboardSummary`, `getSalesReport`, `getInventoryReport`, `getDebtReport`, `getExpenseReport` — with in-memory mock store for SDK testability.
+- **`DashboardSummary`** interface: `todaySales`, `weekSales`, `monthSales`, `todayRevenue`, `weekRevenue`, `monthRevenue`, `monthCost`, `grossProfit`, `grossMargin`, `lowStockCount`, `outstandingDebts`, `pendingExpenses`, `activeCustomers`.
+- **`SalesReport`** interface: period, totalSales, totalRevenue, totalCost, grossProfit, grossMargin, byPaymentMethod, topProducts (sorted by revenue), salesCount, averageSaleValue.
+- **`InventoryReport`** interface: totalProducts, totalStockValue, lowStockCount, outOfStockCount, deadStock (>30 days no movement), reorderSuggestions.
+- **`DebtReport`** interface: totalOutstanding, overdueCount, partialCount, agingBuckets (0-30 / 31-60 / 61-90 / 90+), byCustomer (sorted by outstanding descending).
+- **`ExpenseReport`** interface: total, byCategory, pendingCount, vsPriorMonth (percentage change).
+- **29 tests** (`packages/reports/test/ReportService.test.ts`): DashboardSummary all-fields, today/week/month sales counts, voided/refunded excluded, grossProfit/grossMargin, lowStockCount, outstandingDebts, pendingExpenses, activeCustomers, businessId isolation; SalesReport period/totals/average, byPaymentMethod grouping, topProducts revenue-sorted, date-range filter, empty period; InventoryReport totals, stock value, dead stock detection, reorder suggestions; DebtReport totals/overdue/partial, aging buckets, byCustomer sorted, businessId isolation; ExpenseReport totals/byCategory, pendingCount, vsPriorMonth, businessId isolation.
+
 ## [0.1.0-alpha.16] — 2025-09-10 (Phase 12 Expense SDK)
 ### Added
 - **`packages/expenses`** package: `package.json`, `tsconfig.json`, `src/ExpenseRepository.ts`, `src/ExpenseService.ts`, `src/index.ts`.

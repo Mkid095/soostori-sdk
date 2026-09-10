@@ -22,6 +22,7 @@
     { "path": "packages/tuma" },
     { "path": "packages/whatsapp" },
     { "path": "packages/cloud" },
-    { "path": "packages/desktop-adapter" }
+    { "path": "packages/desktop-adapter" },
+    { "path": "packages/team" }
   ]
 }

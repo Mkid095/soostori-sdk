@@ -1,0 +1,47 @@
+{
+  "name": "@soostori/team",
+  "version": "0.1.0-alpha.1",
+  "description": "Team management — invitations, memberships, role and permission assignment with sync event emission",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "lint": "echo 'lint placeholder'"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "dependencies": {
+    "@soostori/core": "workspace:*",
+    "@soostori/contracts": "workspace:*",
+    "@soostori/events": "workspace:*",
+    "@soostori/auth": "workspace:*",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  },
+  "license": "BSL-1.1",
+  "private_publish_token_env": "NPM_TOKEN",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mkid095/soostori-sdk.git"
+  }
+}

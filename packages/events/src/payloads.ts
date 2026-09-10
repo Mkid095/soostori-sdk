@@ -197,6 +197,15 @@ export interface EventPayloadMap {
 
   'system.backup_completed': { backupId: string; sizeBytes: number }
   'system.error': { source: string; message: string }
+
+  // Team events
+  'team.invitation.created': { invitationId: string; email: string; role: string }
+  'team.invitation.accepted': { invitationId: string; membershipId: string }
+  'team.invitation.expired': { invitationId: string }
+  'team.invitation.revoked': { invitationId: string }
+  'team.member.removed': { membershipId: string; employeeId: string }
+  'team.member.role_changed': { membershipId: string; employeeId: string; role: string }
+  'team.member.permission_changed': { membershipId: string; capability: string }
 }
 
 export type EventPayload<K extends keyof EventPayloadMap> = EventPayloadMap[K]
