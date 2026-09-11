@@ -209,6 +209,14 @@ export interface EventPayloadMap {
   'team.member.removed': { membershipId: string; employeeId: string }
   'team.member.role_changed': { membershipId: string; employeeId: string; role: string }
   'team.member.permission_changed': { membershipId: string; capability: string }
+
+  // Partner events (Phase 18)
+  'partner.application_submitted': { applicationId: string; applicantPersonId: string; fullName: string; email: string }
+  'partner.approved': { applicationId: string; salespersonProfileId: string }
+  'partner.rejected': { applicationId: string; reason?: string }
+  'partner.enrolled': { salespersonProfileId: string; businessId: string }
+  'conversion.qualified': { businessId: string; subscriptionId: string; salespersonProfileId: string; influencerProfileId?: string }
+  'commission.created': { commissionEarningId: string; salespersonProfileId: string; influencerProfileId?: string; businessId: string; subscriptionId: string; amount: number; role: 'salesperson' | 'influencer' }
 }
 
 export type EventPayload<K extends keyof EventPayloadMap> = EventPayloadMap[K]

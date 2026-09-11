@@ -144,6 +144,12 @@ export const CAPABILITIES = {
   // Web / partner
   SALE_READ:               'sale.read',
   PARTNER_MANAGE:          'partner.manage',
+  PARTNER_VIEW:            'partner.view',
+  PARTNER_APPLY:           'partner.apply',
+  PARTNER_APPROVE:         'partner.approve',
+  PARTNER_REJECT:          'partner.reject',
+  COMMISSION_VIEW_OWN:     'commission.view_own',
+  COMMISSION_VIEW_ALL:     'commission.view_all',
   SUBSCRIPTION_MANAGE:     'subscription.manage',
   TEAM_MANAGE:             'team.manage',
   SETTINGS_MANAGE:         'settings.manage',
@@ -176,16 +182,22 @@ export const ROLE_DEFAULT_CAPABILITIES = {
     CAPABILITIES.CUSTOMERS_VIEW,
     CAPABILITIES.INVENTORY_VIEW,
     CAPABILITIES.PRODUCTS_VIEW,
+    CAPABILITIES.PARTNER_VIEW,
+    CAPABILITIES.COMMISSION_VIEW_OWN,
   ],
   attendant:  [
     CAPABILITIES.INVENTORY_VIEW,
     CAPABILITIES.PRODUCTS_VIEW,
     CAPABILITIES.CUSTOMERS_VIEW,
+    CAPABILITIES.PARTNER_VIEW,
+    CAPABILITIES.COMMISSION_VIEW_OWN,
   ],
   viewer:     [
     CAPABILITIES.PRODUCTS_VIEW,
     CAPABILITIES.INVENTORY_VIEW,
     CAPABILITIES.REPORTS_VIEW,
+    CAPABILITIES.PARTNER_VIEW,
+    CAPABILITIES.COMMISSION_VIEW_OWN,
   ],
 } as Record<EmployeeRole, readonly Capability[]>
 

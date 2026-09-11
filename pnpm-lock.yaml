@@ -528,6 +528,34 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.20.1)
 
+  packages/partners:
+    dependencies:
+      '@soostori/auth':
+        specifier: workspace:*
+        version: link:../auth
+      '@soostori/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@soostori/core':
+        specifier: workspace:*
+        version: link:../core
+      '@soostori/events':
+        specifier: workspace:*
+        version: link:../events
+      zod:
+        specifier: ^3.24.0
+        version: 3.25.76
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.1
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.20.1)
+
   packages/payments:
     dependencies:
       '@soostori/core':

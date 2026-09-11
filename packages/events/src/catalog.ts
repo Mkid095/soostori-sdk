@@ -137,6 +137,15 @@ export const TEAM_MEMBER_REMOVED        = 'team.member.removed'
 export const TEAM_MEMBER_ROLE_CHANGED   = 'team.member.role_changed'
 export const TEAM_MEMBER_PERMISSION_CHANGED = 'team.member.permission_changed'
 
+// ── Partner events (Phase 18) ───────────────────────────────────────────────
+
+export const PARTNER_APPLICATION_SUBMITTED = 'partner.application_submitted'
+export const PARTNER_APPROVED              = 'partner.approved'
+export const PARTNER_REJECTED              = 'partner.rejected'
+export const PARTNER_ENROLLED              = 'partner.enrolled'
+export const CONVERSION_QUALIFIED          = 'conversion.qualified'
+export const COMMISSION_CREATED            = 'commission.created'
+
 // ── Aggregated event names ──────────────────────────────────────────────────
 
 export const ALL_EVENTS = [
@@ -176,6 +185,9 @@ export const ALL_EVENTS = [
   TEAM_INVITATION_CREATED, TEAM_INVITATION_ACCEPTED, TEAM_INVITATION_EXPIRED,
   TEAM_INVITATION_REVOKED, TEAM_MEMBER_REMOVED, TEAM_MEMBER_ROLE_CHANGED,
   TEAM_MEMBER_PERMISSION_CHANGED,
+  // Partner
+  PARTNER_APPLICATION_SUBMITTED, PARTNER_APPROVED, PARTNER_REJECTED,
+  PARTNER_ENROLLED, CONVERSION_QUALIFIED, COMMISSION_CREATED,
 ] as const
 
 export type SoostoriEventName = typeof ALL_EVENTS[number]
