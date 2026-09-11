@@ -11,6 +11,7 @@ import type {
   CreateInvoiceRequest, CreateInvoiceResult,
   PaymentCallback,
 } from './types.js'
+import type { PaymentReceiptRepository } from './receipt.js'
 
 export interface PaymentProvider {
   /** Unique provider identifier. */
@@ -25,6 +26,12 @@ export interface PaymentProvider {
   createInvoice(req: CreateInvoiceRequest): Promise<CreateInvoiceResult>
   /** Verify and parse a webhook callback (verifies authenticity). */
   verifyCallback(rawBody: string, signature?: string): PaymentCallback
+  /**
+   * Repository for persisting payment receipts.
+   * Default implementation is a no-op. Providers with persistent receipt
+   * needs should override this property.
+   */
+  receiptRepository?: PaymentReceiptRepository
 }
 
 export class PaymentProviderRegistry {

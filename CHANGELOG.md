@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] — Phase 19 (Reports Wiring, Subscription Sync, Offline Policy, M-Pesa Receipts)
+
+### Added
+- **`packages/reports/test/ReportService.test.ts`**: Phase 19 additions — 8 tests covering `getDashboardSummary` mixed-transaction aggregates, sales/debt/expense/inventory reports, empty-period zeroed reports, reconciliation invariant (SUM(sales) = dashboardSummary.totalSales), and offline SQLite derivation.
+- **`packages/subscription/src/enforcement-sync.ts`**: `enforceSubscriptionForSync(cache, shopId)` — called by the sync timer worker before `apply()`. Rules: `active/trialing/past_due` allow silently; `expired` within grace period allow with logged warning; `expired` past grace period throws `SubscriptionGracePeriodExpiredError`; `cancelled` throws `SubscriptionCancelledError`. Added both error classes.
+- **`packages/subscription/test/enforcement-sync.test.ts`**: 7 tests covering all subscription state paths (active, trialing, past_due, grace period, expired past grace, cancelled, null cache).
+- **`packages/offline/src/sync-hook.ts`**: `onSyncTick(cache, lastOnlineAt)` — called by the sync timer worker on every cycle. Returns `{ phase, daysOffline, remainingDays }` per the 3-day state machine: Day 0 → ONLINE; Days 1-2 → OFFLINE_NORMAL; Day 3 → OFFLINE_WARNING; Day 4+ → OFFLINE_LIMIT_EXCEEDED. Includes clock skew guard (future timestamp → ONLINE).
+- **`packages/offline/test/sync-hook.test.ts`**: 7 tests covering all phase transitions and clock skew guard.
+- **`packages/payments/src/receipt.ts`**: Canonical `PaymentReceipt` interface and `PaymentReceiptRepository` contract. Fields: `id`, `shopId`, `provider` (tuma/payhero/pesapal/other), `providerReference`, `checkoutRequestId`, `status`, `amount`, `currency`, `customerPhone`, `failureReason`, `paidAt`, `createdAt`.
+- **`packages/payments/test/receipt.test.ts`**: 6 tests covering save/retrieve by checkoutRequestId, providerReference, listByShop filtering, and all receipt statuses.
+- **`packages/events/src/payloads.ts`**: Fixed `device.primary_transferred` payload — now uses `lanHostDeviceId` + `previousLanHostDeviceId` + `transferredAt` (not `fromDeviceId/toDeviceId`). Added `device.lan_host_changed` payload type.
+- **`packages/events/src/catalog.ts`**: Added `DEVICE_LAN_HOST_CHANGED = 'device.lan_host_changed'` event constant. Marked `DEVICE_PRIMARY_TRANSFERRED` as deprecated alias.
+
+### Changed
+- **`packages/subscription/src/index.ts`**: Added `enforcement-sync.js` export.
+- **`packages/offline/src/index.ts`**: Added `sync-hook.js` export.
+- **`packages/payments/src/index.ts`**: Added `receipt.js` export.
+- **`packages/payments/src/provider.ts`**: Added optional `receiptRepository?: PaymentReceiptRepository` to `PaymentProvider` interface (default no-op).
+
 ## [0.1.0-alpha.22] — 2026-09-11 (Phase 18 FIDScript Gaps + Auth Backend + Commercial)
 ### Added
 - **`packages/sync/src/idempotency.ts`**: `computeIdempotencyKey()` — deterministic fallback key (entity:entityId:operation:sequence) when FIDScript schema lacks idempotencyKey field. `detectIdempotencyKeySupport()` for one-time runtime probe. `setIdempotencyKeySupport()` for direct override.

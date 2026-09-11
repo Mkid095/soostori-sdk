@@ -164,7 +164,8 @@ export interface EventPayloadMap {
   'device.registered': DeviceRegisteredPayload
   'device.enrolled': { deviceId: string; deviceName: string; deviceType: 'desktop' | 'mobile'; businessId: string }
   'device.approved': { deviceId: string; approvedBy: string }
-  'device.primary_transferred': { fromDeviceId: string; toDeviceId: string; transferredBy: string }
+  'device.primary_transferred': { lanHostDeviceId: string; previousLanHostDeviceId: string; transferredBy: string; transferredAt: ISO8601 }
+  'device.lan_host_changed': { shopId: string; lanHostDeviceId: string; previousLanHostDeviceId: string; transferredBy: string; transferredAt: ISO8601 }
   'device.online': { deviceId: string }
   'device.offline': { deviceId: string; lastSeenAt: ISO8601 }
   'device.revoked': { deviceId: string; revokedBy: string }

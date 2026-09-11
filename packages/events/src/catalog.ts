@@ -77,6 +77,8 @@ export const DEVICE_REVOKED = 'device.revoked'
 export const DEVICE_ENROLLED = 'device.enrolled'
 export const DEVICE_APPROVED = 'device.approved'
 export const DEVICE_PRIMARY_TRANSFERRED = 'device.primary_transferred'
+/** @deprecated Use DEVICE_LAN_HOST_CHANGED — renamed for lan_host terminology */
+export const DEVICE_LAN_HOST_CHANGED = 'device.lan_host_changed'
 export const HOST_TRANSFER = 'device.host_transfer'
 export const PRIMARY_DEVICE_ELECTED = 'device.primary_elected'
 export const PRIMARY_DEVICE_LOST = 'device.primary_lost'
@@ -164,6 +166,7 @@ export const ALL_EVENTS = [
   // Device
   DEVICE_REGISTERED, DEVICE_ONLINE, DEVICE_OFFLINE, DEVICE_REVOKED,
   DEVICE_ENROLLED, DEVICE_APPROVED, DEVICE_PRIMARY_TRANSFERRED,
+  DEVICE_LAN_HOST_CHANGED,
   HOST_TRANSFER,
   PRIMARY_DEVICE_ELECTED, PRIMARY_DEVICE_LOST, HEARTBEAT_ACK,
   // Sync
