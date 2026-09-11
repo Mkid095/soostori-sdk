@@ -74,6 +74,9 @@ export const DEVICE_REGISTERED = 'device.registered'
 export const DEVICE_ONLINE = 'device.online'
 export const DEVICE_OFFLINE = 'device.offline'
 export const DEVICE_REVOKED = 'device.revoked'
+export const DEVICE_ENROLLED = 'device.enrolled'
+export const DEVICE_APPROVED = 'device.approved'
+export const DEVICE_PRIMARY_TRANSFERRED = 'device.primary_transferred'
 export const HOST_TRANSFER = 'device.host_transfer'
 export const PRIMARY_DEVICE_ELECTED = 'device.primary_elected'
 export const PRIMARY_DEVICE_LOST = 'device.primary_lost'
@@ -150,7 +153,9 @@ export const ALL_EVENTS = [
   // Supplier
   SUPPLIER_CREATED, SUPPLIER_UPDATED,
   // Device
-  DEVICE_REGISTERED, DEVICE_ONLINE, DEVICE_OFFLINE, DEVICE_REVOKED, HOST_TRANSFER,
+  DEVICE_REGISTERED, DEVICE_ONLINE, DEVICE_OFFLINE, DEVICE_REVOKED,
+  DEVICE_ENROLLED, DEVICE_APPROVED, DEVICE_PRIMARY_TRANSFERRED,
+  HOST_TRANSFER,
   PRIMARY_DEVICE_ELECTED, PRIMARY_DEVICE_LOST, HEARTBEAT_ACK,
   // Sync
   SYNC_PUSHED, SYNC_PULLED, SYNC_CONFLICT, SYNC_SNAPSHOT_DOWNLOADED,

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-alpha.19] — 2025-09-11 (Phase 15 Devices & Primary Device SDK)
+### Added
+- **`DeviceService`** (`packages/devices/src/DeviceService.ts`): canonical device management service with `enrollDevice`, `approveDevice`, `revokeDevice`, `transferPrimary`, `listDevices`, `getDevice` — all scoped to `businessId` and emitting sync events.
+- **`devices.transfer_primary`** capability added to `packages/auth/src/permissions.ts` (`CAPABILITIES.DEVICES_TRANSFER_PRIMARY`), included in owner and manager role bundles.
+- **New device sync events** added to `@soostori/events`: `device.enrolled`, `device.approved`, `device.primary_transferred` — with typed payloads in `payloads.ts` and constants in `catalog.ts`.
+- **`DeviceService`** exported from `@soostori/devices` barrel.
+- **10+ unit tests** for `DeviceService` covering all methods and error paths (`packages/devices/test/DeviceService.test.ts`).
+
 ## [0.1.0-alpha.18] — 2025-09-10 (Phase 14 Team Management SDK)
 ### Added
 - **`packages/team`** new package: Phase 14 canonical team invitation + membership management.

@@ -26,7 +26,7 @@ export const ROLE_PERMISSIONS: Record<EmployeeRole, ReadonlySet<string>> = {
     'debts.view', 'debts.create', 'debts.update', 'debts.delete',
     'customers.view', 'customers.create', 'customers.update', 'customers.delete',
     'settings.view', 'settings.update',
-    'devices.view', 'devices.manage',
+    'devices.view', 'devices.manage', 'devices.transfer_primary',
     'subscription.view', 'subscription.manage',
     'cloud.snapshot', 'cloud.fullSync',
   ]),
@@ -39,7 +39,7 @@ export const ROLE_PERMISSIONS: Record<EmployeeRole, ReadonlySet<string>> = {
     'debts.view', 'debts.create', 'debts.update', 'debts.delete',
     'customers.view', 'customers.create', 'customers.update', 'customers.delete',
     'settings.view',
-    'devices.view',
+    'devices.view', 'devices.manage', 'devices.transfer_primary',
   ]),
   cashier: new Set([
     'pos.sell',
@@ -134,6 +134,7 @@ export const CAPABILITIES = {
   // Devices
   DEVICES_VIEW:            'devices.view',
   DEVICES_MANAGE:          'devices.manage',
+  DEVICES_TRANSFER_PRIMARY: 'devices.transfer_primary',
   // Settings
   SETTINGS_VIEW:           'settings.view',
   SETTINGS_UPDATE:         'settings.update',

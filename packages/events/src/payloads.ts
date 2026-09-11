@@ -162,6 +162,9 @@ export interface EventPayloadMap {
   'supplier.updated': { supplierId: string }
 
   'device.registered': DeviceRegisteredPayload
+  'device.enrolled': { deviceId: string; deviceName: string; deviceType: 'desktop' | 'mobile'; businessId: string }
+  'device.approved': { deviceId: string; approvedBy: string }
+  'device.primary_transferred': { fromDeviceId: string; toDeviceId: string; transferredBy: string }
   'device.online': { deviceId: string }
   'device.offline': { deviceId: string; lastSeenAt: ISO8601 }
   'device.revoked': { deviceId: string; revokedBy: string }

@@ -2,8 +2,9 @@
  * Inventory repository contract — append-only ledger + cached balances.
  */
 
+import type { Sale, SaleLineItem } from '@soostori/contracts'
 import type { StockMovement, StockBalance, StockReservation, StockSummary } from './types.js'
-import type { UUID, ISO8601 } from '@soostori/core'
+import type { UUID, ISO8601, SaleId, SaleItemId, BusinessId, IdempotencyKey } from '@soostori/core'
 
 /** Pagination options — defined locally since core has no equivalent. */
 export interface PaginationOptions {
@@ -42,6 +43,21 @@ export interface InventoryRepository {
   getReservationsBySale(saleId: UUID): Promise<StockReservation[]>
   updateReservationStatus(id: UUID, status: StockReservation['status']): Promise<void>
   getActiveReservations(productId: UUID): Promise<StockReservation[]>
+}
+
+// ── Sale repository ────────────────────────────────────────────────────────────
+
+export interface SaleRepository {
+  getSale(id: SaleId): Promise<Sale | null>
+  upsertSale(sale: Sale): Promise<void>
+  listSales(businessId: BusinessId): Promise<Sale[]>
+  /** Idempotency lookup — finds an existing sale by idempotency key. */
+  getSaleByIdempotencyKey(key: IdempotencyKey): Promise<Sale | null>
+  getSaleItem(id: SaleItemId): Promise<SaleLineItem | null>
+  upsertSaleItem(item: SaleLineItem): Promise<void>
+  listSaleItems(saleId: SaleId): Promise<SaleLineItem[]>
+  /** Idempotency lookup — finds an existing sale item by composite key. */
+  getSaleItemByIdempotencyKey(key: IdempotencyKey): Promise<SaleLineItem | null>
 }
 
 export class InsufficientStockError extends Error {
