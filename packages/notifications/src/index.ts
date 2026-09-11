@@ -1,3 +1,7 @@
 export * from './channel.js'
 export * from './preferences.js'
+export * from './preferences-service.js'
 export * from './engine.js'
+export * from './notification-service.js'
+export * from './in-app.js'
+export * from './types.js'

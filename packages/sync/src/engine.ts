@@ -41,6 +41,8 @@ export interface SyncEngineOptions {
   queue: QueueStorage
   primary?: PrimaryDeviceCoordinator
   cursor?: SyncCursor | null
+  /** Called after each event is successfully written to the cloud. */
+  onEventSent?: (event: SoostoriEvent) => void
 }
 
 /**
@@ -60,6 +62,7 @@ export class SyncEngine {
   private readonly conflicts: SyncConflictRecord[] = []
   /** Last known entity version per entityId — used for STALE_VERSION conflict detection. */
   private entityVersions = new Map<string, number>()
+  private readonly onEventSent?: (event: SoostoriEvent) => void
 
   constructor(options: SyncEngineOptions) {
     this.shopId = options.shopId
@@ -68,6 +71,7 @@ export class SyncEngine {
     this.queue = new OfflineQueue(options.queue)
     this.primary = options.primary
     this.cursor = options.cursor ?? null
+    this.onEventSent = options.onEventSent
     // Load persisted processed events asynchronously.
     void this.loadProcessedEvents()
   }
@@ -158,6 +162,7 @@ export class SyncEngine {
         }
         await this.cloud.transact([['update', 'syncEvents', item.event.id, this.eventToInstaml(item.event)]])
         await this.queue.markSent(item.id)
+        this.onEventSent?.(item.event)
         pushed++
       } catch (err) {
         await this.queue.markFailed(item.id, String(err))

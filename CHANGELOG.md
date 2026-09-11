@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-alpha.21] — 2025-09-11 (Phase 17 Notifications)
+### Added
+- **`packages/notifications/src/types.ts`**: Canonical `NotificationEventType` enum (19 event types: `sale.created`, `sale.refunded`, `debt.created`, `debt.payment_recorded`, `debt.settled`, `expense.created`, `expense.approved`, `expense.paid`, `inventory.low_stock`, `inventory.received`, `inventory.adjusted`, `team.invitation_sent`, `team.member_added`, `team.role_changed`, `device.enrolled`, `device.approved`, `device.revoked`, `device.primary_changed`, `commission.created`, `commission.paid`). `NotificationEvent` interface with id, businessId, eventType, payload, channels, priority, createdAt, readAt, deliveredAt. `NotificationChannel` interface. `NotificationPreferences` interface. `syncEventToNotificationType()` helper.
+- **`packages/notifications/src/notification-service.ts`**: `NotificationService` — `send(event)`, `notifyUser(userId, eventType, payload, businessId, priority?)`, `notifyBusiness(businessId, eventType, payload, recipientIds, priority?)`. Respects user preferences; channel failures are fire-and-forget.
+- **`packages/notifications/src/in-app.ts`**: `InAppChannel` implementing `NotificationChannel` with platform-injected `NotificationStore`.
+- **`packages/notifications/src/preferences-service.ts`**: `NotificationPreferencesService` — `getPreferences(userId)`, `setPreferences(userId, eventType, prefs)`, `getEnabledChannels(userId, eventType)`. In-memory fallback; `NotificationPreferencesStorage` interface for platform persistence.
+- **`packages/sync/src/engine.ts`**: Added `onEventSent?: (event: SoostoriEvent) => void` hook to `SyncEngineOptions`; called after every event is successfully written to FIDScript (cloud). Enables NotificationService wiring without coupling sync to notifications.
+
 ## [0.1.0-alpha.20] — 2025-09-11 (Phase 16.1 Sync Correctness)
 ### Fixed
 - **`packages/sync/src/engine.ts` — `pullSinceCursor`**: Added `shopId` filter to the cloud query — was querying ALL shops' events (critical cross-tenant bug). Also fixed `sequence` to use `sequenceNumber` field (server-assigned) instead of deriving from `syncedAt` timestamp, and fixed `idempotencyKey` to use the dedicated `idempotencyKey` field instead of falling back to `id` or `syncedAt`.
