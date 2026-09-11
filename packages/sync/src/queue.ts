@@ -21,10 +21,14 @@ export interface QueueStorage {
   delete(id: string): void | Promise<void>
   /** Mark items older than the cursor as sent. */
   pruneSent(): void | Promise<void>
+  /** Persist processed event idempotency keys. */
+  saveProcessedEvents(keys: string[]): void | Promise<void>
+  /** Load persisted processed event idempotency keys. */
+  loadProcessedEvents(): string[] | Promise<string[]>
 }
 
 export class OfflineQueue {
-  constructor(private readonly storage: QueueStorage) {}
+  constructor(readonly storage: QueueStorage) {}
 
   async add(event: SoostoriEvent): Promise<OfflineQueueItem> {
     const item: OfflineQueueItem = {
@@ -42,8 +46,18 @@ export class OfflineQueue {
   async getPending(): Promise<OfflineQueueItem[]> {
     const all = await this.storage.getAll()
     return all.filter(item =>
-      item.status === 'pending' || (item.status === 'failed' && new Date(item.nextRetryAt) <= new Date())
+      item.status === 'pending' ||
+      (item.status === 'failed' && new Date(item.nextRetryAt) <= new Date())
     )
+  }
+
+  async markInFlight(id: string): Promise<void> {
+    const all = await this.storage.getAll()
+    const item = all.find(i => i.id === id)
+    if (item) {
+      item.status = 'in_flight'
+      await this.storage.save(item)
+    }
   }
 
   async markSent(id: string): Promise<void> {

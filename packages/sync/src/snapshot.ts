@@ -34,11 +34,32 @@ export async function downloadInitialSnapshot(opts: SnapshotImportOptions): Prom
     }).catch(() => ({ customers: [] })),
   ])
 
+  // Validate that records carry a version field — reject silently malformed data.
+  const products = productsRes.products ?? []
+  const categories = categoriesRes.categories ?? []
+  const customers = customersRes.customers ?? []
+
+  for (const p of products) {
+    if (typeof (p as Record<string, unknown>).version !== 'number') {
+      console.error('[downloadInitialSnapshot] product missing version:', p.id ?? p)
+    }
+  }
+  for (const c of categories) {
+    if (typeof (c as Record<string, unknown>).version !== 'number') {
+      console.error('[downloadInitialSnapshot] category missing version:', c.id ?? c)
+    }
+  }
+  for (const cu of customers) {
+    if (typeof (cu as Record<string, unknown>).version !== 'number') {
+      console.error('[downloadInitialSnapshot] customer missing version:', cu.id ?? cu)
+    }
+  }
+
   const snapshotId = newId()
   const result: SnapshotResult = {
-    products: productsRes.products?.length ?? 0,
-    categories: categoriesRes.categories?.length ?? 0,
-    customers: customersRes.customers?.length ?? 0,
+    products: products.length,
+    categories: categories.length,
+    customers: customers.length,
     total: 0,
     snapshotId,
   }

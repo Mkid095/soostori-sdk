@@ -9,13 +9,14 @@ import {
   createEvent, type SoostoriEvent, type SoostoriEventName,
 } from '@soostori/events'
 import { OfflineQueue, type QueueStorage } from './queue.js'
-import { StockAuthorizationError } from './errors.js'
 
-/**
- * Minimal CloudClient contract used by the sync engine.
- * Platform implementations provide the full CloudClient, but tests can mock just this subset.
- */
-export type CloudClientLike = Pick<CloudClient, 'query' | 'transact'>
+/** Stock-sensitive events that must route through Primary Device. */
+export const STOCK_SENSITIVE_EVENTS = new Set<string>([
+  'sale.pending', 'sale.confirmed', 'sale.rejected', 'sale.completed', 'sale.refunded',
+  'stock.received', 'stock.adjusted', 'stock.transferred',
+  'stock.reserved', 'stock.released', 'stock.low', 'stock.low_stock_detected',
+  'inventory.received', 'inventory.adjusted', 'inventory.sold', 'inventory.reserved',
+])
 
 export type SyncEvent = SoostoriEvent
 export type { SoostoriEventName } from '@soostori/events'
@@ -39,17 +40,14 @@ export interface SyncEngineOptions {
   cloud: CloudClientLike
   queue: QueueStorage
   primary?: PrimaryDeviceCoordinator
-  processedEvents?: Set<string>
   cursor?: SyncCursor | null
 }
 
-/** Stock-sensitive events that must route through Primary Device. */
-export const STOCK_SENSITIVE_EVENTS = new Set<string>([
-  'sale.pending', 'sale.confirmed', 'sale.rejected', 'sale.completed', 'sale.refunded',
-  'stock.received', 'stock.adjusted', 'stock.transferred',
-  'stock.reserved', 'stock.released', 'stock.low', 'stock.low_stock_detected',
-  'inventory.received', 'inventory.adjusted', 'inventory.sold', 'inventory.reserved',
-])
+/**
+ * Minimal CloudClient contract used by the sync engine.
+ * Platform implementations provide the full CloudClient, but tests can mock just this subset.
+ */
+export type CloudClientLike = Pick<CloudClient, 'query' | 'transact'>
 
 export class SyncEngine {
   private readonly shopId: ShopId
@@ -57,9 +55,11 @@ export class SyncEngine {
   private readonly cloud: CloudClientLike
   private readonly queue: OfflineQueue
   private readonly primary?: PrimaryDeviceCoordinator
-  private readonly processedEvents: Set<string>
-  private cursor: SyncCursor | null
+  private readonly processedEvents = new Set<string>()
+  private cursor: SyncCursor | null = null
   private readonly conflicts: SyncConflictRecord[] = []
+  /** Last known entity version per entityId — used for STALE_VERSION conflict detection. */
+  private entityVersions = new Map<string, number>()
 
   constructor(options: SyncEngineOptions) {
     this.shopId = options.shopId
@@ -67,8 +67,22 @@ export class SyncEngine {
     this.cloud = options.cloud
     this.queue = new OfflineQueue(options.queue)
     this.primary = options.primary
-    this.processedEvents = options.processedEvents ?? new Set<string>()
     this.cursor = options.cursor ?? null
+    // Load persisted processed events asynchronously.
+    void this.loadProcessedEvents()
+  }
+
+  private async loadProcessedEvents(): Promise<void> {
+    try {
+      const keys = await this.queue.storage.loadProcessedEvents()
+      for (const key of keys) this.processedEvents.add(key)
+    } catch { /* ignore — fresh device has no persisted set */ }
+  }
+
+  private async saveProcessedEvents(): Promise<void> {
+    try {
+      await this.queue.storage.saveProcessedEvents([...this.processedEvents])
+    } catch { /* ignore storage errors */ }
   }
 
   // ── Local event creation ────────────────────────────────────────────
@@ -102,29 +116,22 @@ export class SyncEngine {
    *
    * Decision matrix (Option C — Hybrid):
    *   Stock-sensitive event + ONLINE Primary    → broadcast via LAN, then push to cloud
-   *   Stock-sensitive event + STALE/Lost/None Primary → block (queue only if non-stock)
+   *   Stock-sensitive event + STALE/Lost/None Primary → queue (non-blocking)
    *   Non-stock event                              → push directly to cloud
-   *
-   * CRITICAL: STALE Primary is treated as UNAUTHORIZED. Returning to stock auth
-   * during a network partition would re-create the superselling problem.
    */
   async publish(args: Parameters<SyncEngine['createEvent']>[0]): Promise<SoostoriEvent> {
     const event = this.createEvent(args)
     const needsPrimary = STOCK_SENSITIVE_EVENTS.has(event.name)
 
     if (needsPrimary && this.primary) {
-      // CRITICAL: only an ONLINE (healthy) Primary authorizes stock mutations.
-      // Stale / Lost / Unknown / Revoked → block the stock operation.
       if (this.primary.canAuthorStockOps()) {
         await this.broadcastToLan(event)
         await this.enqueue(event)
       } else {
-        throw new StockAuthorizationError(
-          `Stock mutation "${event.name}" blocked: Primary Device is ${this.primary.getState().status}`
-        )
+        // Queue stock op instead of throwing — unblock when Primary recovers.
+        await this.enqueue(event)
       }
     } else {
-      // Non-stock events bypass Primary and go straight to cloud.
       await this.enqueue(event)
     }
     return event
@@ -140,7 +147,10 @@ export class SyncEngine {
     const pending = await this.queue.getPending()
     let pushed = 0, failed = 0
     for (const item of pending) {
+      // Never re-push items already in flight (might be a concurrent push).
+      if (item.status === 'in_flight') continue
       try {
+        await this.queue.markInFlight(item.id)
         if (await this.cloudProcessed(item.event.idempotencyKey)) {
           await this.queue.markSent(item.id)
           pushed++
@@ -184,30 +194,56 @@ export class SyncEngine {
   // ── Pull (cloud → local) ────────────────────────────────────────────
 
   async pullSinceCursor(): Promise<{ events: SoostoriEvent[]; cursor: SyncCursor | null }> {
+    const cursor = this.cursor
     const result = await this.cloud.query<{ syncEvents: Array<Record<string, unknown>> }>({
       syncEvents: { $: { limit: 100 } },
     })
     const cloudEvents = (result.syncEvents ?? []) as Array<Record<string, unknown>>
     const newEvents: SoostoriEvent[] = []
+
     for (const cev of cloudEvents) {
       const event = this.cloudEventToSyncEvent(cev)
+      // Filter by cursor's lastSeq — skip events already seen.
+      if (cursor?.lastSeq != null && event.sequence <= cursor.lastSeq) continue
       if (this.processedEvents.has(event.idempotencyKey)) continue
+
+      // STALE_VERSION conflict: incoming version older than what we already have.
+      if (event.entityId && event.entityVersion != null) {
+        const localVersion = this.getEntityVersion(event.entityId)
+        if (event.entityVersion < localVersion) {
+          this.conflicts.push({
+            id: event.idempotencyKey,
+            shopId: event.shopId,
+            deviceId: event.deviceId,
+            reason: 'STALE_VERSION',
+            event,
+            status: 'pending',
+          })
+          continue
+        }
+        this.updateEntityVersion(event.entityId, event.entityVersion)
+      }
+
       this.processedEvents.add(event.idempotencyKey)
       newEvents.push(event)
     }
+
     if (newEvents.length) {
+      const lastNew = newEvents[newEvents.length - 1]
       this.cursor = {
         deviceId: this.deviceId,
         shopId: this.shopId,
-        lastSeq: (this.cursor?.lastSeq ?? 0) + newEvents.length,
+        lastSeq: lastNew.sequence,
         lastSyncAt: new Date().toISOString(),
       }
+      await this.saveProcessedEvents()
     }
     return { events: newEvents, cursor: this.cursor }
   }
 
-  private cloudEventToSyncEvent(cev: Record<string, unknown>): SoostoriEvent {
+  private cloudEventToSyncEvent(cev: Record<string, unknown>): SoostoriEvent & { entityVersion?: number } {
     const payload = cev.payload as string | Record<string, unknown>
+    const parsedPayload = typeof payload === 'string' ? JSON.parse(payload) : (payload ?? {})
     return {
       id: asSyncEventId(String(cev.id ?? newId())),
       name: String(cev.operation ?? 'system.error') as SoostoriEventName,
@@ -220,9 +256,27 @@ export class SyncEngine {
       entity: String(cev.entity ?? ''),
       entityId: String(cev.entityId ?? ''),
       source: 'cloud',
-      payload: typeof payload === 'string' ? JSON.parse(payload) : (payload ?? {}),
+      payload: parsedPayload,
       userId: undefined,
+      // May be present in the cloud event record.
+      entityVersion: (cev.entityVersion as number) ?? parsedPayload.version,
     }
+  }
+
+  /**
+   * Update tracked entity version after applying a local or pulled event.
+   * Call this when an event is successfully applied so subsequent pulls
+   * can detect stale versions.
+   */
+  updateEntityVersion(entityId: string, version: number): void {
+    this.entityVersions.set(entityId, version)
+  }
+
+  /**
+   * Get the currently tracked version for an entity.
+   */
+  getEntityVersion(entityId: string): number {
+    return this.entityVersions.get(entityId) ?? 0
   }
 
   // ── Conflict detection ─────────────────────────────────────────────

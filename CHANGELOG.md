@@ -179,6 +179,20 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- **`packages/sync`** (Phase 16 — Offline-First): `OfflineQueue.markInFlight(id)` — marks item `in_flight` when push begins, preventing duplicate push on concurrent/timeout retry.
+- **`packages/sync`** (Phase 16 — Offline-First): `QueueStorage.loadProcessedEvents()` / `saveProcessedEvents()` — persist processed `idempotencyKey` set to storage; loaded on `SyncEngine` init and saved after each successful `pullSinceCursor()`, preventing duplicate replay after app restart.
+- **`packages/sync`** (Phase 16 — Offline-First): `SyncEngine.updateEntityVersion(entityId, version)` / `getEntityVersion(entityId)` — track per-entity version for STALE_VERSION conflict detection.
+- **`packages/sync`** (Phase 16 — Offline-First): `downloadInitialSnapshot()` now validates that each product, category, and customer record carries a numeric `version` field; logs `console.error` for any record that is missing it instead of silently accepting malformed data.
+- **`packages/offline`** (Phase 16): `OfflineQueue` now exposes `QueueStorage.loadProcessedEvents()` / `saveProcessedEvents()` contract for idempotency-key persistence.
+
+### Fixed
+
+- **`packages/sync`** (Phase 16 — Offline-First): `pullSinceCursor()` now filters incoming cloud events by `cursor.lastSeq` — events with `sequence <= cursor.lastSeq` are skipped, preventing re-processing of already-seen events.
+- **`packages/sync`** (Phase 16 — Offline-First): `pullSinceCursor()` now uses the last pulled event's `sequence` as `cursor.lastSeq` (not count-based increment) for accurate monotonic cursor tracking.
+- **`packages/sync`** (Phase 16 — Offline-First): `publish()` queues stock-sensitive events in `OfflineQueue` when `primary.canAuthorStockOps() === false` instead of throwing `StockAuthorizationError` — no more hard-block on Primary Device loss.
+- **`packages/sync`** (Phase 16 — Offline-First): `pushPending()` marks items `in_flight` before attempting cloud transact, and skips `in_flight` items to prevent duplicate push on concurrent calls.
+- **`packages/sync`** (Phase 16 — Offline-First): `STALE_VERSION` conflict detection wired in `pullSinceCursor()` — when `event.entityVersion < localVersion`, creates a `pending` conflict record in `this.conflicts` instead of applying the stale event.
+
 - **`@soostori/auth`** (NEW): `OperationalAuth` class in `operational-auth.ts` — device-local PIN verification and enrollment state machine. Handles "can this device operate?" layer separate from cloud `CloudAuth`.
 - **`@soostori/auth`** (NEW): `DeviceEnrollmentState` union type: `DEVICE_NOT_ENROLLED | PIN_SETUP_REQUIRED | PIN_VERIFICATION_REQUIRED | OPERATIONAL`.
 - **`@soostori/auth`** (NEW): `OperationalSession` interface — local PIN-verified session with TTL.
