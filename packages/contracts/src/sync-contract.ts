@@ -106,7 +106,7 @@ export type SyncApplyResult =
  */
 export interface SyncEngine {
   /** Queue an event for transmission to the cloud. */
-  enqueue(event: SyncEvent): Promise<{ state: 'queued' | 'acked' | 'rejected' }>
+  enqueue(event: SyncEvent): Promise<{ state: 'queued' | 'acked' | 'rejected' | 'failed'; error?: string }>
   /** Pull new events from the cloud since `cursor`. */
   pull(cursor: SyncCursor): Promise<SyncEvent[]>
   /** Apply a single event to a local row. Idempotent on `idempotencyKey`. */
