@@ -13,8 +13,7 @@ export type DeviceType = 'desktop' | 'mobile'
 
 export type DeviceStatus = 'pending' | 'authorized' | 'revoked' | 'offline'
 
-/** Device role within a shop's LAN. */
-export type DeviceRole = 'primary' | 'standard' | 'mobile'
+export type DeviceRole = 'lan_host' | 'standard' | 'mobile'
 
 export interface Device {
   id: UUID
@@ -22,8 +21,8 @@ export interface Device {
   deviceName: string
   deviceType: DeviceType
   status: DeviceStatus
-  /** True if this device is the LAN Primary. Mutually exclusive within a shop. */
-  isPrimary: boolean
+  /** True if this device is the LAN host. Authoritative for stock mutations in offline mode. Mutually exclusive within a shop. */
+  isLanHost: boolean
   /** When device was last seen (heartbeat). */
   lastSeenAt: ISO8601 | null
   /** When device was authorized for this shop. */
@@ -52,12 +51,12 @@ export interface DeviceIdentity {
   registeredAt: ISO8601 | null
 }
 
-/** LAN heartbeat — every 30s from terminal, every 5s from primary. */
+/** LAN heartbeat — every 30s from terminal, every 5s from LAN host. */
 export interface Heartbeat {
   deviceId: UUID
   shopId: ShopId
   timestamp: ISO8601
-  isPrimary: boolean
+  isLanHost: boolean
   reachable: boolean
   /** Stock sequence number — terminals use this for catch-up. */
   stockSequence: number

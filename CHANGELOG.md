@@ -2,6 +2,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-alpha.22] — 2026-09-11 (Phase 18 FIDScript Gaps + Auth Backend + Commercial)
+### Added
+- **`packages/sync/src/idempotency.ts`**: `computeIdempotencyKey()` — deterministic fallback key (entity:entityId:operation:sequence) when FIDScript schema lacks idempotencyKey field. `detectIdempotencyKeySupport()` for one-time runtime probe. `setIdempotencyKeySupport()` for direct override.
+- **`packages/sync/src/engine.ts`**: Updated `cloudEventToSyncEvent()` to use deterministic composite fallback when idempotencyKey is absent from FIDScript. Added `idempotencyKeySupport?: 'required' | 'optional' | 'unsupported'` to `SyncEngineOptions`. `computeIdempotencyKey()` now used in `cloudProcessed` path.
+- **`packages/sync/src/index.ts`**: Exports `idempotency.js`.
+- **`packages/devices/src/types.ts`**: Renamed `Device.isPrimary` → `Device.isLanHost` (LAN host = authoritative for stock mutations in offline mode). Updated `Heartbeat.isPrimary` → `Heartbeat.isLanHost`. Updated `DeviceRole` type: `'primary'` → `'lan_host'`. Updated doc comments.
+- **`packages/devices/src/errors.ts`**: Added `LanHostRequiredError`.
+- **`packages/devices/src/DeviceService.ts`**: Replaced `isPrimary` with `isLanHost` throughout. Added `getLanHost()` — returns the current LAN host device for the shop. Added `setLanHost(targetDeviceId, transferredBy)` — transfers host authority with event emission.
+- **`packages/devices/src/primary.ts`**: Updated heartbeat ingestion to use `isLanHost` field name.
+- **`packages/devices/src/index.ts`**: Added `errors.js` export.
+- **`packages/devices/README.md`**: Updated to use `isLanHost` / `lan_host` terminology throughout.
+- **`packages/devices/test/DeviceService.test.ts`**: Replaced all `isPrimary` references with `isLanHost`.
+- **`packages/devices/test/devices.test.ts`**: Replaced all `isPrimary` references with `isLanHost`.
+- **`packages/auth/src/api-client.ts`**: `HttpAuthApiClient` — full `AuthApiClient` implementation using Next.js Route Handlers. All 14+ interface methods mapped to HTTP endpoints. Uses configurable `baseUrl` + `fetch`. Exports `AuthApiClientConfig`.
+- **`packages/auth/src/mock-api-client.ts`**: `MockAuthApiClient` — in-memory `AuthApiClient` implementation for SDK tests. All methods return typed success responses by default. Configurable via `mock` property override map.
+- **`packages/auth/src/enrollment-token.ts`**: Enrollment token specification and types (`EnrollmentToken`, `CreateEnrollmentTokenInput`, `ConsumeEnrollmentTokenInput`). Documents backend route handlers: `POST /api/commercial/enrollment-token`, `GET /api/commercial/enrollment-token/:employeeId`, `POST /api/auth/devices/pin/consume-with-token`. Full error code table (EXPIRED, CONSUMED, REPLAY, SCOPE_MISMATCH).
+- **`packages/auth/src/index.ts`**: Added exports for `HttpAuthApiClient`, `AuthApiClientConfig`, `MockAuthApiClient`, `MockAuthApiClientConfig`, `enrollment-token.js`.
+- **`packages/commercial/package.json`**: New package `@soostori/commercial`.
+- **`packages/commercial/tsconfig.json`**: Standard Soostori TypeScript config.
+- **`packages/commercial/src/types.ts`**: `EnrolledBusiness`, `CommissionSummary` interfaces.
+- **`packages/commercial/src/PackageRepository.ts`**: Repository interface — `findBySalespersonId()`, `getBusinessForPackage()`, `getCommissionLedger()`, `upsertPackage()`.
+- **`packages/commercial/src/CommissionService.ts`**: `CommissionService` — `getCommissionSummary(salespersonCloudId)` aggregates all active packages, resolves business names, computes commission splits via `calculateCommission()`, returns per-business breakdown + totals.
+- **`packages/commercial/src/index.ts`**: Barrel export.
+- **`packages/commercial/test/CommissionService.test.ts`**: 5 tests — empty packages, single active package (verifies correct split math), multiple packages (verifies aggregation), inactive packages filtered, missing business name fallback.
+- **`packages/commercial/README.md`**: Commission model table + usage example.
+
+### Changed
+- **`tsconfig.json`**: Added `packages/commercial` to project references.
+- **`vitest.config.ts`**: Added `@soostori/commercial` path alias.
+
+### Fixed
+- **`packages/devices/test/devices.test.ts`**: Fixed `PrimaryDeviceCoordinator` tests — coordinator now uses `BUSINESS = asBusinessId('biz-1')` (matching `DeviceService.test.ts`) so heartbeat `shopId` matches the coordinator's `shopId`. Previously used `asShopId('shop-1')` which was a different string, causing all elections to be silently skipped.
+- **`packages/devices/test/DeviceService.test.ts`**: Mock repo now fabricates the service's own `deviceId` so `this.repository.findDevice(this.deviceId)` returns a valid device during `transferPrimary` calls (fixes "Only the current primary device can initiate a transfer" error when testing transfers from non-enrolled devices). All test imports updated to `../dist/index.js` to work around vitest/esbuild class method transformation bug.
+
 ## [0.1.0-alpha.21] — 2025-09-11 (Phase 17 Notifications)
 ### Added
 - **`packages/notifications/src/types.ts`**: Canonical `NotificationEventType` enum (19 event types: `sale.created`, `sale.refunded`, `debt.created`, `debt.payment_recorded`, `debt.settled`, `expense.created`, `expense.approved`, `expense.paid`, `inventory.low_stock`, `inventory.received`, `inventory.adjusted`, `team.invitation_sent`, `team.member_added`, `team.role_changed`, `device.enrolled`, `device.approved`, `device.revoked`, `device.primary_changed`, `commission.created`, `commission.paid`). `NotificationEvent` interface with id, businessId, eventType, payload, channels, priority, createdAt, readAt, deliveredAt. `NotificationChannel` interface. `NotificationPreferences` interface. `syncEventToNotificationType()` helper.

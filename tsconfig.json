@@ -23,6 +23,7 @@
     { "path": "packages/whatsapp" },
     { "path": "packages/cloud" },
     { "path": "packages/desktop-adapter" },
-    { "path": "packages/team" }
+    { "path": "packages/team" },
+    { "path": "packages/commercial" }
   ]
 }

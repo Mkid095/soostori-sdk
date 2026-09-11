@@ -1,32 +1,32 @@
 # @soostori/devices
 
-Device identity + Primary Device coordinator — the LAN authority for stock mutations.
+Device identity + LAN Host coordinator — the LAN authority for stock mutations.
 
-## Architecture (Option C — Hybrid Primary)
+## Architecture (Option C — Hybrid)
 
-Each business has a designated **Primary Device** on the LAN:
+Each business has a designated **LAN Host** on the LAN:
 
 ```
-                Primary Device
+                LAN Host
                  │
        ┌─────────┼────────────┐
    Terminal 1  Terminal 2   Mobile
 ```
 
-Stock-sensitive operations (sale, stock receipt, stock adjustment) route through Primary.
+Stock-sensitive operations (sale, stock receipt, stock adjustment) route through the LAN Host.
 Non-stock operations (customer edits, debt records) work offline independently.
 
 ## Why manual failover only?
 
 In a POS handling money and inventory:
 
-> Two devices accidentally becoming Primary is **worse** than temporarily restricting stock ops.
+> Two devices accidentally becoming LAN Host is **worse** than temporarily restricting stock ops.
 
 So this SDK:
-- Auto-elects Primary when first device joins a shop LAN
-- Allows manual `transferPrimary(toDevice, fromDevice)`
-- Detects Primary loss after grace period (default 60s)
-- Does **not** automatically elect a new Primary
+- Auto-elects LAN Host when first device joins a shop LAN
+- Allows manual `setLanHost(targetDeviceId, transferredBy)`
+- Detects LAN Host loss after grace period (default 60s)
+- Does **not** automatically elect a new LAN Host
 
 ## Modules
 
@@ -35,11 +35,13 @@ So this SDK:
 | `types.ts` | `Device`, `DeviceIdentity`, `Heartbeat`, `PrimaryDeviceState` |
 | `primary.ts` | `PrimaryDeviceCoordinator` — heartbeats, election, transfer, canAuthorStockOps |
 | `repository.ts` | Storage abstraction for device records |
+| `errors.ts` | `LanHostRequiredError` |
+| `DeviceService.ts` | `DeviceService` — canonical device management, getLanHost, setLanHost |
 
 ## Usage
 
 ```ts
-import { PrimaryDeviceCoordinator } from '@soostori/devices'
+import { PrimaryDeviceCoordinator, LanHostRequiredError } from '@soostori/devices'
 
 const coordinator = new PrimaryDeviceCoordinator({
   shopId,
@@ -49,7 +51,7 @@ const coordinator = new PrimaryDeviceCoordinator({
 // On heartbeat from a peer
 coordinator.ingestHeartbeat({
   deviceId: peerId, shopId, timestamp: new Date().toISOString(),
-  isPrimary: true, reachable: true, stockSequence: 42,
+  isLanHost: true, reachable: true, stockSequence: 42,
 })
 
 // Periodic state update
@@ -57,6 +59,6 @@ coordinator.tick()
 
 // Before processing a sale
 if (!coordinator.canAuthorStockOps()) {
-  throw new Error('Primary unavailable — sale queued')
+  throw new LanHostRequiredError()
 }
 ```

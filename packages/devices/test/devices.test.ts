@@ -1,10 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
-import { PrimaryDeviceCoordinator } from '../src/index'
+import { PrimaryDeviceCoordinator } from '../dist/index.js'
 import { getEventBus } from '@soostori/events'
 import { PRIMARY_DEVICE_ELECTED, PRIMARY_DEVICE_LOST, HOST_TRANSFER } from '@soostori/events'
-import { newId, asShopId } from '@soostori/core'
+import { newId, asBusinessId } from '@soostori/core'
 
-const SHOP = asShopId('shop-1')
+const BUSINESS = asBusinessId('biz-1')
+const SHOP = BUSINESS // alias for clarity — PrimaryDeviceCoordinator uses shopId
 
 describe('PrimaryDeviceCoordinator', () => {
   it('starts with no primary', () => {
@@ -23,8 +24,8 @@ describe('PrimaryDeviceCoordinator', () => {
 
     const peerPrimary = newId()
     c.ingestHeartbeat({
-      deviceId: peerPrimary as any, shopId: SHOP, timestamp: new Date().toISOString(),
-      isPrimary: true, reachable: true, stockSequence: 1,
+      deviceId: peerPrimary as any, shopId: BUSINESS as any, timestamp: new Date().toISOString(),
+      isLanHost: true, reachable: true, stockSequence: 1,
     })
 
     expect(c.getState().primaryId).toBe(peerPrimary)
@@ -44,9 +45,9 @@ describe('PrimaryDeviceCoordinator', () => {
     const peer = newId() as any
     const old = Date.now() - 5000
     c.ingestHeartbeat({
-      deviceId: peer, shopId: SHOP,
+      deviceId: peer, shopId: BUSINESS as any,
       timestamp: new Date(old).toISOString(),
-      isPrimary: true, reachable: true, stockSequence: 1,
+      isLanHost: true, reachable: true, stockSequence: 1,
     })
     c.tick()
     expect(c.getState().status).toBe('lost')
@@ -63,16 +64,16 @@ describe('PrimaryDeviceCoordinator', () => {
     expect(c.canAuthorStockOps()).toBe(false)  // no primary elected
 
     c.ingestHeartbeat({
-      deviceId: newId() as any, shopId: SHOP, timestamp: new Date().toISOString(),
-      isPrimary: true, reachable: true, stockSequence: 1,
+      deviceId: newId() as any, shopId: BUSINESS as any, timestamp: new Date().toISOString(),
+      isLanHost: true, reachable: true, stockSequence: 1,
     })
     expect(c.canAuthorStockOps()).toBe(true)  // online
 
     c.reset()
     c.ingestHeartbeat({
-      deviceId: newId() as any, shopId: SHOP,
+      deviceId: newId() as any, shopId: BUSINESS as any,
       timestamp: new Date(Date.now() - 200).toISOString(),  // older than freshness
-      isPrimary: true, reachable: true, stockSequence: 1,
+      isLanHost: true, reachable: true, stockSequence: 1,
     })
     c.tick()  // tick() advances staleness based on heartbeat age
     expect(c.canAuthorStockOps()).toBe(false)  // STALE — must NOT authorize
@@ -83,8 +84,8 @@ describe('PrimaryDeviceCoordinator', () => {
     expect(c.canAuthorStockOps()).toBe(false)
 
     c.ingestHeartbeat({
-      deviceId: newId() as any, shopId: SHOP, timestamp: new Date().toISOString(),
-      isPrimary: true, reachable: true, stockSequence: 1,
+      deviceId: newId() as any, shopId: BUSINESS as any, timestamp: new Date().toISOString(),
+      isLanHost: true, reachable: true, stockSequence: 1,
     })
     c.tick()
     expect(c.canAuthorStockOps()).toBe(true)
@@ -97,8 +98,8 @@ describe('PrimaryDeviceCoordinator', () => {
     const newPrimary = newId() as any
 
     c.ingestHeartbeat({
-      deviceId: oldPrimary, shopId: SHOP, timestamp: new Date().toISOString(),
-      isPrimary: true, reachable: true, stockSequence: 1,
+      deviceId: oldPrimary, shopId: BUSINESS as any, timestamp: new Date().toISOString(),
+      isLanHost: true, reachable: true, stockSequence: 1,
     })
     expect(c.getState().primaryId).toBe(oldPrimary)
 
@@ -120,11 +121,11 @@ describe('PrimaryDeviceCoordinator', () => {
     const c = new PrimaryDeviceCoordinator({ shopId: SHOP, deviceId: newId() as any })
     c.ingestHeartbeat({
       deviceId: newId() as any, shopId: SHOP, timestamp: new Date().toISOString(),
-      isPrimary: true, reachable: true, stockSequence: 1,
+      isLanHost: true, reachable: true, stockSequence: 1,
     })
     c.ingestHeartbeat({
       deviceId: newId() as any, shopId: SHOP, timestamp: new Date().toISOString(),
-      isPrimary: false, reachable: true, stockSequence: 0,
+      isLanHost: false, reachable: true, stockSequence: 0,
     })
     expect(c.listDevices()).toHaveLength(2)
   })

@@ -38,6 +38,7 @@ export default defineConfig({
       '@soostori/contracts': resolve(ROOT, 'packages/contracts/src/index.ts'),
       '@soostori/updates': resolve(ROOT, 'packages/updates/src/index.ts'),
       '@soostori/team': resolve(ROOT, 'packages/team/src/index.ts'),
+      '@soostori/commercial': resolve(ROOT, 'packages/commercial/src/index.ts'),
     },
   },
 })

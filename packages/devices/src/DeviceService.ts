@@ -84,7 +84,7 @@ export class DeviceService {
       deviceName: parsed.deviceName,
       deviceType: parsed.deviceType,
       status: 'pending',
-      isPrimary: false,
+      isLanHost: false,
       lastSeenAt: now,
       authorizedAt: null,
       activeEmployeeId: null,
@@ -150,8 +150,8 @@ export class DeviceService {
     const now: ISO8601 = new Date().toISOString()
     await this.repository.revokeDevice(deviceId, now)
 
-    // If revoking the primary, trigger a transfer
-    if (device.isPrimary && this.primary) {
+    // If revoking the LAN host, trigger a transfer
+    if (device.isLanHost && this.primary) {
       this.primary.transferPrimary(deviceId as any, this.deviceId as any)
     }
 
@@ -190,8 +190,8 @@ export class DeviceService {
     this.primary.transferPrimary(toDeviceId as any, this.deviceId as any)
 
     // Update both devices in repository
-    await this.repository.updateDevice(this.deviceId, { isPrimary: false })
-    await this.repository.updateDevice(toDeviceId, { isPrimary: true })
+    await this.repository.updateDevice(this.deviceId, { isLanHost: false })
+    await this.repository.updateDevice(toDeviceId, { isLanHost: true })
 
     const event = createEvent({
       name: DEVICE_PRIMARY_TRANSFERRED,
@@ -235,5 +235,50 @@ export class DeviceService {
   /** Get a single device. */
   async getDevice(deviceId: DeviceId): Promise<Device | null> {
     return this.repository.findDevice(deviceId)
+  }
+
+  /** Return the LAN host device for this shop, if any. */
+  async getLanHost(): Promise<Device | null> {
+    const devices = await this.repository.findByShop(this.businessId as any)
+    return devices.find(d => d.isLanHost) ?? null
+  }
+
+  /**
+   * Transfer LAN host authority to another device.
+   * Demotes the current host and promotes the target.
+   */
+  async setLanHost(targetDeviceId: DeviceId, transferredBy: UserId): Promise<void> {
+    if (!this.primary) throw new Error('PrimaryDeviceCoordinator not configured')
+
+    const currentHost = await this.getLanHost()
+    const target = await this.repository.findDevice(targetDeviceId)
+    if (!target) throw new Error(`Target device not found: ${targetDeviceId}`)
+    if (target.status !== 'authorized') {
+      throw new Error(`Target device is not authorized: ${targetDeviceId}`)
+    }
+
+    if (currentHost) {
+      await this.repository.updateDevice(currentHost.id, { isLanHost: false })
+    }
+    await this.repository.updateDevice(targetDeviceId, { isLanHost: true })
+
+    this.primary.transferPrimary(targetDeviceId as any, this.deviceId as any)
+
+    const event = createEvent({
+      name: HOST_TRANSFER,
+      shopId: this.businessId as any,
+      deviceId: this.deviceId,
+      userId: transferredBy,
+      entityId: targetDeviceId,
+      entity: 'device',
+      payload: {
+        fromDeviceId: currentHost?.id ?? null,
+        toDeviceId: targetDeviceId,
+        transferredBy,
+        reason: 'lan_host_transfer',
+      },
+    })
+    await this.syncEngine.enqueue(event)
+    void getEventBus().publish(event)
   }
 }

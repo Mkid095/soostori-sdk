@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { DeviceService, type SyncEngineLike } from '../src/DeviceService'
-import { PrimaryDeviceCoordinator } from '../src/index'
+import { DeviceService, type SyncEngineLike } from '../dist/DeviceService.js'
+import { PrimaryDeviceCoordinator } from '../dist/index.js'
 import { getEventBus } from '@soostori/events'
 import {
   DEVICE_ENROLLED, DEVICE_APPROVED, DEVICE_REVOKED,
   DEVICE_PRIMARY_TRANSFERRED, HOST_TRANSFER,
 } from '@soostori/events'
 import { newId, asBusinessId } from '@soostori/core'
-import type { Device, DevicesRepository } from '../src/index'
+import type { Device, DevicesRepository } from '../dist/index.js'
 import type { SoostoriEvent } from '@soostori/events'
 
 const BUSINESS = asBusinessId('biz-1')
@@ -20,7 +20,28 @@ function createMockRepo(): DevicesRepository {
   return {
     async getLocalIdentity() { return null },
     async saveLocalIdentity() {},
-    async findDevice(id) { return devices.get(String(id)) ?? null },
+    async findDevice(id) {
+      const d = devices.get(String(id))
+      if (d) return d
+      // Fabricate the service's own deviceId so it passes the primary check
+      if (String(id) === String(DEVICE_ID)) {
+        return {
+          id: DEVICE_ID as DeviceId,
+          shopId: BUSINESS,
+          deviceName: 'Own Device',
+          deviceType: 'desktop' as const,
+          status: 'authorized' as const,
+          isLanHost: false,
+          lastSeenAt: null,
+          authorizedAt: null,
+          activeEmployeeId: null,
+          appVersion: null,
+          hostname: null,
+          platform: null,
+        }
+      }
+      return null
+    },
     async findByShop() { return [...devices.values()] },
     async registerDevice(d) { devices.set(String(d.id), d) },
     async updateDevice(id, changes) {
@@ -90,7 +111,7 @@ describe('DeviceService', () => {
       expect(device.status).toBe('pending')
       expect(device.deviceName).toBe('POS Terminal 1')
       expect(device.deviceType).toBe('desktop')
-      expect(device.isPrimary).toBe(false)
+      expect(device.isLanHost).toBe(false)
       expect(device.authorizedAt).toBeNull()
     })
 
@@ -278,7 +299,7 @@ describe('DeviceService', () => {
         deviceId: DEVICE_ID as any,
         shopId: BUSINESS as any,
         timestamp: new Date().toISOString(),
-        isPrimary: true,
+        isLanHost: true,
         reachable: true,
         stockSequence: 1,
       })
@@ -301,7 +322,7 @@ describe('DeviceService', () => {
         deviceId: DEVICE_ID as any,
         shopId: BUSINESS as any,
         timestamp: new Date().toISOString(),
-        isPrimary: true,
+        isLanHost: true,
         reachable: true,
         stockSequence: 1,
       })
@@ -324,7 +345,7 @@ describe('DeviceService', () => {
         deviceId: DEVICE_ID as any,
         shopId: BUSINESS as any,
         timestamp: new Date().toISOString(),
-        isPrimary: true,
+        isLanHost: true,
         reachable: true,
         stockSequence: 1,
       })

@@ -9,6 +9,7 @@ import {
   createEvent, type SoostoriEvent, type SoostoriEventName,
 } from '@soostori/events'
 import { OfflineQueue, type QueueStorage } from './queue.js'
+import { computeIdempotencyKey } from './idempotency.js'
 
 /** Stock-sensitive events that must route through Primary Device. */
 export const STOCK_SENSITIVE_EVENTS = new Set<string>([
@@ -43,6 +44,14 @@ export interface SyncEngineOptions {
   cursor?: SyncCursor | null
   /** Called after each event is successfully written to the cloud. */
   onEventSent?: (event: SoostoriEvent) => void
+  /**
+   * Controls how idempotencyKey is handled when writing to FIDScript.
+   * - 'required': FIDScript requires the field (will error if absent)
+   * - 'optional': FIDScript accepts but ignores it (safe to always include)
+   * - 'unsupported': FIDScript does not have this field (omit; use deterministic fallback)
+   * Default: detected automatically on first write.
+   */
+  idempotencyKeySupport?: 'required' | 'optional' | 'unsupported'
 }
 
 /**
@@ -155,7 +164,7 @@ export class SyncEngine {
       if (item.status === 'in_flight') continue
       try {
         await this.queue.markInFlight(item.id)
-        if (await this.cloudProcessed(item.event.idempotencyKey)) {
+        if (await this.cloudProcessed(computeIdempotencyKey(item.event))) {
           await this.queue.markSent(item.id)
           pushed++
           continue
@@ -254,7 +263,8 @@ export class SyncEngine {
     const payload = cev.payload as string | Record<string, unknown>
     const parsedPayload = typeof payload === 'string' ? JSON.parse(payload) : (payload ?? {})
     const eventId = String(cev.id ?? newId())
-    const idempotencyKeyRaw = cev.idempotencyKey ?? eventId
+    const idempotencyKeyRaw = cev.idempotencyKey
+      ?? `${cev.entity}:${cev.entityId}:${cev.operation}:${cev.sequenceNumber ?? 0}`
     // Guard: skip events not belonging to this shop (belt-and-suspenders after query filter)
     const eventShopId = String(cev.shopId ?? '')
     if (eventShopId && eventShopId !== this.shopId) {
@@ -284,7 +294,7 @@ export class SyncEngine {
       timestamp: String(cev.syncedAt ?? new Date().toISOString()),
       // Prefer sequenceNumber (server-assigned) over timestamp for ordering; fallback to 0
       sequence: Number(cev.sequenceNumber ?? 0),
-      // Use dedicated idempotencyKey field; never fall back to id or timestamp
+      // Use idempotencyKey from schema; fall back to deterministic composite
       idempotencyKey: asSyncEventId(String(idempotencyKeyRaw)),
       entity: String(cev.entity ?? ''),
       entityId: String(cev.entityId ?? ''),

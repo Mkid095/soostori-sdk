@@ -1,20 +1,20 @@
 /**
- * Primary Device management — Option C implementation.
+ * LAN Host Device management — Option C implementation.
  *
- * The Primary Device is the local LAN authority for stock mutations.
- * - Terminals send SALE_REQUEST to the Primary for stock validation
- * - Primary broadcasts SALE_CONFIRMED/SALE_REJECTED
- * - When Primary is lost, non-stock operations continue, stock ops queue
+ * The LAN Host Device is the local LAN authority for stock mutations.
+ * - Terminals send SALE_REQUEST to the LAN Host for stock validation
+ * - LAN Host broadcasts SALE_CONFIRMED/SALE_REJECTED
+ * - When LAN Host is lost, non-stock operations continue, stock ops queue
  *
  * Election rules:
- * - First device to join a shop LAN becomes Primary (auto-election)
- * - Primary can voluntarily step down via HOST_TRANSFER
- * - Primary can be revoked by an owner via the cloud
+ * - First device to join a shop LAN becomes LAN Host (auto-election)
+ * - LAN Host can voluntarily step down via HOST_TRANSFER
+ * - LAN Host can be revoked by an owner via the cloud
  * - Manual failover only — never automatic blind election
  *
  * Why not automatic failover?
  * In a POS with money and inventory, two devices accidentally becoming
- * Primary creates worse problems than temporarily restricting stock ops.
+ * LAN Host creates worse problems than temporarily restricting stock ops.
  */
 
 import type { Device, Heartbeat, PrimaryDeviceState } from './types.js'
@@ -71,8 +71,8 @@ export class PrimaryDeviceCoordinator {
     if (hb.shopId !== this.shopId) return
     this.heartbeats.set(asDeviceId(hb.deviceId as string), hb)
 
-    if (hb.isPrimary) {
-      // This device claims primary
+    if (hb.isLanHost) {
+      // This device claims LAN host
       if (this.state.primaryId === null) {
         this.electPrimary(asDeviceId(hb.deviceId as string), hb.timestamp)
       } else if (this.state.primaryId !== asDeviceId(hb.deviceId as string)) {
@@ -85,8 +85,8 @@ export class PrimaryDeviceCoordinator {
       }
     }
 
-    if (asDeviceId(hb.deviceId as string) === this.localDeviceId && !hb.isPrimary) {
-      // We were Primary but heartbeat claims we're not — possibly transferred
+    if (asDeviceId(hb.deviceId as string) === this.localDeviceId && !hb.isLanHost) {
+      // We were LAN Host but heartbeat claims we're not — possibly transferred
       // The transfer event handles this, so we just continue
     }
   }
