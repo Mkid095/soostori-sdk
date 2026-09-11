@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.0-alpha.20] — 2025-09-11 (Phase 16.1 Sync Correctness)
+### Fixed
+- **`packages/sync/src/engine.ts` — `pullSinceCursor`**: Added `shopId` filter to the cloud query — was querying ALL shops' events (critical cross-tenant bug). Also fixed `sequence` to use `sequenceNumber` field (server-assigned) instead of deriving from `syncedAt` timestamp, and fixed `idempotencyKey` to use the dedicated `idempotencyKey` field instead of falling back to `id` or `syncedAt`.
+- **`packages/sync/src/engine.ts` — cursor persistence ordering**: `saveProcessedEvents()` now runs BEFORE updating `this.cursor` — ensures crash after pull still returns a correct cursor (no event skipping).
+- **`packages/sync/src/engine.ts` — `cloudEventToSyncEvent`**: Added belt-and-suspenders `shopId` guard — skips events for other shops even if query filter missed them.
+- **`packages/sync/src/queue.ts` — dead-letter path**: `markFailed` now caps retries at `MAX_RETRIES=5` and moves exhausted items to dead-letter via optional `saveDeadLetter` hook (backward-compatible with existing `QueueStorage` implementations). Added exponential backoff: 1s, 2s, 4s, 8s, 16s.
+
 ## [0.1.0-alpha.19] — 2025-09-11 (Phase 15 Devices & Primary Device SDK)
 ### Added
 - **`DeviceService`** (`packages/devices/src/DeviceService.ts`): canonical device management service with `enrollDevice`, `approveDevice`, `revokeDevice`, `transferPrimary`, `listDevices`, `getDevice` — all scoped to `businessId` and emitting sync events.
