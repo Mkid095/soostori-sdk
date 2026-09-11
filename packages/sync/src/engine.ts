@@ -195,8 +195,12 @@ export class SyncEngine {
 
   async pullSinceCursor(): Promise<{ events: SoostoriEvent[]; cursor: SyncCursor | null }> {
     const cursor = this.cursor
+    const where: Record<string, unknown> = { shopId: this.shopId }
+    if (cursor?.lastSeq != null) {
+      where['sequenceNumber'] = { $gt: cursor.lastSeq }
+    }
     const result = await this.cloud.query<{ syncEvents: Array<Record<string, unknown>> }>({
-      syncEvents: { $: { limit: 100 } },
+      syncEvents: { $: { where, limit: 100 } },
     })
     const cloudEvents = (result.syncEvents ?? []) as Array<Record<string, unknown>>
     const newEvents: SoostoriEvent[] = []
@@ -221,7 +225,6 @@ export class SyncEngine {
           })
           continue
         }
-        this.updateEntityVersion(event.entityId, event.entityVersion)
       }
 
       this.processedEvents.add(event.idempotencyKey)
@@ -230,13 +233,14 @@ export class SyncEngine {
 
     if (newEvents.length) {
       const lastNew = newEvents[newEvents.length - 1]
+      // Persist cursor BEFORE returning so crash after pullStill gets correct cursor
+      await this.saveProcessedEvents()
       this.cursor = {
         deviceId: this.deviceId,
         shopId: this.shopId,
         lastSeq: lastNew.sequence,
         lastSyncAt: new Date().toISOString(),
       }
-      await this.saveProcessedEvents()
     }
     return { events: newEvents, cursor: this.cursor }
   }
@@ -244,15 +248,39 @@ export class SyncEngine {
   private cloudEventToSyncEvent(cev: Record<string, unknown>): SoostoriEvent & { entityVersion?: number } {
     const payload = cev.payload as string | Record<string, unknown>
     const parsedPayload = typeof payload === 'string' ? JSON.parse(payload) : (payload ?? {})
+    const eventId = String(cev.id ?? newId())
+    const idempotencyKeyRaw = cev.idempotencyKey ?? eventId
+    // Guard: skip events not belonging to this shop (belt-and-suspenders after query filter)
+    const eventShopId = String(cev.shopId ?? '')
+    if (eventShopId && eventShopId !== this.shopId) {
+      return {
+        id: asSyncEventId(eventId),
+        name: 'system.error' as SoostoriEventName,
+        version: 1,
+        shopId: asShopId(eventShopId),
+        deviceId: asDeviceId(String(cev.deviceId ?? '')),
+        timestamp: String(cev.syncedAt ?? new Date().toISOString()),
+        sequence: 0,
+        idempotencyKey: asSyncEventId(String(idempotencyKeyRaw)),
+        entity: String(cev.entity ?? ''),
+        entityId: String(cev.entityId ?? ''),
+        source: 'cloud',
+        payload: parsedPayload,
+        userId: undefined,
+        entityVersion: (cev.entityVersion as number) ?? parsedPayload.version,
+      }
+    }
     return {
-      id: asSyncEventId(String(cev.id ?? newId())),
+      id: asSyncEventId(eventId),
       name: String(cev.operation ?? 'system.error') as SoostoriEventName,
       version: 1,
-      shopId: asShopId(String(cev.shopId ?? '')),
+      shopId: asShopId(eventShopId || this.shopId),
       deviceId: asDeviceId(String(cev.deviceId ?? '')),
       timestamp: String(cev.syncedAt ?? new Date().toISOString()),
-      sequence: Number(cev.syncedAt) || Date.now(),
-      idempotencyKey: asSyncEventId(String(cev.id ?? cev.syncedAt ?? newId())),
+      // Prefer sequenceNumber (server-assigned) over timestamp for ordering; fallback to 0
+      sequence: Number(cev.sequenceNumber ?? 0),
+      // Use dedicated idempotencyKey field; never fall back to id or timestamp
+      idempotencyKey: asSyncEventId(String(idempotencyKeyRaw)),
       entity: String(cev.entity ?? ''),
       entityId: String(cev.entityId ?? ''),
       source: 'cloud',
