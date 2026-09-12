@@ -129,6 +129,13 @@ export const SYSTEM_ERROR = 'system.error'
 export const BUSINESS_CREATED = 'business.created'
 export const BUSINESS_UPDATED = 'business.updated'
 
+// ── Employee / membership events ──────────────────────────────────────────────
+
+export const EMPLOYEE_INVITED    = 'employee.invited'
+export const EMPLOYEE_ACCEPTED  = 'employee.accepted'
+export const EMPLOYEE_ROLE_CHANGED = 'employee.role_changed'
+export const EMPLOYEE_REVOKED   = 'employee.revoked'
+
 // ── Team events ───────────────────────────────────────────────────────────────
 
 export const TEAM_INVITATION_CREATED    = 'team.invitation.created'
@@ -184,6 +191,8 @@ export const ALL_EVENTS = [
   SYSTEM_BACKUP_COMPLETED, SYSTEM_ERROR,
   // Business
   BUSINESS_CREATED, BUSINESS_UPDATED,
+  // Employee
+  EMPLOYEE_INVITED, EMPLOYEE_ACCEPTED, EMPLOYEE_ROLE_CHANGED, EMPLOYEE_REVOKED,
   // Team
   TEAM_INVITATION_CREATED, TEAM_INVITATION_ACCEPTED, TEAM_INVITATION_EXPIRED,
   TEAM_INVITATION_REVOKED, TEAM_MEMBER_REMOVED, TEAM_MEMBER_ROLE_CHANGED,

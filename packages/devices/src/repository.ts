@@ -17,6 +17,9 @@ export interface DevicesRepository {
   updateDevice(id: UUID, changes: Partial<Device>): Promise<Device>
   revokeDevice(id: UUID, at: ISO8601): Promise<void>
 
+  /** Count active (authorized) devices for a shop — used for subscription device limit enforcement. */
+  countActiveDevices(shopId: ShopId): Promise<number>
+
   // Primary device state
   getPrimaryState(shopId: ShopId): Promise<PrimaryDeviceState | null>
   savePrimaryState(shopId: ShopId, state: PrimaryDeviceState): Promise<void>

@@ -1,6 +1,6 @@
 {
   "name": "@soostori/business",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "Multi-business owner model — Person → Business → Membership",
   "type": "module",
   "main": "./dist/index.js",

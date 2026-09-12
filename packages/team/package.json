@@ -1,6 +1,6 @@
 {
   "name": "@soostori/team",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "description": "Team management — invitations, memberships, role and permission assignment with sync event emission",
   "type": "module",
   "main": "./dist/index.js",

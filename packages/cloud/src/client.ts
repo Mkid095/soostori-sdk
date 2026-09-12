@@ -136,6 +136,86 @@ export class CloudClient {
       return { reachable: false, latencyMs: null }
     }
   }
+
+  // ── Business / Person ─────────────────────────────────────────────────
+
+  /** Query persons (cloud users). */
+  async queryPersons<T = Record<string, unknown>>(goals: Record<string, unknown>): Promise<T> {
+    return this.query<T>(goals)
+  }
+
+  /** Create a shop (business). */
+  async createShop(shopId: string, attrs: Record<string, unknown>): Promise<void> {
+    await this.upsert('shops', shopId, attrs)
+  }
+
+  /** Update a shop. */
+  async updateShop(shopId: string, attrs: Record<string, unknown>): Promise<void> {
+    await this.upsert('shops', shopId, attrs)
+  }
+
+  /** Create an employee (membership) record. */
+  async createEmployee(employeeId: string, attrs: Record<string, unknown>): Promise<void> {
+    await this.upsert('employees', employeeId, attrs)
+  }
+
+  /** Update an employee record. */
+  async updateEmployee(employeeId: string, attrs: Record<string, unknown>): Promise<void> {
+    await this.upsert('employees', employeeId, attrs)
+  }
+
+  /** Create an invitation. */
+  async createInvitation(invitationId: string, attrs: Record<string, unknown>): Promise<void> {
+    await this.upsert('invitations', invitationId, attrs)
+  }
+
+  /** Update an invitation status. */
+  async updateInvitation(invitationId: string, attrs: Record<string, unknown>): Promise<void> {
+    await this.upsert('invitations', invitationId, attrs)
+  }
+
+  /** Accept an invitation — updates invitation + creates employee in a transaction. */
+  async acceptInvitation(
+    invitationId: string,
+    employeeId: string,
+    invitationAttrs: Record<string, unknown>,
+    employeeAttrs: Record<string, unknown>,
+  ): Promise<void> {
+    await this.transact([
+      ['update', 'invitations', invitationId, invitationAttrs],
+      ['create', 'employees', employeeId, employeeAttrs],
+    ])
+  }
+
+  /** Query subscriptions for a shop. */
+  async querySubscriptions<T = Record<string, unknown>>(goals: Record<string, unknown>): Promise<T> {
+    return this.query<T>(goals)
+  }
+
+  /** Create a subscription. */
+  async createSubscription(subscriptionId: string, attrs: Record<string, unknown>): Promise<void> {
+    await this.upsert('subscriptions', subscriptionId, attrs)
+  }
+
+  /** Update a subscription. */
+  async updateSubscription(subscriptionId: string, attrs: Record<string, unknown>): Promise<void> {
+    await this.upsert('subscriptions', subscriptionId, attrs)
+  }
+
+  /** Register a device. */
+  async registerDevice(deviceId: string, attrs: Record<string, unknown>): Promise<void> {
+    await this.upsert('devices', deviceId, attrs)
+  }
+
+  /** Update a device. */
+  async updateDevice(deviceId: string, attrs: Record<string, unknown>): Promise<void> {
+    await this.upsert('devices', deviceId, attrs)
+  }
+
+  /** Query devices for a shop. */
+  async queryDevices<T = Record<string, unknown>>(goals: Record<string, unknown>): Promise<T> {
+    return this.query<T>(goals)
+  }
 }
 
 /** Factory: create a new cloud client. */

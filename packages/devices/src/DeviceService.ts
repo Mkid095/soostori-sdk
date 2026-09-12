@@ -13,7 +13,7 @@
 
 import { z } from 'zod'
 import type { BusinessId, DeviceId, ISO8601, UserId } from '@soostori/core'
-import { newId } from '@soostori/core'
+import { newId, SoostoriError } from '@soostori/core'
 import { createEvent, getEventBus } from '@soostori/events'
 import {
   DEVICE_ENROLLED,
@@ -45,6 +45,14 @@ export interface SyncEngineLike {
   enqueue(event: SoostoriEvent): Promise<void>
 }
 
+/** Thrown when device registration would exceed the subscription's device limit. */
+export class DeviceLimitExceededError extends SoostoriError {
+  constructor(message: string) {
+    super('DEVICE_LIMIT_EXCEEDED', message)
+    this.name = 'DeviceLimitExceededError'
+  }
+}
+
 // ── DeviceService ──────────────────────────────────────────────────────────────
 
 export interface DeviceServiceOptions {
@@ -53,6 +61,12 @@ export interface DeviceServiceOptions {
   repository: DevicesRepository
   syncEngine: SyncEngineLike
   primaryCoordinator?: PrimaryDeviceCoordinator
+  /**
+   * Subscription device limit for this shop. When non-null, enrollDevice()
+   * counts active devices and throws DeviceLimitExceededError if the limit
+   * would be exceeded by registering a new device.
+   */
+  deviceLimit?: number | null
 }
 
 export class DeviceService {
@@ -61,6 +75,7 @@ export class DeviceService {
   private readonly repository: DevicesRepository
   private readonly syncEngine: SyncEngineLike
   private readonly primary?: PrimaryDeviceCoordinator
+  private readonly deviceLimit?: number | null
 
   constructor(options: DeviceServiceOptions) {
     this.businessId = options.businessId
@@ -68,6 +83,7 @@ export class DeviceService {
     this.repository = options.repository
     this.syncEngine = options.syncEngine
     this.primary = options.primaryCoordinator
+    this.deviceLimit = options.deviceLimit
   }
 
   /** Enroll a new device (registers but does not authorize). */
@@ -75,6 +91,17 @@ export class DeviceService {
     input: EnrollDeviceInput,
     enrolledBy?: UserId,
   ): Promise<Device> {
+    // Enforce subscription device limit before registration
+    if (this.deviceLimit != null) {
+      const devices = await this.repository.findByShop(this.businessId as any)
+      const activeCount = devices.filter(d => d.status !== 'revoked').length
+      if (activeCount >= this.deviceLimit) {
+        throw new DeviceLimitExceededError(
+          `Device limit reached (${this.deviceLimit}). Cannot register new device.`
+        )
+      }
+    }
+
     const parsed = EnrollDeviceInput.parse(input)
     const now: ISO8601 = new Date().toISOString()
 

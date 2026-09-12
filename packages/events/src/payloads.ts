@@ -202,6 +202,16 @@ export interface EventPayloadMap {
   'system.backup_completed': { backupId: string; sizeBytes: number }
   'system.error': { source: string; message: string }
 
+  // Business events
+  'business.created': { businessId: string; name: string; ownerPersonId: string }
+  'business.updated': { businessId: string; changes: Record<string, unknown> }
+
+  // Employee / membership events
+  'employee.invited': { businessId: string; employeeId: string; personId: string; role: string }
+  'employee.accepted': { businessId: string; employeeId: string; personId: string }
+  'employee.role_changed': { businessId: string; employeeId: string; role: string; changedBy: string }
+  'employee.revoked': { businessId: string; employeeId: string }
+
   // Team events
   'team.invitation.created': { invitationId: string; email: string; role: string }
   'team.invitation.accepted': { invitationId: string; membershipId: string }
