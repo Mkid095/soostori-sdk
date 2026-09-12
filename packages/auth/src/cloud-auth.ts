@@ -89,6 +89,9 @@ export interface GoogleOAuthConfig {
 
 export interface GoogleSignInResult {
   userId: UserId
+  employeeId: EmployeeId
+  shopId: ShopId
+  deviceId: DeviceId
   email: string
   displayName?: string
   idToken: string
@@ -126,6 +129,9 @@ export interface PasswordResetRequestResult {
 
 export interface PasswordResetCompleteResult {
   userId: UserId
+  employeeId: EmployeeId
+  shopId: ShopId
+  deviceId: DeviceId
   email: string
   accessToken: string
   refreshToken: string
@@ -309,6 +315,8 @@ export interface AuthApiResponse<T> {
 export interface SignInResult {
   userId: UserId
   employeeId: EmployeeId
+  shopId: ShopId
+  deviceId: DeviceId
   email: string
   accessToken: string
   refreshToken: string
@@ -482,6 +490,9 @@ export class CloudAuth {
 
     const session = await this._storeSession({
       userId: data.userId,
+      employeeId: data.employeeId,
+      shopId: data.shopId,
+      deviceId: data.deviceId,
       accessToken: data.accessToken,
       refreshToken: data.refreshToken,
       email: data.email,
@@ -492,6 +503,9 @@ export class CloudAuth {
       ok: true,
       data: {
         userId: data.userId,
+        employeeId: data.employeeId,
+        shopId: data.shopId,
+        deviceId: data.deviceId,
         email: data.email,
         displayName: data.displayName,
         idToken: data.idToken,
@@ -524,6 +538,9 @@ export class CloudAuth {
 
       const session = await this._storeSession({
         userId: data.userId,
+        employeeId: data.employeeId,
+        shopId: data.shopId,
+        deviceId: data.deviceId,
         accessToken: data.accessToken,
         refreshToken: data.refreshToken,
         email: data.email,
@@ -534,6 +551,9 @@ export class CloudAuth {
         ok: true,
         data: {
           userId: data.userId,
+          employeeId: data.employeeId,
+          shopId: data.shopId,
+          deviceId: data.deviceId,
           email: data.email,
           displayName: data.displayName,
           idToken: data.idToken,
@@ -561,6 +581,9 @@ export class CloudAuth {
 
     const session = await this._storeSession({
       userId: data.userId,
+      employeeId: data.employeeId,
+      shopId: data.shopId,
+      deviceId: data.deviceId,
       accessToken: data.accessToken,
       refreshToken: data.refreshToken,
       email: data.email,
@@ -617,6 +640,9 @@ export class CloudAuth {
 
     const session = await this._storeSession({
       userId: data.userId,
+      employeeId: data.employeeId,
+      shopId: data.shopId,
+      deviceId: data.deviceId,
       accessToken: data.accessToken,
       refreshToken: data.refreshToken,
       email: data.email,
@@ -775,6 +801,9 @@ export class CloudAuth {
 
   private async _storeSession(params: {
     userId: UserId | string
+    employeeId: EmployeeId | string
+    shopId: ShopId | string
+    deviceId: DeviceId | string
     accessToken: string
     refreshToken?: string
     email: string
@@ -783,9 +812,9 @@ export class CloudAuth {
     const expiresAt = new Date(Date.now() + DEFAULT_SESSION_TTL_MS).toISOString() as ISO8601
     const stored: StoredSession = {
       userId: String(params.userId),
-      employeeId: '',
-      shopId: '',
-      deviceId: '',
+      employeeId: String(params.employeeId),
+      shopId: String(params.shopId),
+      deviceId: String(params.deviceId),
       email: params.email,
       accessToken: params.accessToken,
       refreshToken: params.refreshToken ?? '',

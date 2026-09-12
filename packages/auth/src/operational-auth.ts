@@ -407,7 +407,7 @@ export class OperationalAuth {
      */
     pinVerificationProof?: string
   }): Promise<
-    | AuthResult<{ nextState: DeviceEnrollmentState }>
+    | AuthResult<{ nextState: DeviceEnrollmentState; enrollmentToken?: string }>
     | AuthResult<{ needsCloudVerify: true; employeeId: EmployeeId }>
   > {
     const { cloudApi, state, shopId, deviceId, deviceName } = params
@@ -446,9 +446,15 @@ export class OperationalAuth {
         }
       }
 
-      // PIN verified — cloud will hold the enrollment token
-      // Return nextState so caller knows to call completeEnrollmentWithCloudVerify
-      return { ok: true, data: { nextState: 'PIN_SETUP_REQUIRED' } }
+      // PIN verified — backend issued a short-lived enrollment token.
+      // Caller must pass it to completeEnrollmentWithCloudVerify.
+      return {
+        ok: true,
+        data: {
+          nextState: 'PIN_SETUP_REQUIRED' as DeviceEnrollmentState,
+          enrollmentToken: result.data!.enrollmentToken,
+        },
+      }
     }
 
     return { ok: false, error: pinError('ENROLLMENT_REQUIRED', 'Device is not in a state that allows enrollment') }

@@ -2,9 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] — Phase 19 (Reports Wiring, Subscription Sync, Offline Policy, M-Pesa Receipts)
+## [Unreleased] — Phase 01 Authentication Audit Fixes
 
-### Added
+### Fixed
+- **`@soostori/auth`**: `StoredSession` now correctly populated with `employeeId`, `shopId`, `deviceId` — these were previously always empty strings. Updated `GoogleSignInResult`, `SignInResult`, and `PasswordResetCompleteResult` interfaces to include these fields, and `_storeSession()` to extract them from API responses.
+- **`@soostori/auth`**: Cross-device PIN enrollment (`beginEnrollment`) now correctly returns `enrollmentToken` from `verifyPinForEnrollment` so callers can pass it to `completeEnrollmentWithCloudVerify`. Updated return type and test.
+- **`@soostori/auth`**: All 144 tests passing.
+
+## [0.1.0-alpha.22] — 2026-09-12
 - **`packages/reports/test/ReportService.test.ts`**: Phase 19 additions — 8 tests covering `getDashboardSummary` mixed-transaction aggregates, sales/debt/expense/inventory reports, empty-period zeroed reports, reconciliation invariant (SUM(sales) = dashboardSummary.totalSales), and offline SQLite derivation.
 - **`packages/subscription/src/enforcement-sync.ts`**: `enforceSubscriptionForSync(cache, shopId)` — called by the sync timer worker before `apply()`. Rules: `active/trialing/past_due` allow silently; `expired` within grace period allow with logged warning; `expired` past grace period throws `SubscriptionGracePeriodExpiredError`; `cancelled` throws `SubscriptionCancelledError`. Added both error classes.
 - **`packages/subscription/test/enforcement-sync.test.ts`**: 7 tests covering all subscription state paths (active, trialing, past_due, grace period, expired past grace, cancelled, null cache).

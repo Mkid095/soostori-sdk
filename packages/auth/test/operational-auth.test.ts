@@ -344,7 +344,7 @@ describe('Enrollment state machine', () => {
 
     expect(result.ok).toBe(true)
     if (result.ok) {
-      expect(result.data).toEqual({ nextState: 'PIN_SETUP_REQUIRED' })
+      expect(result.data).toEqual({ nextState: 'PIN_SETUP_REQUIRED', enrollmentToken: 'tok' })
     }
     expect(cloudApi.verifyPinForEnrollment).toHaveBeenCalledWith(EID, 'pbkdf2proof', SID, DID)
   })
