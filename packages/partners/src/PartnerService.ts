@@ -44,6 +44,7 @@ import type {
   RejectApplicationInput,
   EnrollBusinessInput,
   RecordConversionInput,
+  CommissionEarning,
 } from './types.js'
 import {
   PARTNER_APPLICATION_SUBMITTED,

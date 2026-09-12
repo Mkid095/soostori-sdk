@@ -148,6 +148,8 @@ export const CAPABILITIES = {
   PARTNER_APPLY:           'partner.apply',
   PARTNER_APPROVE:         'partner.approve',
   PARTNER_REJECT:          'partner.reject',
+  PARTNER_ENROLL:          'partner.enroll',    // Phase 18 — enroll a business
+  PARTNER_CONVERT:         'partner.convert',  // Phase 18 — record a conversion
   COMMISSION_VIEW_OWN:     'commission.view_own',
   COMMISSION_VIEW_ALL:     'commission.view_all',
   SUBSCRIPTION_MANAGE:     'subscription.manage',
