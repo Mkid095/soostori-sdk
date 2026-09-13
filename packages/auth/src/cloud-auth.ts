@@ -438,11 +438,6 @@ export class CloudAuth {
    * Returns a partial result — call `handleOAuthCallback` after the redirect.
    */
   async signInWithGoogle(config: GoogleOAuthConfig): Promise<AuthResult<GoogleSignInPartial>> {
-    this._syncNetworkStatus()
-    if (!this._networkStatus.isOnline) {
-      return { ok: false, error: authError('NETWORK_OFFLINE', 'Google Sign-In requires an internet connection') }
-    }
-
     try {
       const state = this.platform.randomString(16)
       const codeVerifier = this.platform.randomString(64)
