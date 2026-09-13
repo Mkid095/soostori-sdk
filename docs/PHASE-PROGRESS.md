@@ -10,7 +10,7 @@
 | Phase | Name | SDK | Web | Mobile | Desktop | Status |
 |------:|------|:---:|:---:|:------:|:------:|--------|
 | **1** | Authentication & Identity Foundation | ✅ | ✅ | ✅ | ✅ | ✅ ACCEPTED |
-| 2 | Business & Account Provisioning | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
+| **2** | Business & Account Provisioning | ✅ | ⚪ | ⚪ | ⚪ | ⚪ |
 | 3 | SDK & Data Contract Foundation | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
 | 4 | RBAC & Authorization | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
 | 5 | Synchronization | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
@@ -45,8 +45,8 @@
 
 | Phase | Audit Prompt | Complete Record |
 |------:|-------------|----------------|
-| 1 | `docs/PHASE-01-AUDIT.md` | `docs/PHASE-01-COMPLETE.md` |
-| 2 | `docs/PHASE-02-AUDIT.md` | — |
+| 1 | `docs/PHASE-01-AUDIT.md` | `docs/PHASE-01-AUTH-ACCEPTANCE.md` |
+| 2 | `docs/PHASE-02-AUDIT.md` | `docs/PHASE-02-BUSINESS-ACCEPTANCE.md` |
 | 3 | `docs/PHASE-03-AUDIT.md` | — |
 | ... | ... | ... |
 
