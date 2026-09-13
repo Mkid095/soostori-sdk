@@ -1,6 +1,6 @@
 {
   "name": "@soostori/lan",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.3",
   "description": "LAN discovery + WebSocket protocol — extracted from Desktop's sync infrastructure",
   "type": "module",
   "main": "./dist/index.js",
@@ -27,9 +27,9 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@soostori/core": "workspace:*",
-    "@soostori/events": "workspace:*",
-    "@soostori/devices": "workspace:*",
+    "@soostori/core": "^0.1.0-alpha.10",
+    "@soostori/events": "^0.1.0-alpha.2",
+    "@soostori/devices": "^0.1.0-alpha.1",
     "ws": "^8.18.0",
     "zod": "^3.24.0"
   },

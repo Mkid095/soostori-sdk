@@ -7,8 +7,14 @@ allowBuilds:
   better-sqlite3: true
 
 minimumReleaseAgeExclude:
-  - '@soostori/core@0.1.0-alpha.2'
+  - '@soostori/core@0.1.0-alpha.2 || 0.1.0-alpha.9 || 0.1.0-alpha.10'
   - '@soostori/schema@0.1.0-alpha.2'
+  - '@soostori/auth@0.1.0-alpha.8'
+  - '@soostori/cloud@0.1.0-alpha.6'
+  - '@soostori/contracts@0.1.0-alpha.2'
+  - '@soostori/events@0.1.0-alpha.3'
+  - '@soostori/devices@0.1.0-alpha.4'
+  - '@soostori/subscription@0.1.0-alpha.3'
 
 onlyBuiltDependencies:
   - esbuild

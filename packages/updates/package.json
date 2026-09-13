@@ -1,6 +1,6 @@
 {
   "name": "@soostori/updates",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.3",
   "description": "Platform-neutral application update contract — update states, OTA/binary distinction, progress, and adapter interface",
   "type": "module",
   "main": "./dist/index.js",
@@ -27,7 +27,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@soostori/core": "workspace:*",
+    "@soostori/core": "^0.1.0-alpha.10",
     "zod": "^3.24.0"
   },
   "devDependencies": {

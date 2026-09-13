@@ -1,6 +1,6 @@
 {
   "name": "@soostori/schema",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "description": "Canonical Soostori cloud entity definitions + migrations + schema versions",
   "type": "module",
   "main": "./dist/index.js",
@@ -27,7 +27,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@soostori/core": "^0.1.0-alpha.2",
+    "@soostori/core": "^0.1.0-alpha.10",
     "zod": "^3.24.0"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 {
   "name": "@soostori/contracts",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.3",
   "description": "Canonical Soostori data contract — all 22 entities + sync/event contract + NoOpSyncEngine stub. Source of truth for Web, Desktop, Mobile.",
   "type": "module",
   "main": "./dist/index.js",
@@ -27,7 +27,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@soostori/core": "workspace:*"
+    "@soostori/core": "^0.1.0-alpha.10"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

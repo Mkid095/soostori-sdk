@@ -1,6 +1,6 @@
 {
   "name": "@soostori/events",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.4",
   "description": "Canonical Soostori event names — single source of truth for sync/notification/audit",
   "type": "module",
   "main": "./dist/index.js",
@@ -27,7 +27,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@soostori/core": "workspace:*",
+    "@soostori/core": "^0.1.0-alpha.10",
     "zod": "^3.24.0"
   },
   "devDependencies": {

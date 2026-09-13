@@ -5,11 +5,11 @@
  *   capabilities, is_host, is_online, connection_token, last_seen, created_at,
  *   status, authorized_at, app_version, hostname, platform)
  *
- * SDK Device shape: { id, shopId, deviceName, deviceType, status, isPrimary,
+ * SDK Device shape: { id, shopId, deviceName, deviceType, status, isLanHost,
  *   lastSeenAt, authorizedAt, activeEmployeeId, appVersion, hostname, platform }
  *
  * CONFLICT resolved by Phase 9.1.1 schema migration (adds missing columns).
- * Desktop is_host (boolean) → SDK isPrimary (boolean): same semantics.
+ * Desktop is_host (boolean) → SDK isLanHost (boolean): same semantics.
  */
 
 import { getDatabase } from './sqlite-database.js'
@@ -33,7 +33,7 @@ function rowToDevice(row: DeviceRow): Device {
     deviceName: row.device_name,
     deviceType: row.device_type as Device['deviceType'],
     status: (row.status ?? 'offline') as Device['status'],
-    isPrimary: row.is_host === 1,
+    isLanHost: row.is_host === 1,
     lastSeenAt: row.last_seen as ISO8601 | null,
     authorizedAt: row.authorized_at as ISO8601 | null,
     activeEmployeeId: row.employee_id as Device['activeEmployeeId'],
@@ -73,7 +73,7 @@ export class DesktopDevicesRepository implements DevicesRepository {
         UPDATE devices SET device_name = ?, device_type = ?, status = ?,
           is_host = ?, last_seen = ? WHERE id = ?
       `).run(device.deviceName, device.deviceType, device.status,
-        device.isPrimary ? 1 : 0, device.lastSeenAt ?? new Date().toISOString(), device.id)
+        device.isLanHost ? 1 : 0, device.lastSeenAt ?? new Date().toISOString(), device.id)
     } else {
       db.prepare(`
         INSERT INTO devices (id, shop_id, device_name, device_type, capabilities, is_host,
@@ -82,7 +82,7 @@ export class DesktopDevicesRepository implements DevicesRepository {
       `).run(
         device.id, device.shopId, device.deviceName, device.deviceType,
         '{"sales":true,"inventory":true,"printing":true}',
-        device.isPrimary ? 1 : 0,
+        device.isLanHost ? 1 : 0,
         device.lastSeenAt ?? new Date().toISOString(),
         device.status, device.authorizedAt, new Date().toISOString(),
       )
@@ -93,7 +93,7 @@ export class DesktopDevicesRepository implements DevicesRepository {
     const db = getDatabase()
     const fieldMap: Record<string, string> = {
       deviceName: 'device_name', deviceType: 'device_type', status: 'status',
-      isPrimary: 'is_host', lastSeenAt: 'last_seen', authorizedAt: 'authorized_at',
+      isLanHost: 'is_host', lastSeenAt: 'last_seen', authorizedAt: 'authorized_at',
       activeEmployeeId: 'employee_id', appVersion: 'app_version', hostname: 'hostname', platform: 'platform',
     }
     const sets: string[] = []; const vals: unknown[] = []
@@ -110,6 +110,13 @@ export class DesktopDevicesRepository implements DevicesRepository {
 
   async revokeDevice(id: UUID, _at: ISO8601): Promise<void> {
     getDatabase().prepare("UPDATE devices SET status = 'revoked' WHERE id = ?").run(id)
+  }
+
+  async countActiveDevices(shopId: ShopId): Promise<number> {
+    const row = getDatabase().prepare(
+      "SELECT COUNT(*) as count FROM devices WHERE shop_id = ? AND status != 'revoked'",
+    ).get(shopId) as { count: number }
+    return row.count
   }
 
   async getPrimaryState(_shopId: ShopId): Promise<PrimaryDeviceState | null> {
