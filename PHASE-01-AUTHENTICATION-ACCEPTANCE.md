@@ -1,11 +1,11 @@
 # PHASE 1 — AUTHENTICATION ACCEPTANCE REPORT
 
-**Date**: 2026-09-13 (revised — alpha.11 fix applied)
+**Date**: 2026-09-14 (revised — alpha.12 fix applied)
 **Audit**: Phase 1 Authentication & Identity Foundation
 **Auditor**: verification-agent
 **Status**: 🟡 **CONDITIONALLY ACCEPTED — FIXES APPLIED**
 
-> All critical defects found in the 2026-09-13 audit have been resolved in source and published to npm as `@soostori/auth@0.1.0-alpha.11`. The alpha.11 patch removes a fatal `navigator.onLine` pre-check from `signInWithGoogle()` that caused spurious `NETWORK_OFFLINE` errors during page transitions — the browser handles its own connectivity errors via `window.location.href`. Remaining open items (oauthSessions schema, clientName registration) require backend deployment verification — marked as ACCEPTED PENDING DEPLOYMENT. Runtime verification required on staging before full ACCEPTED.
+> All critical defects found in the 2026-09-13 audit have been resolved in source and published to npm as `@soostori/auth@0.1.0-alpha.12`. Alpha.12 removes ALL fatal `navigator.onLine` pre-checks from every `CloudAuth` method — `navigator.onLine` is unreliable during page transitions and caused spurious `NETWORK_OFFLINE` errors across email/password, Google ID-token, and OAuth callback flows. API calls now produce their own genuine network errors. Remaining open items (oauthSessions schema, clientName registration) require backend deployment verification — marked as ACCEPTED PENDING DEPLOYMENT. Runtime verification required on staging before full ACCEPTED.
 
 ---
 
@@ -138,7 +138,7 @@ Phase 1 authentication is **NOT ACCEPTED** because:
 
 ## 7. Fixes Applied (2026-09-13)
 
-All fixes committed to source and published as `@soostori/auth@0.1.0-alpha.11` (alpha.11 patches alpha.10).
+All fixes committed to source and published as `@soostori/auth@0.1.0-alpha.12` (alpha.12 patches alpha.11).
 
 | Fix | CRIT | File | Change |
 |-----|------|------|--------|
@@ -151,7 +151,8 @@ All fixes committed to source and published as `@soostori/auth@0.1.0-alpha.11` (
 | F-07 | CRIT-04 | `soostori/src/pages/api/auth/callback/google.ts` | Fixed `CALLBACK_URL` to use absolute URL (`NEXT_PUBLIC_BASE_URL + '/api/auth/callback/google'`). |
 | F-08 | HIGH-03 | `soostori-mobile/src/services/sdk-adapter.ts` | Added `setCookie()` to `rnPlatformAdapter` (no-op on mobile). Updated `PlatformAuthAdapter` interface. |
 | F-09 | HIGH-03 | `soostori-mobile/src/types/@soostori-auth.d.ts` | Added `setCookie()` to `PlatformAuthAdapter` type definition. |
-| F-10 | NETWORK | `soostori-sdk/packages/auth/src/cloud-auth.ts` | Removed fatal `navigator.onLine` pre-check from `signInWithGoogle()` — `window.location.href` handles its own offline error. Network check kept in `handleOAuthCallback()` which makes real HTTP calls. |
+| F-10 | NETWORK | `soostori-sdk/packages/auth/src/cloud-auth.ts` | Removed fatal `navigator.onLine` pre-check from `signInWithGoogle()` — `window.location.href` handles its own offline error. |
+| F-11 | NETWORK | `soostori-sdk/packages/auth/src/cloud-auth.ts` | Alpha.12: removed all remaining `navigator.onLine` pre-checks from `signInWithGoogleIdToken`, `signInWithEmail`, `registerWithEmail`, `verifyEmailAddress`, `resetPassword`, `completePasswordReset`, `registerTrustedDevice`, `listTrustedDevices`, `removeTrustedDevice`. API calls now produce genuine network errors. |
 
 **Still requires backend verification (ACCEPTED PENDING DEPLOYMENT):**
 - `oauthSessions` entity exists in self-hosted InstantDB schema
