@@ -484,10 +484,6 @@ export class CloudAuth {
     codeVerifier: string,
     redirectUri: string,
   ): Promise<AuthResult<GoogleSignInResult>> {
-    this._syncNetworkStatus()
-    if (!this._networkStatus.isOnline) {
-      return { ok: false, error: authError('NETWORK_OFFLINE', 'Network required to complete sign-in') }
-    }
     if (!partial.code) {
       return { ok: false, error: authError('OAUTH_ERROR', 'Missing authorization code in OAuth callback') }
     }
@@ -534,11 +530,6 @@ export class CloudAuth {
    * On success, emits `SIGNED_IN`.
    */
   async signInWithGoogleIdToken(params: { idToken: string; clientName: string }): Promise<AuthResult<GoogleSignInResult>> {
-    this._syncNetworkStatus()
-    if (!this._networkStatus.isOnline) {
-      return { ok: false, error: authError('NETWORK_OFFLINE', 'Google Sign-In requires an internet connection') }
-    }
-
     try {
       const result = await this.api.signInWithIdToken(params.clientName, params.idToken)
       if (result.error) return { ok: false, error: this._mapApiError(result.error) }
@@ -579,10 +570,6 @@ export class CloudAuth {
   // ─── Email/password ───────────────────────────────────────────────────────
 
   async signInWithEmail(email: string, password: string): Promise<AuthResult<SignInResult>> {
-    this._syncNetworkStatus()
-    if (!this._networkStatus.isOnline) {
-      return { ok: false, error: authError('NETWORK_OFFLINE', 'Email sign-in requires an internet connection') }
-    }
     const result = await this.api.signInEmail(email, password)
     if (result.error) return { ok: false, error: this._mapApiError(result.error) }
     const data = result.data!
@@ -607,20 +594,12 @@ export class CloudAuth {
     employeeName: string,
     sendVerificationEmail = true,
   ): Promise<AuthResult<EmailRegistrationResult>> {
-    this._syncNetworkStatus()
-    if (!this._networkStatus.isOnline) {
-      return { ok: false, error: authError('NETWORK_OFFLINE', 'Registration requires an internet connection') }
-    }
     const result = await this.api.registerEmail(email, password, employeeName)
     if (result.error) return { ok: false, error: this._mapApiError(result.error) }
     return { ok: true, data: result.data! }
   }
 
   async verifyEmailAddress(token: string): Promise<AuthResult<EmailVerificationResult>> {
-    this._syncNetworkStatus()
-    if (!this._networkStatus.isOnline) {
-      return { ok: false, error: authError('NETWORK_OFFLINE', 'Email verification requires an internet connection') }
-    }
     const result = await this.api.verifyEmail(token)
     if (result.error) return { ok: false, error: this._mapApiError(result.error) }
     const data = result.data!
@@ -629,19 +608,11 @@ export class CloudAuth {
   }
 
   async resetPassword(email: string): Promise<AuthResult<PasswordResetRequestResult>> {
-    this._syncNetworkStatus()
-    if (!this._networkStatus.isOnline) {
-      return { ok: false, error: authError('NETWORK_OFFLINE', 'Password reset requires an internet connection') }
-    }
     await this.api.requestPasswordReset(email)
     return { ok: true, data: { email, resetLinkSent: true } }
   }
 
   async completePasswordReset(token: string, newPassword: string): Promise<AuthResult<PasswordResetCompleteResult>> {
-    this._syncNetworkStatus()
-    if (!this._networkStatus.isOnline) {
-      return { ok: false, error: authError('NETWORK_OFFLINE', 'Password reset requires an internet connection') }
-    }
     const result = await this.api.completePasswordReset(token, newPassword)
     if (result.error) return { ok: false, error: this._mapApiError(result.error) }
     const data = result.data!
@@ -753,10 +724,6 @@ export class CloudAuth {
     if (!this._session) {
       return { ok: false, error: authError('SESSION_REVOKED', 'Must be signed in to register a trusted device') }
     }
-    this._syncNetworkStatus()
-    if (!this._networkStatus.isOnline) {
-      return { ok: false, error: authError('NETWORK_OFFLINE', 'Device registration requires an internet connection') }
-    }
 
     const deviceToken = this.platform.randomString(32)
     const result = await this.api.registerTrustedDevice(deviceToken, deviceName, this._session.accessToken)
@@ -774,10 +741,6 @@ export class CloudAuth {
     if (!this._session) {
       return { ok: false, error: authError('SESSION_REVOKED', 'Must be signed in to list trusted devices') }
     }
-    this._syncNetworkStatus()
-    if (!this._networkStatus.isOnline) {
-      return { ok: false, error: authError('NETWORK_OFFLINE', 'Listing trusted devices requires an internet connection') }
-    }
     const result = await this.api.listTrustedDevices(this._session.accessToken)
     if (result.error) return { ok: false, error: this._mapApiError(result.error) }
     return { ok: true, data: result.data! }
@@ -786,10 +749,6 @@ export class CloudAuth {
   async removeTrustedDevice(deviceId: DeviceId): Promise<AuthResult<void>> {
     if (!this._session) {
       return { ok: false, error: authError('SESSION_REVOKED', 'Must be signed in to remove a trusted device') }
-    }
-    this._syncNetworkStatus()
-    if (!this._networkStatus.isOnline) {
-      return { ok: false, error: authError('NETWORK_OFFLINE', 'Removing a trusted device requires an internet connection') }
     }
     const result = await this.api.removeTrustedDevice(String(deviceId), this._session.accessToken)
     if (result.error) return { ok: false, error: this._mapApiError(result.error) }
