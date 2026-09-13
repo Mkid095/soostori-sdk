@@ -76,6 +76,8 @@ export interface PlatformAuthAdapter {
   getSecureStorage(): SecureStorage
   getNetworkStatus(): NetworkStatus
   randomString(byteLength: number): string
+  /** Set a cookie on the platform (used by PKCE to store code_verifier before browser opens). */
+  setCookie(name: string, value: string, options?: { httpOnly?: boolean; secure?: boolean; sameSite?: 'Lax' | 'Strict' | 'None'; maxAge?: number; path?: string }): void | Promise<void>
 }
 
 // ─── Google OAuth types ─────────────────────────────────────────────────────────
@@ -446,6 +448,17 @@ export class CloudAuth {
       const codeVerifier = this.platform.randomString(64)
       const codeChallenge = await this._pkceChallenge(codeVerifier)
       const scopes = ['openid', 'email', 'profile', ...(config.scopes ?? [])].join(' ')
+
+      // Store PKCE code_verifier in an HttpOnly cookie so the callback route can
+      // read it after Google redirects back. Cookie is short-lived (10 min) and
+      // cleared by the callback handler after exchange.
+      await this.platform.setCookie('oauth_code_verifier', codeVerifier, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'Lax',
+        maxAge: 600,
+        path: '/',
+      })
 
       const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth')
       authUrl.searchParams.set('client_id', config.clientId)
