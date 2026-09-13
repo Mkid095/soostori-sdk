@@ -1,195 +1,163 @@
-# PHASE-01-AUTHENTICATION-ACCEPTANCE.md
-## Phase 1 — Authentication & Identity Foundation
-### Acceptance Decision — 2026-09-12
+# PHASE 1 — AUTHENTICATION ACCEPTANCE REPORT
 
-**Orchestrator**: joan
-**SDK report**: `PHASE-01-SDK-AUDIT-REPORT.md` (SDK agent, commit `dc8c7f7`)
-**Desktop report**: `PHASE-01-DESKTOP-AUDIT-REPORT.md` (Desktop agent, commit `4d8f382cdd0a502be102c1bac2c988cf9bf3408b`)
-**Mobile report**: `PHASE-01-MOBILE-AUDIT-REPORT.md` (Mobile agent, commit `cd37c91`)
-**Web status**: GAP-07 fixed (version updated), GAP-08 pending Ken's decision
+**Date**: 2026-09-13
+**Audit**: Phase 1 Authentication & Identity Foundation
+**Auditor**: verification-agent
+**Status**: 🔴 **NOT ACCEPTED**
 
 ---
 
-## Decision: ✅ SDK — ACCEPTED
+## 1. What Was Verified
 
-`@soostori/auth@0.1.0-alpha.7` is published to NPM.
-
-| Gap | Status | Evidence |
-|-----|--------|---------|
-| GAP-01 — `StoredSession` employeeId/shopId/deviceId always `''` | ✅ FIXED | `_storeSession()` now populates all four branded IDs from API response |
-| GAP-02 — `GoogleSignInResult` missing identity fields | ✅ FIXED | `employeeId: EmployeeId`, `shopId: ShopId`, `deviceId: DeviceId` added |
-| GAP-03 — `SignInResult` missing identity fields | ✅ FIXED | `shopId` and `deviceId` added |
-| GAP-04 — `beginEnrollment()` discarded `enrollmentToken` | ✅ FIXED | `beginEnrollment()` now returns `enrollmentToken` from `verifyPinForEnrollment()` |
-| GAP-05 — Web platform export | ✅ VERIFIED | Export map sufficient for browser and RN |
-| GAP-06 — `FIDScriptAuthApiClient` completeness | ✅ VERIFIED | All 23 `AuthApiClient` methods implemented |
-
-**Tests**: 144/144 passing
-**NPM**: `@soostori/auth@0.1.0-alpha.7` published and verifiable via `npm view @soostori/auth versions`
+| Method | Tool |
+|--------|------|
+| SDK source code inspection | Direct file read |
+| SDK test execution | `npx vitest run --config vitest.config.ts` |
+| SDK build verification | `pnpm build` |
+| Web repository | GitHub API (`Mkid095/soostori`) |
+| Mobile repository | GitHub API (`Mkid095/soostori-mobile`) |
+| InstantDB Cloud schema | `/instant-self` MCP |
+| Self-hosted InstantDB | ❌ Unreachable — no MCP access |
 
 ---
 
-## Decision: ✅ Desktop — ACCEPTED (with caveats)
+## 2. Acceptance Criteria (from Acceptance Doc, 2026-09-12)
 
-**Commit**: `4d8f382cdd0a502be102c1bac2c988cf9bf3408b`
-
-| Check | Status | Notes |
-|-------|--------|-------|
-| SDK version `^0.1.0-alpha.7` | ✅ FIXED | Updated in `package.json` |
-| `StoredSession` consumption | ✅ VERIFIED | `_loadStoredSession()` loads all fields correctly |
-| Cross-device enrollment IPC (`enrollmentToken`) | ✅ VERIFIED | IPC handler preserves `enrollmentToken` in result |
-| Identity chain: `syncShopFromCloud()` | ✅ VERIFIED | Called in `cloud:auth:registerDevice` |
-| Identity chain: `syncEmployeesFromCloud()` | ✅ VERIFIED | Called in `cloud:auth:registerDevice` |
-| Identity chain: device record creation | ✅ VERIFIED | Created in `cloud:auth:restoreSession` |
-| PKCE OAuth callback server | ✅ VERIFIED | Runs on local port, state/verifier managed correctly |
-| OperationalAuth safeStorage (PIN) | ✅ VERIFIED | Uses `safeStorage.encryptString()` / `decryptString()` |
-| All OperationalAuth IPC handlers | ✅ VERIFIED | All 13 methods bridged |
-
-### Caveats (not blocking Phase 1)
-
-| Gap | Severity | Description | Next Phase |
-|-----|----------|-------------|-----------|
-| `signInWithGoogleIdToken` IPC not wired | MEDIUM | Desktop uses PKCE OAuth (not Mobile ID token flow), so not blocking | Phase 18+ |
-| Email/password registration + verification not wired | MEDIUM | Desktop uses magic-code + OAuth flows | Phase 18+ |
-| Trusted device management not wired | LOW | Not required for Phase 1 offline entitlement | Phase 15+ |
-| `redirectUri` Google registration | NOT VERIFIED | Requires Google Cloud Console config, not code-verifiable | Phase 27 |
-
-**Desktop verdict**: Core identity chain is correct. Email/password, trusted device, and Google ID token gaps are out of scope for Phase 1 (these are Phase 18/15 concerns).
+| # | Criterion | Status |
+|---|-----------|--------|
+| AC-01 | `CloudAuth.signInWithGoogleIdToken({ idToken, clientName })` → `GoogleSignInResult` | ✅ VERIFIED |
+| AC-02 | `signInWithGoogleIdToken` populates `StoredSession { userId, employeeId, shopId, deviceId }` | 🔴 BROKEN (Mobile) |
+| AC-03 | PKCE: `signInWithGoogle()` opens browser; `handleOAuthCallback()` exchanges code | ✅ VERIFIED |
+| AC-04 | PKCE: state + code_verifier stored HttpOnly; code_verifier cleared after use | ✅ VERIFIED |
+| AC-05 | PKCE: S256 challenge method | ✅ VERIFIED |
+| AC-06 | PKCE: `redirectUri` in exchange matches registered Uri | ✅ VERIFIED |
+| AC-07 | Google ID token validated server-side (signature + expiry) | ✅ InstantDB handles |
+| AC-08 | New user → `PERSON_NOT_FOUND` returned; no auto-merge | ✅ VERIFIED |
+| AC-09 | `clientName: 'soostoriandroid'` on Mobile | ✅ VERIFIED in source |
+| AC-10 | `INSTANT_APP_ID=487be5c5-...` matches between Web env and InstantDB | ✅ VERIFIED |
+| AC-11 | Desktop: `isLanHost` field added in Phase 9.1.1 migration | ✅ VERIFIED |
+| AC-12 | `HttpAuthApiClient` wraps SDK `AuthApiClient` interface | ✅ VERIFIED |
+| AC-13 | No auto account merge on second Google sign-in (different employee) | ✅ VERIFIED |
+| AC-14 | Mock API client: `employeeId`, `shopId`, `deviceId` returned | ✅ VERIFIED (mock) |
 
 ---
 
-## Decision: ✅ Mobile — ACCEPTED (with caveats)
+## 3. Final Verification Table
 
-**Commit**: `cd37c91`
+| Layer | Sub-layer | Item | Status | Evidence |
+|-------|-----------|------|--------|---------|
+| **SDK** | Auth primitives | `CloudAuth.signInWithGoogleIdToken()` | 🟢 PASS | `cloud-auth.ts:528` |
+| **SDK** | Auth primitives | `CloudAuth.signInWithGoogle()` (PKCE) | 🟢 PASS | `cloud-auth.ts:438,474` |
+| **SDK** | Auth primitives | `CloudAuth.signInWithEmail()` | 🟢 PASS | `cloud-auth.ts:573` |
+| **SDK** | Session storage | `_storeSession()` populates all 4 IDs | 🟢 PASS | `cloud-auth.ts:802` |
+| **SDK** | PKCE security | S256 code challenge, HttpOnly verifier cookie | 🟢 PASS | `cloud-auth.ts:438,474` |
+| **SDK** | PKCE security | `redirectUri` passed to exchange call | 🟢 PASS | `cloud-auth.ts:474` |
+| **SDK** | Mock API | `employeeId/shopId/deviceId` in `exchangeGoogleCode` | 🟢 PASS | `mock-api-client.ts` |
+| **SDK** | Mock API | `employeeId/shopId/deviceId` in `signInWithIdToken` | 🟢 PASS | `mock-api-client.ts` |
+| **SDK** | Build | TypeScript clean, dist output | 🟢 PASS | `tsc -p tsconfig.json` |
+| **SDK** | Tests | 144/144 tests passing | 🟢 PASS | `vitest run` |
+| **Web** | Integration | Uses `CloudAuth` + `HttpAuthApiClient` | 🟢 PASS | `cloud-auth-client.ts` |
+| **Web** | PKCE flow | Browser opens Google OAuth, callback handled | 🟢 PASS | `LoginForm.tsx`, `callback/google.ts` |
+| **Web** | Session | `oauthSessions` entity written by `saveOAuthSession` | 🟡 GAP | ⚠️ Entity absent from Cloud schema — verified only in self-hosted? |
+| **Web** | Identity | `queryActiveMember()` resolves `employeeId/shopId` | 🟢 PASS | `session-server.ts` |
+| **Web** | Identity | `deviceId` in `StoredSession` | 🟡 GAP | ❌ `queryActiveMember` returns no `deviceId` |
+| **Mobile** | Integration | Uses `CloudAuth.signInWithGoogleIdToken()` | 🟡 GAP | ⚠️ Calls correct SDK method but returns wrong shape |
+| **Mobile** | Session | `accessToken` = `userId` (fabricated) | 🔴 FAIL | `cloud-auth-backend.ts:cloudExchangeGoogleToken()` |
+| **Mobile** | Session | `refreshToken` = `''` (empty) | 🔴 FAIL | `cloud-auth-backend.ts:cloudExchangeGoogleToken()` |
+| **Mobile** | Session | `employeeId/shopId/deviceId` all empty | 🔴 FAIL | `cloud-auth-backend.ts:cloudExchangeGoogleToken()` — returns none |
+| **Mobile** | Identity | Resolved via email matching | 🔴 FAIL | `auth-cloud-flow.ts` — fragile, uses `cloudEmployees.find(e => e.email === email)` |
+| **Mobile** | Runtime | `refreshSession` / `revokeSession` → `UNSUPPORTED` | 🟡 GAP | `buildAuthApiClient()` stubs |
+| **Remote** | Cloud DB | `INSTANT_APP_ID=487be5c5-...` matches | 🟢 PASS | MCP `list_apps` confirms |
+| **Remote** | Cloud DB | `oauthSessions` entity present | 🔴 FAIL | MCP `get_schema` — entity NOT FOUND |
+| **Remote** | Cloud DB | `devices.isLanHost` field | 🟡 GAP | Cloud has both `isPrimary` AND `isLanHost` |
+| **Remote** | Cloud DB | `persons` table has `cloudUserId` | 🟢 PASS | MCP `query` confirms |
+| **Remote** | Cloud DB | `shops` table has probe shop | 🟢 PASS | MCP `query` confirms |
+| **Remote** | Self-hosted | `oauthSessions` entity in self-hosted | 🔴 BLOCKED | Cannot reach `apiinstant.fidscript.com` |
+| **Remote** | Self-hosted | `clientName: 'soostoriandroid'` registered | 🔴 BLOCKED | Cannot query self-hosted InstantDB |
+| **Remote** | Self-hosted | `employees` query succeeds | 🔴 BLOCKED | MCP query returned empty (permission or schema mismatch) |
 
-| Check | Status | Notes |
-|-------|--------|-------|
-| SDK version `^0.1.0-alpha.7` | ✅ FIXED | Updated in `package.json` |
-| Magic code (custom InstantDB flow) | ✅ ACCEPTED | Option B confirmed — `db.auth.signInWithMagicCode` is intentional custom flow |
-| Google ID token → `CloudAuth.signInWithGoogleIdToken()` | ✅ VERIFIED + FIXED | `cloudExchangeGoogleToken()` now returns correct `GoogleSignInResult` shape |
-| `StoredSession` as primary identity source | ✅ FIXED | Cold-start fallback keys exist; authoritative identity from SDK session |
-| React Native `OperationalAuth` (`pin-rn.ts`) | ✅ VERIFIED | Uses SDK's `OperationalAuth` with RN PBKDF2 callbacks |
-| First-device PIN enrollment | ✅ VERIFIED | `setupPin()` → local verifier → `hasPin` flag |
-| Cross-device enrollment (B6) | ⚠️ PARTIAL | `enrollmentToken` still placeholder; real token requires backend `verifyPinForEnrollment()` to return scoped token |
-| Identity chain: `resolveOrCreateEmployee()` | ✅ VERIFIED | Called after `cloudVerifyMagicCode` and `cloudExchangeGoogleToken` |
-| Identity chain: `resolveOrRegisterDevice()` | ✅ VERIFIED | Called after both auth paths |
-| Subscription resolution | ✅ VERIFIED | `resolveSubscription()` cached via `cacheEntitlement` |
-
-### Caveats (not blocking Phase 1)
-
-| Gap | Severity | Description | Next Phase |
-|-----|----------|-------------|-----------|
-| B6 partial — `enrollmentToken` is placeholder | MEDIUM | Real token requires backend connection | Phase 15 |
-| `npm install` broken (workspace references) | PRE-EXISTING | Mobile designed for pnpm monorepo workspace | Phase 27 |
-
-**Mobile verdict**: Auth flow is correct. B6 partial gap is not new — existed before Phase 1; requires backend connectivity to resolve fully.
-
----
-
-## Decision: ⚠️ Web — CONDITIONALLY ACCEPTED (GAP-08 OPEN)
-
-**Status**: GAP-07 fixed, GAP-08 pending Ken's architectural decision.
-
-| Check | Status | Notes |
-|-------|--------|-------|
-| SDK version updated to `^0.1.0-alpha.7` | ✅ FIXED | `package.json` updated |
-| GAP-08 — CloudAuth vs Prisma decision | ⏳ PENDING | Ken must decide: migrate to CloudAuth (Option A) or document exception (Option B) |
-
-**Web current state**:
-- `package.json` references `^0.1.0-alpha.7` ✅
-- Web still uses Prisma `Session` + cookie auth + direct database queries ❌
-- Web does NOT use `@soostori/auth`'s `CloudAuth` ❌
-- This is the same state that existed before Phase 1
-
-**What must happen before Web can be fully accepted**:
-
-Option A (preferred): Web migrates to `@soostori/auth` `CloudAuth`:
-- PKCE Google OAuth via SDK
-- `StoredSession` (access/refresh tokens) replacing cookie sessions
-- All POS apps share the same SDK identity model
-
-Option B: Ken formally documents the exception in `docs/ARCHITECTURE.md`:
-- Web is an admin dashboard, not a POS
-- Web uses separate Prisma-based auth system
-- Web cannot participate in cross-device enrollment or trusted devices
-
-**Web is not blocked for Phase 1 overall** — Desktop and Mobile are the primary POS platforms. Web can be resolved in Phase 3 (SDK & Data Contract Foundation) or sooner if Ken decides.
+**Summary**: 🟢 17 pass | 🟡 6 gaps | 🔴 9 failures | ⚪ 2 blocked
 
 ---
 
-## Cross-System Integration Verification
+## 4. Findings Requiring Resolution
 
-### Identity chain — confirmed consistent across accepted platforms
+### CRITICAL — Must fix before acceptance
 
-```
-Person (FIDScript $users)
-  └── Shop (shops)
-        └── Employee (employees)
-              ├── Role (owner/manager/cashier/attendant)
-              └── Device (devices)
-                    └── Operational PIN (device-local via OperationalAuth)
-```
+| ID | Finding | Location | Impact |
+|----|---------|----------|--------|
+| CRIT-01 | `accessToken: userId` — user ID used as bearer token | `soostori-mobile/src/services/cloud-auth-backend.ts:cloudExchangeGoogleToken()` | Any code using `session.accessToken` as Bearer authenticates with InstantDB user ID |
+| CRIT-02 | `employeeId`, `shopId`, `deviceId` all empty in Mobile `StoredSession` | `soostori-mobile/src/services/cloud-auth-backend.ts:cloudExchangeGoogleToken()` | Mobile identity chain broken — must fall back to email query |
+| CRIT-03 | `oauthSessions` entity absent from Cloud schema — unknown in self-hosted | Web backend `saveOAuthSession()` | Web session persistence would fail if entity not in self-hosted InstantDB |
+| CRIT-04 | `devices` entity has `isPrimary` AND `isLanHost` in Cloud schema | Remote InstantDB Cloud | Phase 9.1.1 added `isLanHost` but `isPrimary` still present — ambiguous |
 
-| Platform | Person | Shop | Employee | Device | Operational PIN |
-|----------|--------|------|----------|--------|----------------|
-| Desktop | $users | ✅ | ✅ | ✅ | ✅ safeStorage |
-| Mobile | $users | ✅ | ✅ | ✅ | ✅ RN PBKDF2 |
-| Web | Prisma User | ✅ shops | ✅ shopMembers | ❌ no device model | ❌ |
+### HIGH — Should fix before acceptance
 
-### Session model — Desktop and Mobile aligned, Web diverges
+| ID | Finding | Location | Impact |
+|----|---------|----------|--------|
+| HIGH-01 | Mobile identity resolved via email matching | `soostori-mobile/src/hooks/auth-cloud-flow.ts:signInWithGoogle()` | Two employees with same email → first match wins; email not a stable identity key |
+| HIGH-02 | `queryActiveMember()` returns no `deviceId` for Web | `soostori-mobile/src/lib/auth/session-server.ts` | Web `StoredSession.deviceId` always empty even when Web path is used |
+| HIGH-03 | Mobile `refreshSession`/`revokeSession` return `UNSUPPORTED` | `soostori-mobile/src/hooks/auth-cloud-flow.ts:buildAuthApiClient()` | Mobile sessions cannot be refreshed or revoked through SDK API |
+| HIGH-04 | `employees` query blocked in Cloud (MCP) | Remote InstantDB | Cannot verify Mobile `clientName: 'soostoriandroid'` maps to correct employee record |
 
-| Platform | Session type | Token model | Storage |
-|----------|------------|------------|---------|
-| Desktop | `StoredSession` | accessToken + refreshToken | ElectronStore (encrypted) |
-| Mobile | `StoredSession` | accessToken + refreshToken | AsyncStorage + SDK |
-| Web | Prisma `Session` | cookie token | Database + httpOnly cookie |
+### MEDIUM — Consider fixing
 
----
-
-## Phase 1 Acceptance Summary
-
-| Component | Decision | Blocking Issues |
-|-----------|----------|---------------|
-| SDK (`@soostori/auth`) | ✅ ACCEPTED | None |
-| Desktop | ✅ ACCEPTED | Medium: email/password + trusted device not wired (Phase 18/15) |
-| Mobile | ✅ ACCEPTED | Medium: `enrollmentToken` placeholder (Phase 15, backend required) |
-| Web | ✅ ACCEPTED | `1c1a8a770f3d4317bf3a8da0dff8b7e8050b9366` | GAP-08 resolved — CloudAuth migration via OAuthSession bridge; PKCE OAuth |
-| Cross-system identity | ✅ ACCEPTED | Desktop + Mobile fully consistent |
+| ID | Finding | Location | Impact |
+|----|---------|----------|--------|
+| MED-01 | `devices.isPrimary` field in remote schema (legacy?) | Remote InstantDB Cloud | Unclear whether SDK should use `isPrimary` or `isLanHost` for primary device election |
 
 ---
 
-## Phase 1 Acceptance: ✅ FULLY ACCEPTED — 2026-09-12
+## 5. Verdict
 
-All four components accepted. Phase 1 complete.
+### 🔴 NOT ACCEPTED
 
-Open items (not blocking — future phases):
+Phase 1 authentication is **NOT ACCEPTED** because:
 
-| Item | Owner | Next phase |
-|------|-------|-----------|
-| Desktop: `signInWithGoogleIdToken` IPC not wired | Desktop | Phase 18 |
-| Desktop: Email/password registration + verification | Desktop | Phase 18 |
-| Desktop: Trusted device management | Desktop | Phase 15 |
-| Mobile: `enrollmentToken` is placeholder (backend required) | Backend | Phase 15 |
-| Web: RBAC role key alignment with SDK `permissions.ts` | Web | Phase 4 |
-| Web: Trusted device management | Web | Phase 15 |
+1. **CRIT-01 + CRIT-02** (Mobile fabricated session tokens): The Mobile auth backend returns `accessToken = userId` (a fabricated value) and empty `employeeId/shopId/deviceId`. This breaks the identity contract that all three platforms depend on.
+
+2. **CRIT-03** (`oauthSessions` unverified): The Web session storage entity cannot be verified in the self-hosted InstantDB. If this entity is not created in the self-hosted deployment, Web sessions will fail silently or crash at runtime.
+
+3. **HIGH-01** (Mobile email-matching identity): Mobile resolves identity by email, which is unstable and can collide.
+
+### Required to Achieve ACCEPTED
+
+| Step | Action | Owner |
+|------|--------|-------|
+| 1 | Fix `cloudExchangeGoogleToken()` in Mobile to return real `accessToken`, `employeeId`, `shopId`, `deviceId` from InstantDB query results | Mobile team |
+| 2 | Verify `oauthSessions` entity schema in self-hosted InstantDB deployment | Backend team |
+| 3 | Verify `clientName: 'soostoriandroid'` is registered in self-hosted InstantDB | Backend team |
+| 4 | Clarify `isPrimary` vs `isLanHost` — determine which field self-hosted InstantDB uses | Backend team |
+| 5 | Replace Mobile email-matching with `userId`-based `employees` lookup by `personId` | Mobile team |
+| 6 | Add `deviceId` to Web `queryActiveMember()` response or document its absence | Web team |
+| 7 | Re-run Phase 1 acceptance audit with staging deployment | Verification agent |
+
+### Evidence Base
+
+- **SDK**: `packages/auth/src/cloud-auth.ts`, `packages/auth/src/mock-api-client.ts` — 144/144 tests passing, TypeScript clean
+- **Web**: `Mkid095/soostori` (main branch) — CloudAuth + PKCE + InstantDB `oauthSessions` (source verified)
+- **Mobile**: `Mkid095/soostori-mobile` (master branch) — CRIT-01, CRIT-02, HIGH-01, HIGH-03 defects found
+- **Remote**: `/instant-self` MCP → InstantDB Cloud (app `487be5c5-7615-4bbd-b3b7-3aa97154ca99`) — schema confirmed except `oauthSessions`
+
+### Test Results at Acceptance Check
+
+| Suite | Result |
+|-------|--------|
+| `packages/auth/test/cloud-auth.test.ts` | ✅ 31/31 passing |
+| `packages/auth/test/operational-auth.test.ts` | ✅ 47/47 passing |
+| `packages/auth/test/api-client.test.ts` | ✅ 38/38 passing |
+| `packages/auth/test/session.test.ts` | ✅ 28/28 passing |
+| **SDK total** | ✅ **144/144** |
+| Web runtime auth | 🔴 BLOCKED — requires staging deployment |
+| Mobile runtime auth | 🔴 BLOCKED — requires CRIT-01/02 fix + staging deployment |
 
 ---
 
-## Phase 1 Acceptance Artifact Provenance
+## 6. Re-audit Triggers
 
-| Item | Value |
-|------|-------|
-| SDK commit | `dc8c7f7` |
-| Desktop commit | `4d8f382cdd0a502be102c1bac2c988cf9bf3408b` |
-| Mobile commit | `cd37c91` |
-| Web commit | `a9cfdd4a` — complete Prisma→InstantDB migration, all web data in FIDScript |
-| NPM `@soostori/auth` | `0.1.0-alpha.7` |
-| NPM `@soostori/commercial` | `0.1.0-alpha.2` |
-| NPM `@soostori/expenses` | `0.1.0-alpha.17` |
-| NPM `@soostori/reports` | `0.1.0-alpha.14` |
-| NPM `@soostori/team` | `0.1.0-alpha.2` |
-| SDK tests | 144/144 passing |
-| Phase 1 declared complete | 2026-09-12 |
+This acceptance is conditional. Re-audit is required when:
 
----
-
-*This file is the permanent Phase 1 acceptance artifact. It is the authoritative record of what was proven, what was accepted, and what remains open.*
+- Any Mobile auth backend code is changed
+- The self-hosted InstantDB schema is modified
+- A new `clientName` value is registered
+- The `devices` table schema is changed in either Cloud or self-hosted InstantDB

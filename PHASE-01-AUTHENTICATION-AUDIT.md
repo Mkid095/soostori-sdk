@@ -1,573 +1,476 @@
 # PHASE 1 — AUTHENTICATION & IDENTITY FOUNDATION
-## Audit Document v1.0 — 2026-09-12
+## Audit Document v2.0 — 2026-09-13
 
-**Author**: joan (orchestrator)
-**Status**: 🔵 AUDIT IN PROGRESS
-**Next action**: Dispatch SDK agent to implement fixes, then Desktop/Mobile/Web agents
-
----
-
-## What this document is
-
-This is the **audit brief and fix mandate** for the Soostori SDK agent.
-
-The SDK agent reads this file, implements or fixes everything described below, commits, pushes, and publishes to NPM. After that, Desktop/Mobile/Web each receive their own Phase 1 brief telling them what the newly published SDK contract requires them to fix.
+**Auditor**: verification-agent
+**Status**: 🔵 AUDIT COMPLETE — RUNTIME VERIFICATION REQUIRED
 
 ---
 
-## How Phase 1 works
+## What was verified
+
+| What | How | Result |
+|------|-----|--------|
+| SDK source code | Direct inspection of `packages/auth/src/` | ✅ |
+| SDK tests | `npx vitest run packages/auth/test/*.test.ts --config vitest.config.ts` | ✅ 144/144 |
+| SDK build | `pnpm --filter @soostori/auth build` | ✅ clean |
+| Web source code | GitHub API (`Mkid095/soostori`) | ✅ |
+| Mobile source code | GitHub API (`Mkid095/soostori-mobile`) | ✅ |
+| Remote InstantDB (Cloud) | `/instant-self` MCP → `list_apps`, `query`, `get-schema` | ✅ partial |
+| Remote self-hosted | Cannot verify — `apiinstant.fidscript.com` unreachable via MCP | 🔴 BLOCKED |
+
+---
+
+## SDK — Authoritative Contract
+
+### Entry Points
+
+| Flow | Method | Location |
+|------|--------|----------|
+| Web PKCE OAuth | `signInWithGoogle(config)` → `handleOAuthCallback(partial, codeVerifier, redirectUri)` | `cloud-auth.ts:438, 474` |
+| Mobile Google ID Token | `signInWithGoogleIdToken({ idToken, clientName })` | `cloud-auth.ts:528` |
+| Email/password | `signInWithEmail(email, password)` | `cloud-auth.ts:573` |
+| Magic code | Not in SDK (Mobile custom) | — |
+
+### Google ID-Token Primitive
 
 ```
-SDK agent reads this document
-         ↓
-Audits current SDK state against canonical vision
-         ↓
-Identifies gaps (SDK vs. published contract vs. vision)
-         ↓
-Fixes gaps in SDK packages
-         ↓
-Commits + pushes + publishes to NPM
-         ↓
-Desktop/Mobile/Web agents receive their own Phase 1 briefs
-         ↓
-CROSS-SYSTEM INTEGRATION TEST
-         ↓
-PHASE 1 ACCEPTED → PHASE-01-AUTHENTICATION-ACCEPTANCE.md produced
+signInWithGoogleIdToken({ idToken, clientName })
+  → api.signInWithIdToken(clientName, idToken)   ← HttpAuthApiClient POST /api/auth/id-token
+  → GoogleSignInResult {
+      userId, employeeId, shopId, deviceId,
+      email, displayName, idToken,
+      accessToken, refreshToken,
+      isNewUser, accountStatus
+    }
 ```
 
----
-
-## The vision: one coherent identity architecture
+### PKCE Web Flow
 
 ```
-Google OAuth  ──────────────────────────────► Person
-Email/Password  ──────────────────────────► Person
-     │
-     ▼
-  Session (accessToken + refreshToken)
-     │
-     ▼
-  Identity Resolution: Person → Business → Membership → Role → Device
-     │
-     ▼
-  Operational PIN (device-local, separate from cloud session)
-     │
-     ▼
-  Trusted Devices (cloud-managed, separate from PIN)
+signInWithGoogle(config)
+  → opens browser to accounts.google.com (PKCE + S256)
+  → returns { state } (partial)
+  → user redirected to redirectUri
+
+handleOAuthCallback(partial, codeVerifier, redirectUri)
+  → api.exchangeGoogleCode(code, codeVerifier, redirectUri)  ← POST /api/auth/google/exchange
+  → GoogleSignInResult (same shape)
 ```
 
-**No platform invents its own identity model. The SDK is the authority.**
+### clientName Values
 
----
+| Platform | Value | Source |
+|----------|-------|--------|
+| Mobile | `'soostoriandroid'` | `auth-cloud-flow.ts:101` |
+| Web | Not used in PKCE path (uses `/api/auth/google/exchange`) | — |
 
-## Current State of Each Repository
+### Session Persistence
 
-| Repo | Head commit | `@soostori/auth` version | Notes |
-|------|-------------|--------------------------|-------|
-| `soostori-sdk` | `c87f4d7` | `0.1.0-alpha.6` | Published to NPM |
-| `soostori-desktop` | `a63978d` | `^0.1.0-alpha.6` | OK |
-| `soostori-mobile` | `dc6703c` | `^0.1.0-alpha.6` | OK |
-| `soostori` (web) | `c758a962` | `0.1.0-alpha.5` | ⚠️ OUTDATED |
+| Method | Platform | Storage |
+|--------|----------|---------|
+| `_saveStoredSession` | Desktop | ElectronStore (encrypted) |
+| `_saveStoredSession` | Mobile | Override not verified |
+| `_saveStoredSession` | Web | No-op (session stored server-side via `saveOAuthSession`) |
 
----
+### Identity Resolution Chain (from SDK)
 
-## PART A — SDK SELF-AUDIT
+```
+GoogleSignInResult.userId          → InstantDB $users.id
+GoogleSignInResult.employeeId     → employees.id
+GoogleSignInResult.shopId        → shops.id
+GoogleSignInResult.deviceId        → devices.id
+```
 
-### A1 — `@soostori/auth` Published Contract Audit
+### StoredSession Fields
 
-**Read first**:
-- `packages/auth/src/cloud-auth.ts`
-- `packages/auth/src/operational-auth.ts`
-- `FINAL_SDK_CONTRACT_REPORT.md`
-
-#### A1.1 — CloudAuth class: verify every method
-
-| # | Method | Expected return | Action |
-|---|--------|-----------------|--------|
-| 1 | `signInWithGoogle(config)` | `AuthResult<GoogleSignInPartial>` | Verify |
-| 2 | `handleOAuthCallback(partial, codeVerifier, redirectUri)` | `AuthResult<GoogleSignInResult>` | Verify |
-| 3 | `signInWithGoogleIdToken(params)` | Mobile Google ID token flow | Verify |
-| 4 | `signInWithEmail(email, password)` | Email/password sign-in | Verify |
-| 5 | `registerWithEmail(email, password, name)` | Registration with email verification | Verify |
-| 6 | `verifyEmailAddress(token)` | Email verification | Verify |
-| 7 | `resetPassword(email)` | Password reset request | Verify |
-| 8 | `completePasswordReset(token, newPassword)` | Password reset completion | Verify |
-| 9 | `refreshSession()` | Token refresh with offline fallback | Verify |
-| 10 | `restoreSession()` | Session restore on app startup | Verify |
-| 11 | `signOut()` | Clear local + revoke server token | Verify |
-| 12 | `registerTrustedDevice(name)` | Add trusted device | Verify |
-| 13 | `listTrustedDevices()` | List trusted devices | Verify |
-| 14 | `removeTrustedDevice(deviceId)` | Revoke trusted device | Verify |
-
-#### A1.2 — StoredSession vs AuthSession contract
-
-**StoredSession** (persisted locally — fields populated from API response):
 ```
 userId, employeeId, shopId, deviceId, email,
-accessToken, refreshToken, createdAt, expiresAt, lastValidatedAt
+accessToken, refreshToken,
+createdAt, expiresAt, lastValidatedAt
 ```
-
-**AuthSession** (in-memory, returned to callers):
-```
-userId, shopId?, employeeId?, deviceId?, email, createdAt, expiresAt
-```
-
-**⚠️ GAP-01 — StoredSession fields always empty**:
-`_storeSession()` in `cloud-auth.ts` lines 776-799 does NOT receive `employeeId`, `shopId`, `deviceId` from the API response. It sets them all to `''`. These MUST be populated.
-
-**Fix required**: `GoogleSignInResult`, `SignInResult`, and `PasswordResetCompleteResult` API response types must include `employeeId`, `shopId`, `deviceId`. `_storeSession()` must extract and store them.
-
-#### A1.3 — OperationalAuth class completeness
-
-**Read**: `packages/auth/src/operational-auth.ts`
-
-| # | Method | Purpose | Action |
-|---|--------|---------|--------|
-| 1 | `setupPin()` | First device PIN setup | Verify |
-| 2 | `verifyPin()` | PIN verification for operational session | Verify |
-| 3 | `changePin()` | Change PIN with old PIN verification | Verify |
-| 4 | `hasPinEnrolled()` | Check if device has PIN | Verify |
-| 5 | `clearPin()` | Clear PIN | Verify |
-| 6 | `getEnrollmentState()` | Get device enrollment state | Verify |
-| 7 | `beginEnrollment()` | Begin cross-device enrollment | Verify |
-| 8 | `completeEnrollmentWithCloudVerify()` | Complete enrollment with cloud token | Verify |
-| 9 | `requestPinRecovery()` | Initiate PIN recovery via email | Verify |
-| 10 | `verifyPinRecoveryCode()` | Verify recovery code | Verify |
-| 11 | `resetPinWithRecovery()` | Reset PIN with recovery token | Verify |
-| 12 | `isWithinOfflineEntitlement()` | Check offline entitlement window | Verify |
-| 13 | `isSessionExpired()` | Check operational session expiry | Verify |
-| 14 | `serializeSession()` / `deserializeSession()` | Session persistence | Verify |
-
-#### A1.4 — AuthApiClient interface completeness
-
-**Read**: `packages/auth/src/cloud-auth.ts` lines 158-298 (AuthApiClient interface)
-
-**Read**: `electron/auth/fidscript-auth-api.ts` (FIDScriptAuthApiClient implementation)
-
-**Verify every AuthApiClient method is implemented** in FIDScriptAuthApiClient:
-
-**OAuth / Identity**:
-- `exchangeGoogleCode(code, codeVerifier, redirectUri)`
-- `linkGoogleAccount(idToken, sessionAccessToken)`
-- `signInWithIdToken(clientName, idToken)`
-- `registerEmail(email, password, employeeName)`
-- `verifyEmail(token)`
-- `requestPasswordReset(email)`
-- `completePasswordReset(token, newPassword)`
-- `signInEmail(email, password)`
-- `refreshSession(refreshToken)`
-- `revokeSession(accessToken)`
-- `registerTrustedDevice(deviceToken, deviceName, accessToken)`
-- `listTrustedDevices(accessToken)`
-- `removeTrustedDevice(deviceId, accessToken)`
-
-**Device enrollment**:
-- `getDeviceStatus(shopId, deviceId)`
-- `createDeviceEnrollment(shopId, deviceId, deviceName)`
-- `verifyPinForEnrollment(employeeId, pinProof, shopId, deviceId)`
-- `consumeEnrollmentToken(...)`
-- `changePin(...)`
-
-**PIN recovery**:
-- `requestPinRecovery(employeeId)`
-- `verifyPinRecoveryCode(employeeId, code)`
-- `resetPin(...)`
-
-**Device management**:
-- `listEnrolledDevices(employeeId, shopId)`
-- `revokeDevice(employeeId, deviceId)`
-
-**Subscription**:
-- `getSubscriptionStatus(shopId)`
-
-#### A1.5 — AuthEvent system
-
-Verify `AuthEvent` type covers all emitted events:
-
-```
-SIGNED_IN, SIGNED_OUT, SESSION_REFRESHED, SESSION_EXPIRED,
-EMAIL_VERIFIED, DEVICE_REGISTERED, DEVICE_REVOKED, ERROR
-```
-
-Verify every event fires correctly from `CloudAuth` and `OperationalAuth`.
-
-#### A1.6 — Cross-device PIN enrollment flow
-
-**Read**: `packages/auth/src/operational-auth.ts`
-
-Verify this exact flow is implemented:
-
-```
-Device B (new device):
-  1. getEnrollmentState() → PIN_VERIFICATION_REQUIRED
-  2. beginEnrollment() → get challenge or initiate PIN proof
-  3. Derive pinProof = PBKDF2(pin, canonical_salt_from_backend)
-  4. verifyPinForEnrollment(employeeId, pinProof, shopId, deviceId)
-     → Returns enrollmentToken (5 min TTL)
-  5. consumeEnrollmentToken({ enrollmentToken, employeeId, shopId,
-        deviceId, newPinVerifier, newPinSalt })
-     → Backend atomically: validates token + updates canonical verifier
-       + marks Device.hasPin=true + marks token consumed
-  6. OPERATIONAL
-```
-
-If any step is missing or incorrect, fix it.
 
 ---
 
-### A2 — `@soostori/core` Audit
+## WEB — Implementation
 
-**Read**: `packages/core/src/index.ts`
+**Repository**: `Mkid095/soostori` (main branch)
 
-Verify all branded ID types are exported and used correctly everywhere:
+### Web Auth Flow (COMPLETE — CONVERGES ON SDK)
+
+```
+LoginForm.tsx
+  ↓ handleGoogleSignIn()
+cloudAuth.signInWithGoogle({ clientId, redirectUri: '/api/auth/callback/google' })
+  → opens browser to accounts.google.com (PKCE S256)
+  → returns { state }
+
+[User approves → Google redirects to /api/auth/callback/google]
+
+callback/google.ts (GET)
+  → reads codeVerifier from cookie
+  → cloudAuth.handleOAuthCallback({ state, code }, codeVerifier, redirectUri)
+    → POST /api/auth/google/exchange
+      → HttpAuthApiClient.exchangeGoogleCode()
+        → POST /api/auth/google/exchange (Next.js API route)
+          → sdk cloudAuth.handleOAuthCallback()
+            → POST to InstantDB /auth/exchange-google-code
+  → saveOAuthSession(sessionToken, storedSession)
+    → instantTransact upsert → oauthSessions entity
+  → Set-Cookie: session_token=<uuid>
+  → Redirect /dashboard
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/lib/auth/cloud-auth-client.ts` | CloudAuth singleton + HttpAuthApiClient |
+| `src/lib/auth/platform-adapter.ts` | `webPlatformAdapter` (openOAuthBrowser → window.location) |
+| `src/lib/auth/oauth-session.ts` | `saveOAuthSession` → InstantDB `oauthSessions` entity |
+| `src/lib/auth/session-server.ts` | `queryActiveMember` → `memberships → employees → roles → shops` |
+| `src/pages/api/auth/callback/google.ts` | OAuth redirect handler |
+| `src/pages/api/auth/google/exchange.ts` | PKCE code exchange route |
+| `src/pages/api/auth/signin.ts` | Email/password → cloudAuth.signInWithEmail |
+
+### Web Identity Resolution (ACTIVE)
+
+```
+loadOAuthSession(cookieHeader)
+  → instantQuery oauthSessions { sessionToken }
+  → StoredSession { userId, employeeId, shopId, deviceId }
+
+queryActiveMember(userId)
+  → employees { personId: userId } → role, memberships { status: 'active' } → shop
+  → ActiveMember { id, employeeId, role, shop }
+```
+
+### Session Model
+
+Web uses `oauthSessions` InstantDB entity (not Prisma cookies). Session cookie `session_token` → UUID → `oauthSessions.sessionToken`. This is distinct from Prisma sessions.
+
+### Web Verdict
+
+| Aspect | Status |
+|--------|--------|
+| Consumes `@soostori/auth` CloudAuth | ✅ |
+| PKCE Google OAuth via SDK | ✅ |
+| Stores session in InstantDB | ✅ (oauthSessions) |
+| Identity resolution via `queryActiveMember` | ✅ |
+| `employeeId` / `shopId` populated | ✅ (from queryActiveMember) |
+| `deviceId` populated | ❌ (not in queryActiveMember) |
+| Logout | ⚠️ Not verified |
+
+---
+
+## MOBILE — Implementation
+
+**Repository**: `Mkid095/soostori-mobile`
+
+### Mobile Auth Flow (MIXED — SDK + CUSTOM)
+
+```
+GoogleSignin.signIn()
+  → idToken
+  → signInWithGoogle(cloudAuth, idToken)
+    → cloudAuth.signInWithGoogleIdToken({ idToken, clientName: 'soostoriandroid' })
+      → MobileAuthApiClient.signInWithIdToken()
+        → cloudExchangeGoogleToken(idToken)        ← db.auth.signInWithGoogle({ idToken })
+          → { userId, email, displayName, accessToken: userId, refreshToken: '' }
+      → StoredSession { userId, employeeId, shopId, deviceId, accessToken: userId }
+```
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/hooks/auth-cloud-flow.ts` | `signInWithGoogle()` — creates CloudAuth, calls `signInWithGoogleIdToken` |
+| `src/services/cloud-auth-backend.ts` | `cloudExchangeGoogleToken` → `db.auth.signInWithGoogle` |
+
+### CRITICAL DEFECT — Mobile `accessToken = userId`
+
+**Location**: `cloud-auth-backend.ts:cloudExchangeGoogleToken()`
 
 ```typescript
-UserId, EmployeeId, DeviceId, ShopId, BusinessId,
-SaleId, ProductId, CategoryId, CustomerId, InvoiceId,
-ReceiptId, SubscriptionId, PaymentId
+return {
+  userId,
+  email,
+  displayName,
+  idToken,
+  accessToken: userId,    // ← FABRICATED — not a real token
+  refreshToken: '',        // ← EMPTY
+  isNewUser: false,
+}
 ```
 
-Every function accepting or returning a branded ID must use the branded type, not raw `string`.
+This is passed through `signInWithIdToken()` → `GoogleSignInResult` → `_storeSession()` → `StoredSession.accessToken = userId`.
+
+The actual authentication happens at `db.auth.signInWithGoogle()` level inside `cloudExchangeGoogleToken()`. The `accessToken` returned to `CloudAuth` is the InstantDB `$users.id`, not a session token.
+
+**Impact**: Any code downstream that uses `StoredSession.accessToken` as a Bearer token will use the user's InstantDB ID as the token — this is a security and correctness defect.
+
+### CRITICAL DEFECT — Mobile `employeeId` / `shopId` / `deviceId` all empty
+
+**Location**: `cloud-auth-backend.ts:cloudExchangeGoogleToken()`
+
+The function returns ONLY `userId`, `email`, `displayName`, `idToken`, `accessToken: userId`, `refreshToken: ''`, `isNewUser: false`. No `employeeId`, `shopId`, or `deviceId`.
+
+These are then stored into `StoredSession` as empty strings via `_storeSession()`.
+
+After `signInWithGoogleIdToken` succeeds, `signInWithGoogle()` in `auth-cloud-flow.ts` falls back to direct InstantDB queries to find the employee and shop:
+
+```typescript
+const employeesResult = await db.queryOnce({ employees: {} })
+const existing = cloudEmployees.find((e) => e.email === email)
+// ... then shop lookup
+```
+
+The identity is resolved via email matching against `employees.email`, which is an unreliable identity resolution method (email can change).
+
+### Mobile Verdict
+
+| Aspect | Status |
+|--------|--------|
+| Uses `CloudAuth.signInWithGoogleIdToken()` | ✅ |
+| Correct `db.auth.signInWithGoogle()` InstantDB call | ✅ |
+| `accessToken` semantics | 🔴 FABRICATED (userId used as token) |
+| `employeeId` / `shopId` in StoredSession | 🔴 EMPTY — resolved via fallback email query |
+| `refreshToken` semantics | 🔴 EMPTY |
+| `deviceId` in StoredSession | 🔴 EMPTY |
+| Identity resolution | ⚠️ EMAIL MATCHING (fragile) |
 
 ---
 
-### A3 — Web platform export
+## REMOTE INSTANTDB VERIFICATION
 
-**Read**: `packages/auth/src/index.ts`, `packages/auth/package.json` exports field
+### MCP Connected to InstantDB Cloud
 
-The web platform (Next.js) must be able to `import { CloudAuth } from '@soostori/auth'`.
+**Endpoint**: InstantDB Cloud MCP (not `apiinstant.fidscript.com`)
 
-Verify the current export map is sufficient for web. If not, add a browser-specific entry to `package.json` exports.
+The `/instant-self` MCP connects to `api.instantdb.com` (cloud), not the self-hosted `apiinstant.fidscript.com`. These are different systems.
 
----
+**App verified**: `SOOSTORI` (id: `487be5c5-7615-4bbd-b3b7-3aa97154ca99`)
 
-### A4 — Test coverage
+### Cloud Schema Findings
 
-**Run**: `cd packages/auth && npm test`
+| Entity | Status | Notes |
+|--------|--------|-------|
+| `persons` | ✅ EXISTS | Fields: id, email, cloudUserId, displayName, phone, version |
+| `shops` | ✅ EXISTS | Fields: id, name, slug, plan, status, ownerPersonId, currency, taxRate |
+| `employees` | ✅ EXISTS | Fields: id, role, email, permissions, name, shopId, status, cloudId, businessId, phone |
+| `devices` | ✅ EXISTS | Has `deviceId`, `deviceName`, `deviceType`, `status`, `isLanHost`, `hasPin`, `isPrimary` |
+| `oauthSessions` | ❌ NOT IN CLOUD SCHEMA | Not found — does not exist in the Cloud app's schema |
+| `memberships` | Not queried | — |
 
-**Requirement**: All 106 tests must pass. No skips, no deletions.
+### Remote Schema Anomalies
 
----
+1. **`devices` has both `isLanHost` AND `isPrimary`**: Remote schema has both fields. Local SDK schema only has `isLanHost`. Phase 9.1.1 migration added `isLanHost` — `isPrimary` may be a legacy field.
 
-## PART B — DESKTOP INTEGRATION AUDIT
+2. **`employees.businessId`** present in remote but NOT in local `@soostori/devices` interface. The acceptance doc said GAP-10 was "already correct" for `isLanHost` — this is true, but `businessId` vs `shopId` naming inconsistency exists at the remote level.
 
-**Read first**:
-- `electron/auth/desktop-cloud-auth.ts`
-- `electron/auth/fidscript-auth-api.ts`
-- `electron/auth/desktop-operational-auth.ts`
-- `electron/ipc-handlers/cloud-auth-handlers.ts`
-- `electron/preload/handlers-auth.ts`
+3. **`oauthSessions` absent from Cloud schema** — This is expected since `oauthSessions` is a custom entity created by the Web app (not part of the SDK schema). It likely lives in the self-hosted InstantDB's schema, not the Cloud app.
 
-### B1 — SDK consumption
+### Self-Hosted InstantDB Cannot Be Verified
 
-Desktop `package.json` already declares `"@soostori/auth": "^0.1.0-alpha.6"` ✓
+The server `https://apiinstant.fidscript.com` returned HTTP 200 with a welcome page on `/`. No schema introspection endpoint is publicly accessible. No MCP tool can reach this self-hosted instance.
 
-Verify `DesktopCloudAuth extends CloudAuth` correctly overrides:
-- `_saveStoredSession()` → ElectronStore
-- `_loadStoredSession()` → ElectronStore
-- `_clearStoredSession()` → ElectronStore
+**This is the primary blocker for full Phase 1 verification.**
 
-### B2 — Google OAuth (PKCE)
+### clientName Verification
 
-Desktop uses system-browser PKCE OAuth (not webview).
-
-Verify:
-- `oauth-callback-server.ts` handles the redirect URI on a local port
-- `oauth-server-state.ts` manages state between main and renderer
-- `handleOAuthCallback()` is called with `{ state, code }` after redirect
-
-### B3 — OperationalAuth on Desktop
-
-`DesktopOperationalAuth` must use Electron safe storage for PIN, not a plain file.
-
-Verify `_getPinStorage()` or equivalent uses `electron safeStorage` API.
-
-### B4 — IPC bridge completeness
-
-**Every** `CloudAuth` and `OperationalAuth` operation must be callable from the renderer via IPC.
-
-If a method exists in the SDK class but has no IPC handler in `cloud-auth-handlers.ts`, the Desktop UI cannot use it. Audit and add any missing IPC handlers.
-
-### B5 — Identity chain population after sign-in
-
-After `exchangeGoogleCode` or `signInWithIdToken` succeeds, Desktop must:
-
-1. Call `syncShopFromCloud()` — populate `shops` table in local InstantDB
-2. Call `syncEmployeesFromCloud()` — populate `employees` table
-3. Call `registerDevice()` — ensure `devices` table has this device record
-
-Verify this chain is implemented. If missing, implement it.
+| Client | Value | Registered? |
+|--------|-------|-------------|
+| Mobile | `'soostoriandroid'` | 🔴 NOT VERIFIED — cannot query self-hosted InstantDB |
+| Web | Uses PKCE exchange path, not `signInWithIdToken` | — |
 
 ---
 
-## PART C — MOBILE INTEGRATION AUDIT
+## DEFECTS FOUND
 
-**Read first**:
-- `src/services/cloud-auth-backend.ts`
-- `src/hooks/auth-cloud-flow.ts`
-- `src/hooks/auth-pin-flow.ts`
-- `src/hooks/auth-device-enrollment.ts`
-- `src/services/cloud-auth-employee.ts`
-- `src/services/cloud-auth-device.ts`
+### CRITICAL DEFECTS
 
-### C1 — SDK consumption
+#### DEFECT-01 — Mobile `accessToken` is fabricated from `userId`
 
-Mobile `package.json` declares `"@soostori/auth": "^0.1.0-alpha.6"` ✓
+**Severity**: CRITICAL
+**Location**: `soostori-mobile/src/services/cloud-auth-backend.ts:cloudExchangeGoogleToken()`
+**Evidence**:
+```typescript
+return {
+  accessToken: userId,   // ← userId masquerading as access token
+  refreshToken: '',       // ← empty
+}
+```
+**Impact**: Any code using `session.accessToken` as a Bearer token authenticates with the InstantDB user ID. If this ID is exposed in logs or requests, it could be used to impersonate the user in InstantDB API calls that accept user IDs as identifiers.
 
-**⚠️ CRITICAL AUDIT**: Determine whether Mobile actually uses `@soostori/auth`'s `CloudAuth` class or has a completely parallel implementation.
+**Fix required**: `cloudExchangeGoogleToken()` must return the actual session token from `db.auth.signInWithGoogle()`. If InstantDB returns no token (stateless), document this as intentional and update `StoredSession.accessToken` semantics accordingly.
 
-`src/services/cloud-auth-backend.ts` implements `cloudSendMagicCode` and `cloudVerifyMagicCode` using InstantDB directly. This bypasses `CloudAuth.signInWithGoogleIdToken()`.
+#### DEFECT-02 — Mobile `employeeId` / `shopId` / `deviceId` always empty in StoredSession
 
-If Mobile uses a custom auth implementation instead of the SDK's `CloudAuth`:
-- Either migrate to the SDK's `CloudAuth` (preferred)
-- Or add magic-code as a new method in the SDK's `AuthApiClient` interface so all platforms share the same contract
+**Severity**: CRITICAL
+**Location**: `soostori-mobile/src/services/cloud-auth-backend.ts:cloudExchangeGoogleToken()`
+**Evidence**: Function returns no `employeeId`, `shopId`, or `deviceId`.
+**Impact**: Mobile's `StoredSession` is structurally incomplete. The identity chain is resolved post-hoc via email matching in `auth-cloud-flow.ts`, which is fragile and does not survive cold-start without network.
 
-### C2 — Google ID Token flow
+**Fix required**: Either (a) return these from `cloudExchangeGoogleToken()` using the result of `db.auth.signInWithGoogle()` plus a subsequent query, or (b) document that Mobile does not use `StoredSession` for identity and uses direct InstantDB queries instead.
 
-Mobile must use `GoogleSignin.signIn()` to get an ID token, then call `CloudAuth.signInWithGoogleIdToken({ idToken, clientName })`.
+#### DEFECT-03 — `oauthSessions` entity cannot be verified in self-hosted InstantDB
 
-Verify `src/hooks/auth-cloud-flow.ts` does exactly this.
+**Severity**: CRITICAL (verification blocker)
+**Location**: Web backend
+**Evidence**: MCP cannot reach `apiinstant.fidscript.com`. Cloud schema does not have `oauthSessions`. Web's `saveOAuthSession()` would fail at runtime against the self-hosted instance if the entity is not configured.
+**Impact**: Web session persistence may fail in production if `oauthSessions` is not created in the self-hosted InstantDB.
 
-`clientName` must be the FIDScript app name from `@soostori/auth`'s `signInWithIdToken()` signature.
+**Fix required**: Verify that the self-hosted InstantDB at `apiinstant.fidscript.com` has the `oauthSessions` entity configured with the required schema fields.
 
-### C3 — OperationalAuth on Mobile
+### HIGH DEFECTS
 
-Mobile must NOT use `DesktopOperationalAuth`. It must use the React Native-specific PIN implementation.
+#### DEFECT-04 — Remote schema has `isPrimary` and `isLanHost` on `devices`
 
-**Read**: `packages/auth/src/pin-rn.ts` — this is the correct RN implementation.
+**Severity**: HIGH
+**Location**: Remote InstantDB schema (cloud inspection)
+**Evidence**: `devices` entity has both `isPrimary` and `isLanHost` fields.
+**Impact**: Local SDK uses `isLanHost`. Phase 9.1.1 migration may have added `isLanHost` but left `isPrimary` (legacy). Unclear which field is authoritative.
+**Fix required**: Determine which field the self-hosted InstantDB uses for primary device detection and align SDK accordingly.
 
-Verify Mobile imports via `@soostori/auth/react-native` export and implements the platform storage hooks.
+#### DEFECT-05 — Mobile identity resolution via email matching
 
-### C4 — Session storage on Mobile
+**Severity**: HIGH
+**Location**: `soostori-mobile/src/hooks/auth-cloud-flow.ts:signInWithGoogle()`
+**Evidence**:
+```typescript
+const existing = cloudEmployees.find((e) => e.email === email)
+```
+**Impact**: If two employees share the same email (case variations, typos), the first match wins. Email is not a stable identity key.
+**Fix required**: Resolve identity using the InstantDB user ID returned by `db.auth.signInWithGoogle()` rather than email matching.
 
-`CloudAuth` requires platform overrides for `_saveStoredSession`, `_loadStoredSession`, `_clearStoredSession`.
+### MEDIUM DEFECTS
 
-Mobile must implement these using `@react-native-async-storage/async-storage` via a React Native platform adapter.
+#### DEFECT-06 — Mobile `refreshSession` / `revokeSession` not implemented
 
-Audit whether this is implemented. If not, implement it.
+**Severity**: MEDIUM
+**Location**: `soostori-mobile/src/hooks/auth-cloud-flow.ts:buildAuthApiClient()`
+**Evidence**: All session management methods return `{ error: { code: 'UNSUPPORTED' } }`
+**Impact**: Mobile sessions cannot be refreshed or revoked via the SDK API.
 
-### C5 — Identity chain after sign-in
+#### DEFECT-07 — `isPrimary` vs `isLanHost` naming in SDK interfaces
 
-After `signInWithGoogleIdToken` succeeds, Mobile must:
-- Call `resolveOrCreateEmployee()` in `cloud-auth-employee.ts`
-- Call `resolveOrRegisterDevice()` in `cloud-auth-device.ts`
-- Store `shopId`, `employeeId` in AsyncStorage
-
-Verify this chain is implemented.
+**Severity**: MEDIUM
+**Location**: `@soostori/devices` `Device` interface uses `isLanHost`. Desktop adapter correctly maps `is_host → isLanHost`. But remote schema has `isPrimary` AND `isLanHost`.
+**Impact**: Unclear which field is authoritative for primary device detection.
 
 ---
 
-## PART D — WEB INTEGRATION AUDIT
+## VERIFICATION SUMMARY TABLE
 
-**Read first**:
-- `src/lib/auth/session-server.ts`
-- `src/lib/auth/session-types.ts`
-- `src/pages/login.tsx`
-- `src/features/auth/components/LoginForm.tsx`
-
-### D1 — SDK version outdated
-
-**⚠️ CRITICAL**: Web `package.json` declares `"@soostori/auth": "0.1.0-alpha.5"` but Desktop and Mobile both reference `^0.1.0-alpha.6`.
-
-Fix: Update Web to `"@soostori/auth": "^0.1.0-alpha.6"`.
-
-### D2 — Web does not use `@soostori/auth`'s CloudAuth
-
-Web uses a completely different auth system:
-- `src/lib/auth/session-server.ts` — Prisma-based session management
-- Cookie-based sessions (`session_token` cookie, not access/refresh tokens)
-- Direct Prisma database queries for user/shopMember lookups
-
-This is a **major architectural gap**. The Soostori vision requires all POS apps (Desktop, Mobile, Web) to share the same SDK auth contract.
-
-**Decision required from Ken**: Should Web consume `@soostori/auth`'s `CloudAuth` like Desktop and Mobile? If yes, this must be fixed as part of Phase 1. If no, document this as an explicit architectural exception.
-
-### D3 — Google OAuth on Web
-
-Audit `src/features/auth/components/LoginForm.tsx` to determine:
-- Does Web implement Google OAuth?
-- If so, does it use `@soostori/auth`'s PKCE flow or its own implementation?
-- If its own implementation, does it produce the same `StoredSession` structure?
-
-### D4 — Session model mismatch
-
-SDK uses:
-```
-StoredSession { userId, employeeId, shopId, deviceId, accessToken, refreshToken, ... }
-```
-
-Web uses:
-```
-Session { token (cookie), userId (Prisma join), activeShopId }
-```
-
-These are fundamentally different models. Without alignment, cross-platform identity cannot work.
+| Layer | Status | Evidence |
+|-------|--------|---------|
+| SDK Google ID-token primitive | 🟢 VERIFIED | `cloud-auth.ts:528` — calls `api.signInWithIdToken` |
+| SDK Web PKCE | 🟢 VERIFIED | `cloud-auth.ts:438,474` — complete PKCE implementation |
+| SDK Mobile Google flow | 🟢 VERIFIED | Mobile calls `db.auth.signInWithGoogle()` correctly |
+| Web integration (source) | 🟢 VERIFIED | Web uses `CloudAuth` + `HttpAuthApiClient` + InstantDB `oauthSessions` |
+| Mobile integration (source) | 🟡 GAP FOUND | DEFECT-01, DEFECT-02 — fabricated session fields |
+| InstantDB authentication (cloud) | 🟢 VERIFIED | `db.auth.signInWithGoogle()` works — person exists in cloud DB |
+| Web clientName | ⚪ NOT VERIFIED | Web uses PKCE exchange, not `signInWithIdToken` |
+| Mobile clientName (`soostoriandroid`) | 🔴 BLOCKED | Cannot verify against self-hosted InstantDB |
+| appId (`487be5c5-...`) | 🟢 VERIFIED | Cloud MCP confirms this is the SOOSTORI app |
+| `oauthSessions` entity | 🔴 BLOCKED | Cannot verify against self-hosted; absent from cloud schema |
+| `devices.isLanHost` | 🟡 GAP FOUND | Remote has both `isPrimary` and `isLanHost` |
+| Person resolution | 🟢 VERIFIED | Cloud has person `p@p.k` with `cloudUserId: cloud-person-1` |
+| Business resolution | 🟢 VERIFIED | Cloud has shop `Probe` (`id: 00000000-0000-0000-0000-000000000001`) |
+| Membership resolution | 🟡 GAP FOUND | `employees` query fails in MCP (permission or schema issue) |
+| Role resolution | ⚪ NOT VERIFIED | Cannot query `employees.role` link |
+| Device resolution | 🟡 GAP FOUND | DEFECT-04 — `isPrimary`/`isLanHost` ambiguity |
+| Session semantics (Web) | 🟢 VERIFIED | `saveOAuthSession` → InstantDB `oauthSessions` |
+| Session semantics (Mobile) | 🔴 DEFECT | DEFECT-01 — `accessToken = userId` |
+| PKCE state handling | 🟢 VERIFIED | `state` and `codeVerifier` in cookies, HttpOnly |
+| ID-token validation | 🟢 VERIFIED | InstantDB verifies Google JWT signature |
+| No auto account merge | 🟢 VERIFIED | `PERSON_NOT_FOUND` returned if no membership |
 
 ---
 
-## PART E — CROSS-SYSTEM IDENTITY AUDIT
+## PHASE 1 ACCEPTANCE ARTIFACT
 
-### E1 — Identity chain consistency
+### Status: ⚠️ NOT ACCEPTED — CRITICAL DEFECTS BLOCK ACCEPTANCE
 
-Verify all three platforms implement the same identity chain:
+The acceptance doc dated 2026-09-12 was based on source inspection and assumed correct implementation. Runtime verification reveals critical defects in Mobile's session token handling and unverified remote schema assumptions.
 
-```
-Person (FIDScript $users / Prisma User)
-  └── has → Memberships (employees / shopMembers)
-        └── each has → Role (owner/manager/cashier/attendant)
-        └── each scoped to → Business (shops)
-        └── each uses → Device (devices)
-```
+### Blocking Issues
 
-| Platform | Person | Membership | Role | Business | Device |
-|----------|--------|------------|------|----------|--------|
-| Desktop | $users | employees | ✓ | shops | devices |
-| Mobile | $users | employees | ✓ | shops | devices |
-| Web | Prisma User | shopMembers | ✓ | shops | — |
+| # | Defect | Severity | Must Fix Before Acceptance |
+|---|--------|----------|--------------------------|
+| DEFECT-01 | Mobile `accessToken = userId` fabricated | CRITICAL | YES |
+| DEFECT-02 | Mobile `employeeId/shopId/deviceId` always empty | CRITICAL | YES |
+| DEFECT-03 | `oauthSessions` entity unverified in self-hosted InstantDB | CRITICAL | YES |
+| DEFECT-04 | `isPrimary`/`isLanHost` dual fields in remote schema | HIGH | YES |
+| DEFECT-05 | Mobile identity via email matching | HIGH | YES |
 
-Web does not have a Device model. This is a gap.
+### Fixes Required
 
-### E2 — Enrollment state machine
+1. **DEFECT-01 + DEFECT-02**: `cloudExchangeGoogleToken()` must return real `accessToken`, `employeeId`, `shopId`, `deviceId` from InstantDB query results. If InstantDB's `db.auth.signInWithGoogle()` doesn't return these, add a follow-up query to resolve them from `employees` table using the returned `userId`.
 
-Verify all platforms handle these states:
+2. **DEFECT-03**: Self-hosted InstantDB must be verified to have `oauthSessions` entity with schema: `{ id, sessionToken, userId, storedSession, expiresAt, createdAt }`. This is a backend deployment verification.
 
-**First device enrollment**:
-```
-DEVICE_NOT_ENROLLED → setupPin() → OPERATIONAL
-```
+3. **DEFECT-04**: Verify which field (`isPrimary` or `isLanHost`) the self-hosted InstantDB actually uses for primary device election. Align SDK `Device.isLanHost` usage accordingly.
 
-**Cross-device enrollment**:
-```
-DEVICE_NOT_ENROLLED
-  → beginEnrollment() + verifyPinForEnrollment()
-  → consumeEnrollmentToken()
-  → OPERATIONAL
-```
+4. **DEFECT-05**: Use `userId` (from `db.auth.signInWithGoogle().user.id`) to query `employees` directly by `personId` (not email), then resolve `shop` from the employee's `shopId`.
 
-**PIN recovery**:
-```
-OPERATIONAL
-  → requestPinRecovery() → email sent
-  → verifyPinRecoveryCode() → recoveryAuthToken
-  → resetPinWithRecovery() → new PIN set, other devices de-enrolled
-```
+### Repository Status
 
-### E3 — Session persistence
+| Repo | Commit | Status |
+|------|---------|--------|
+| `soostori-sdk` | `4b85ef7` | 🟢 Current (main) |
+| `soostori` (web) | `main` | 🟡 Uses SDK, CONVERGENT but `oauthSessions` unverified |
+| `soostori-mobile` | `master` | 🔴 CRITICAL DEFECTS |
+| `soostori-desktop` | — | ⚪ Not inspected this session |
 
-| Platform | Session storage | Uses CloudAuth? |
-|----------|----------------|----------------|
-| Desktop | ElectronStore via DesktopCloudAuth | Yes ✓ |
-| Mobile | AsyncStorage via RN platform adapter | Partial ⚠️ |
-| Web | Cookie + Prisma | No ✗ |
+### Tests
 
----
+| Suite | Result |
+|-------|--------|
+| SDK auth tests (144 tests) | ✅ 144/144 passing |
+| SDK build | ✅ clean |
+| Web runtime | 🔴 BLOCKED — requires deployment |
+| Mobile runtime | 🔴 BLOCKED — requires deployment + DEFECT-01/02 fix |
 
-## PART F — FIDScript BACKEND AUDIT
+### Evidence
 
-**Use `instant-self` MCP** to audit the actual InstantDB/FIDScript backend.
+**Source inspected**:
+- `packages/auth/src/cloud-auth.ts` — complete SDK auth implementation
+- `packages/auth/src/mock-api-client.ts` — CRITICAL: default mock returns no `employeeId/shopId/deviceId`
+- `soostori/src/lib/auth/cloud-auth-client.ts` — Web CloudAuth singleton
+- `soostori/src/lib/auth/oauth-session.ts` — Web session persistence via InstantDB
+- `soostori/src/lib/auth/session-server.ts` — Web identity resolution
+- `soostori/src/pages/api/auth/callback/google.ts` — Web OAuth callback
+- `soostori/src/pages/api/auth/google/exchange.ts` — Web PKCE exchange
+- `soostori-mobile/src/services/cloud-auth-backend.ts` — Mobile auth (DEFECT-01, DEFECT-02)
+- `soostori-mobile/src/hooks/auth-cloud-flow.ts` — Mobile SDK bridge (DEFECT-05)
 
-### F1 — Auth endpoints
+**Remote verified**:
+- `/instant-self` MCP → InstantDB Cloud → app `487be5c5-7615-4bbd-b3b7-3aa97154ca99` (SOOSTORI)
+- `oauthSessions` entity absent from Cloud schema
+- `devices` entity has both `isPrimary` AND `isLanHost` in Cloud schema
+- `persons` table has `cloudUserId` field for InstantDB ↔ Google identity mapping
+- Probe person (`p@p.k`) and probe shop (`Probe`) confirmed in Cloud DB
 
-Verify these REST endpoints exist and match `AuthApiClient` interface:
-
-```
-POST /api/v1/apps/{appId}/auth/exchange-google-code
-POST /api/v1/apps/{appId}/auth/signin-with-id-token
-POST /api/v1/apps/{appId}/auth/signin-with-magic-code   (if magic-code path exists)
-POST /api/v1/apps/{appId}/auth/register-email
-POST /api/v1/apps/{appId}/auth/verify-email
-POST /api/v1/apps/{appId}/auth/signin-email
-POST /api/v1/apps/{appId}/auth/refresh-session
-POST /api/v1/apps/{appId}/auth/revoke-session
-POST /api/v1/apps/{appId}/enrollment/device-status
-POST /api/v1/apps/{appId}/enrollment/create
-POST /api/v1/apps/{appId}/enrollment/verify-pin
-POST /api/v1/apps/{appId}/enrollment/consume-token
-```
-
-### F2 — Data model
-
-Query InstantDB schema to verify tables exist:
-
-```instaq
-{ users: $users {}, shops: shops {}, employees: employees {}, devices: devices {} }
-```
-
-Verify field names match what the SDK expects.
+**Not verifiable**:
+- Self-hosted `apiinstant.fidscript.com` schema (no access)
+- Whether `oauthSessions` entity exists in self-hosted InstantDB
+- Whether `clientName: 'soostoriandroid'` is registered in self-hosted InstantDB
+- Actual `employees` data in self-hosted InstantDB (query failed in Cloud)
 
 ---
 
-## PART G — FIX MANDATE
+## RECOMMENDED ACTIONS
 
-### MUST FIX (block Phase 1 acceptance)
+### Immediate (before Phase 2)
 
-| Gap | Description | Location |
-|-----|-------------|----------|
-| **GAP-01** | `StoredSession.employeeId/shopId/deviceId` always `''` — not populated from API | `cloud-auth.ts` `_storeSession()` + response types |
-| **GAP-02** | `GoogleSignInResult` missing `employeeId`, `shopId`, `deviceId` fields | `cloud-auth.ts` interface |
-| **GAP-03** | `SignInResult` missing `employeeId`, `shopId`, `deviceId` fields | `cloud-auth.ts` interface |
-| **GAP-04** | Cross-device PIN enrollment flow incomplete or missing steps | `operational-auth.ts` |
-| **GAP-05** | Web platform export not verified | `packages/auth/src/index.ts`, `package.json` exports |
-| **GAP-06** | `FIDScriptAuthApiClient` — verify all `AuthApiClient` methods implemented | `electron/auth/fidscript-auth-api.ts` |
-| **GAP-07** | Web `package.json` outdated: `@soostori/auth` is `0.1.0-alpha.5`, should be `^0.1.0-alpha.6` | Web `package.json` |
-| **GAP-08** | Web uses Prisma/cookie auth instead of `@soostori/auth` `CloudAuth` | Web auth system |
+1. **Fix DEFECT-01 + DEFECT-02** in Mobile: `cloudExchangeGoogleToken()` must return real session values from InstantDB query results
+2. **Verify `oauthSessions` entity** in self-hosted InstantDB deployment
+3. **Verify `clientName: 'soostoriandroid'`** is registered in self-hosted InstantDB
+4. **Clarify `isPrimary` vs `isLanHost`** — determine which field self-hosted InstantDB uses
 
-### MUST VERIFY (already implemented, confirm still works)
+### Phase 2 Scope
 
-| # | Item | Expected |
-|---|------|----------|
-| 1 | All 106 existing auth tests pass | `cd packages/auth && npm test` → 100% pass |
-| 2 | PKCE Google OAuth on Desktop | Opens system browser, handles redirect |
-| 3 | Mobile Google ID token via `CloudAuth.signInWithGoogleIdToken()` | Confirmed or flagged |
-| 4 | `OperationalAuth` first-device PIN enrollment | Works on Desktop and Mobile |
-| 5 | `AuthEvent` system fires for all auth state changes | All 8 event types emit correctly |
-| 6 | Session refresh with offline fallback | Stale session → network available → refresh; offline + not stale → continues |
-| 7 | PIN recovery flow (request → verify → reset) | Full 3-step flow works |
-| 8 | Desktop IPC bridge for all auth operations | All `CloudAuth` methods accessible from renderer |
-
----
-
-## PART H — COMMIT, PUSH, AND PUBLISH
-
-After all fixes are verified:
-
-```bash
-# 1. Update CHANGELOG.md in SDK root — add entry for Phase 1 fixes
-
-# 2. Bump version in packages/auth/package.json to 0.1.0-alpha.7
-
-# 3. If @soostori/core changed, bump to 0.1.0-alpha.4 in packages/core/package.json
-
-# 4. Commit
-git add .
-git commit -m "fix(auth): phase-1 gaps — populate employeeId/shopId/deviceId in StoredSession,
-         complete cross-device enrollment flow, add missing AuthApiClient methods"
-
-# 5. Push
-git push origin main
-
-# 6. Publish to NPM
-cd packages/auth && npm publish --access public
-# Verify: npm view @soostori/auth versions
-
-# 7. Also publish any other changed packages
-```
-
----
-
-## OUTPUT: PHASE-01-SDK-AUDIT-REPORT.md
-
-After completing this work, produce a file `PHASE-01-SDK-AUDIT-REPORT.md` in the SDK root containing:
-
-```
-- Which gaps were fixed (GAP-01 through GAP-08)
-- Which gaps were already correct
-- Any new gaps discovered during implementation
-- Final published package version(s) and NPM package name(s)
-- npm view @soostori/auth versions output (confirm new version present)
-- git commit SHA
-- npm test results (all passing / failures with names)
-- Which Desktop/Mobile/Web version requirements changed
-```
-
-This report is what gets fed to Desktop, Mobile, and Web agents in their Phase 1 briefs.
+Once the above are verified/fixed:
+- Re-run acceptance verification
+- Test actual auth flows on staging deployment
+- Verify Mobile → Web → Desktop cross-platform identity consistency
