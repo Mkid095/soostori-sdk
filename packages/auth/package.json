@@ -15,6 +15,18 @@
         "import": "./dist/index.js"
       }
     },
+    "./cloud-auth": {
+      "types": "./dist/cloud-auth.d.ts",
+      "default": "./dist/cloud-auth.js"
+    },
+    "./api-client": {
+      "types": "./dist/api-client.d.ts",
+      "default": "./dist/api-client.js"
+    },
+    "./session": {
+      "types": "./dist/session.d.ts",
+      "default": "./dist/session.js"
+    },
     "./pin-node": {
       "types": "./dist/pin-node.d.ts",
       "default": "./dist/pin-node.js"

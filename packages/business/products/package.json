@@ -1,6 +1,6 @@
 {
   "name": "@soostori/products",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "description": "Product/catalog domain â€” extracted from Desktop's products schema",
   "type": "module",
   "main": "./dist/index.js",
@@ -27,8 +27,8 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@soostori/core": "workspace:*",
-    "@soostori/events": "workspace:*",
+    "@soostori/core": "^0.1.0-alpha.11",
+    "@soostori/events": "^0.1.0-alpha.4",
     "zod": "^3.24.0"
   },
   "devDependencies": {
