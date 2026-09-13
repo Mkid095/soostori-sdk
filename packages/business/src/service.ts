@@ -8,8 +8,8 @@
 
 import type { Person, Business, Membership } from './types.js'
 import type { BusinessRepository } from './repository.js'
-import type { UUID } from '@soostori/core'
-import { newId, asShopId, asDeviceId } from '@soostori/core'
+import type { PersonId, BusinessId, MembershipId, DeviceId } from '@soostori/core'
+import { newId, asShopId, asDeviceId, asMembershipId, asPersonId } from '@soostori/core'
 import {
   createEvent, BUSINESS_CREATED, MEMBERSHIP_INVITED, MEMBERSHIP_REVOKED,
 } from '@soostori/events'
@@ -18,7 +18,7 @@ import { getEventBus } from '@soostori/events'
 export class BusinessService {
   constructor(
     private readonly repo: BusinessRepository,
-    private readonly deviceId: UUID,
+    private readonly deviceId: DeviceId,
   ) {}
 
   /** Create a new business for a Person. */
@@ -27,7 +27,7 @@ export class BusinessService {
     slug: string
     taxRate: number
     currency: string
-    ownerPersonId: UUID
+    ownerPersonId: PersonId
   }): Promise<Business> {
     const business = await this.repo.createBusiness({
       ...args,
@@ -61,10 +61,10 @@ export class BusinessService {
 
   /** Invite an employee to a business. */
   async inviteEmployee(args: {
-    businessId: UUID
-    personId: UUID
+    businessId: BusinessId
+    personId: PersonId
     role: Membership['role']
-    invitedByPersonId: UUID
+    invitedByPersonId: PersonId
   }): Promise<Membership> {
     const membership = await this.repo.createMembership({
       personId: args.personId,
@@ -89,7 +89,7 @@ export class BusinessService {
   }
 
   /** Revoke an employee's access. */
-  async revokeEmployee(membershipId: UUID): Promise<void> {
+  async revokeEmployee(membershipId: MembershipId): Promise<void> {
     await this.repo.updateMembership(membershipId, { status: 'revoked' })
     const membership = await this.repo.findMembership(membershipId)
     if (membership) {
@@ -105,7 +105,7 @@ export class BusinessService {
   }
 
   /** Get all businesses a person belongs to. */
-  async getPersonMemberships(personId: UUID) {
+  async getPersonMemberships(personId: PersonId) {
     return this.repo.getPersonMemberships(personId)
   }
 }
