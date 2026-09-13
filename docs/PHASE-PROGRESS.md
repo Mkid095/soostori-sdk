@@ -9,7 +9,7 @@
 
 | Phase | Name | SDK | Web | Mobile | Desktop | Status |
 |------:|------|:---:|:---:|:------:|:------:|--------|
-| **1** | Authentication & Identity Foundation | ✅ | 🔵 | ⚪ | ⚪ | 🟡 IN PROGRESS |
+| **1** | Authentication & Identity Foundation | ✅ | ✅ | ✅ | ✅ | ✅ ACCEPTED |
 | 2 | Business & Account Provisioning | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
 | 3 | SDK & Data Contract Foundation | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
 | 4 | RBAC & Authorization | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
