@@ -11,7 +11,7 @@
 |------:|------|:---:|:---:|:------:|:------:|--------|
 | **1** | Authentication & Identity Foundation | ✅ | ✅ | ✅ | ✅ | ✅ ACCEPTED |
 | **2** | Business & Account Provisioning | ✅ | ✅ | ✅ | ✅ | ✅ ACCEPTED |
-| 3 | SDK & Data Contract Foundation | ✅ | ⚪ | ⚪ | ⚪ | ⚪ |
+| 3 | SDK & Data Contract Foundation | ✅ | ✅ | ⚪ | ⚪ | ⚪ |
 | 4 | RBAC & Authorization | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
 | 5 | Synchronization | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
 | 6 | Commercial Onboarding | ⚪ | ⚪ | ⚪ | ⚪ | ⚪ |
