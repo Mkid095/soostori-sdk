@@ -572,7 +572,8 @@ export class CloudAuth {
   async signInWithEmail(email: string, password: string): Promise<AuthResult<SignInResult>> {
     const result = await this.api.signInEmail(email, password)
     if (result.error) return { ok: false, error: this._mapApiError(result.error) }
-    const data = result.data!
+    if (!result.data) return { ok: false, error: authError('UNKNOWN', 'signInWithEmail returned no data', undefined) }
+    const data = result.data
 
     const session = await this._storeSession({
       userId: data.userId,
