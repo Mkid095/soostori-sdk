@@ -2,7 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] — Phase 01 Authentication Audit Fixes
+## [Unreleased] — Phase 02 Storage Foundation
+
+### Fixed
+- **`@soostori/cloud`**: `FidScriptStorageTransport` — corrected all FIDScript storage API response shapes against live `apiinstant.fidscript.com`:
+  - `POST /storage/signed-upload-url` body now includes `app_id` (server requires it)
+  - Response envelope is `{ data: "https://host/storage/{fileId}/consume-upload-url" }` (fileId parsed from URL path)
+  - `GET /storage/signed-download-url` now passes `app_id` as query param; response envelope is `{ data: "https://cloudinary..." }`
+  - `POST /storage/delete` body now includes `app_id`
+- **`@soostori/storage`**: Updated unit test mocks to match corrected API shapes
+- **Integration tests**: Added full upload→download round-trip test confirmed against live API:
+  - Real `FileId`: `423011ac-615d-4421-849b-3d13f7b49f47` (UUID)
+  - Real CDN URL: `https://res.cloudinary.com/f65o17cm/image/upload/...`
+  - `StorageService.upload()` returns `{ kind: 'committed', file: FileReference }` with real metadata
+
+### Published
+- `@soostori/cloud@0.1.0-alpha.10`
+- `@soostori/storage@0.2.0-alpha.3`
+
+## [0.1.0-alpha.22] — 2026-09-12
 
 ### Fixed
 - **`@soostori/auth`**: `StoredSession` now correctly populated with `employeeId`, `shopId`, `deviceId` — these were previously always empty strings. Updated `GoogleSignInResult`, `SignInResult`, and `PasswordResetCompleteResult` interfaces to include these fields, and `_storeSession()` to extract them from API responses.
