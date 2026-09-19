@@ -18,7 +18,7 @@ All notable changes to this project will be documented in this file.
 
 ### Published
 - `@soostori/cloud@0.1.0-alpha.10`
-- `@soostori/storage@0.2.0-alpha.3`
+- `@soostori/storage@0.2.0-alpha.4` (rebuilt with corrected cloud@alpha.10)
 
 ## [0.1.0-alpha.22] — 2026-09-12
 
