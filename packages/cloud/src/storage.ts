@@ -163,24 +163,21 @@ export class FidScriptStorageTransport implements StorageTransport {
   }
 
   async requestSignedUploadUrl(req: SignedUploadRequest): Promise<SignedUploadResponse> {
-    const res = await this.request<{
-      uploadUrl: string
-      fileId: string
-      path: string
-      expiresAt?: string
-      requiredHeaders?: Record<string, string>
-    }>('POST', '/storage/signed-upload-url', {
+    // Response: { data: "https://host/storage/{fileId}/consume-upload-url" }
+    const res = await this.request<{ data: string }>('POST', '/storage/signed-upload-url', {
+      app_id: this.appId,
       path: req.path,
       contentType: req.contentType,
       sizeBytes: req.sizeBytes,
       visibility: req.visibility,
     })
+    const uploadUrl: string = res.data
+    const fileIdMatch = uploadUrl.match(/\/storage\/([^/]+)\/consume-upload-url$/)
+    if (!fileIdMatch) throw new Error(`Cannot parse fileId from uploadUrl: ${uploadUrl}`)
     return {
-      uploadUrl: res.uploadUrl,
-      fileId: asFileId(res.fileId),
-      path: asStoragePath(res.path),
-      expiresAt: res.expiresAt,
-      requiredHeaders: res.requiredHeaders,
+      uploadUrl,
+      fileId: asFileId(fileIdMatch[1]),
+      path: asStoragePath(req.path),
     }
   }
 
@@ -213,16 +210,17 @@ export class FidScriptStorageTransport implements StorageTransport {
   }
 
   async requestSignedDownloadUrl(path: StoragePath): Promise<SignedDownloadResponse> {
-    const qs = new URLSearchParams({ path }).toString()
-    const res = await this.request<{ downloadUrl: string; expiresAt?: string }>(
+    const qs = new URLSearchParams({ app_id: this.appId, path }).toString()
+    // Response: { data: "https://res.cloudinary.com/..." }
+    const res = await this.request<{ data: string }>(
       'GET',
       `/storage/signed-download-url?${qs}`
     )
-    return { downloadUrl: res.downloadUrl, expiresAt: res.expiresAt }
+    return { downloadUrl: res.data }
   }
 
   async deleteFile(fileId: FileId): Promise<DeleteResponse> {
-    return this.request<DeleteResponse>('POST', '/storage/delete', { fileId })
+    return this.request<DeleteResponse>('POST', '/storage/delete', { app_id: this.appId, fileId })
   }
 }
 

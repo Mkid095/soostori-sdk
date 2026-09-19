@@ -593,13 +593,14 @@ describe('FidScriptStorageTransport', () => {
       return {
         ok: true,
         status: 200,
-        json: async () => ({ uploadUrl: 'https://x/u', fileId: 'f', path: 'p' }),
+        json: async () => ({ data: 'https://apiinstant.fidscript.com/storage/file-123/consume-upload-url' }),
       }
     }) as any
     const t = new FidScriptStorageTransport({ appId: 'a', fetch: fetchMock })
     const res = await t.requestSignedUploadUrl({
       path: 'p' as any, contentType: 'image/png', sizeBytes: 1, visibility: 'public',
     })
-    expect(res.uploadUrl).toBe('https://x/u')
+    expect(res.uploadUrl).toContain('/storage/file-123/consume-upload-url')
+    expect(res.fileId).toBe('file-123')
   })
 })

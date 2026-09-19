@@ -1,21 +1,29 @@
 /**
  * Integration probe — real FIDScript storage API round-trip.
  *
- * Run with: SOOSTORI_RUN_INTEGRATION=1 SOOSTORI_APP_ID=<id> SOOSTORI_TOKEN=<jwt>
- *          npx vitest run packages/storage/test/integration.test.ts
+ * Run with:
+ *   $env:SOOSTORI_RUN_INTEGRATION="1"
+ *   $env:SOOSTORI_APP_ID="487be5c5-7615-4bbd-b3b7-3aa97154ca99"
+ *   $env:SOOSTORI_TOKEN="<admin-token>"
+ *   npx vitest run packages/storage/test/integration.test.ts
  *
  * This test exercises the actual apiinstant.fidscript.com endpoints. It
  * MUST be skipped when env vars are absent so the unit test suite still
  * passes in CI.
  *
- * Status: as of 2026-09-19, get_storage_config for the SOOSTORI app
- * returns null. The signed upload endpoint therefore fails at runtime
- * with a Cloud error. The test records the failure modes and asserts the
- * SDK degrades gracefully (no app crash, queued state).
+ * Confirmed API shapes (2026-09-19):
+ *   POST /storage/signed-upload-url
+ *     body: { app_id, path, contentType, sizeBytes, visibility }
+ *     → { data: "https://host/storage/{fileId}/consume-upload-url" }
+ *   PUT /storage/{fileId}/consume-upload-url
+ *     headers: Content-Type, Content-Length
+ *     → 200 OK
+ *   GET /storage/signed-download-url?app_id=...&path=...
+ *     → { data: "https://res.cloudinary.com/..." }
  */
 
 import { describe, it, expect } from 'vitest'
-import { FidScriptStorageTransport, classifyTransportError } from '@soostori/cloud'
+import { FidScriptStorageTransport } from '@soostori/cloud'
 import {
   FileUploadQueue,
   InMemoryFileQueueStorage,
@@ -26,53 +34,53 @@ const RUN = process.env.SOOSTORI_RUN_INTEGRATION === '1'
 const APP_ID = process.env.SOOSTORI_APP_ID ?? ''
 const TOKEN = process.env.SOOSTORI_TOKEN ?? ''
 
-const itIf = RUN && APP_ID ? it : it.skip
+const itIf = RUN && APP_ID && TOKEN ? it : it.skip
 
 describe('integration: FIDScript storage API', () => {
-  itIf('storageConfig is configured for the app', async () => {
+  itIf('full upload → download round-trip succeeds with real FileId', async () => {
     const transport = new FidScriptStorageTransport({ appId: APP_ID, token: TOKEN })
-    // We do not have a direct storageConfig endpoint on the REST surface,
-    // so we probe by issuing a signed-upload-url with a tiny payload and
-    // recording what the server returns.
     const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47]) // PNG magic
-    try {
-      const signed = await transport.requestSignedUploadUrl({
-        path: 'integration-probe/2026/09/probe.png' as any,
-        contentType: 'image/png',
-        sizeBytes: bytes.byteLength,
-        visibility: 'public',
-      })
-      console.log('[integration] signed URL response:', signed)
-      // If we get here, the storage API is configured. Attempt the PUT.
-      await transport.uploadBytes(signed.uploadUrl, bytes, signed.requiredHeaders)
-      // Resolve a download URL for the file we just uploaded.
-      const dl = await transport.requestSignedDownloadUrl(signed.path)
-      console.log('[integration] download URL:', dl)
-      expect(signed.fileId).toBeTruthy()
-      expect(dl.downloadUrl).toMatch(/^https?:\/\//)
-    } catch (err) {
-      const failure = classifyTransportError(err)
-      console.log('[integration] upload round-trip failure (expected when storageConfig is null):', failure)
-      // We still expect the SDK to never throw uncaught at the boundary.
-      expect(failure).toBeDefined()
-    }
+    const path = `integration-probe/${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/probe.png`
+
+    // Step 1: Get signed upload URL
+    const signed = await transport.requestSignedUploadUrl({
+      path: path as any,
+      contentType: 'image/png',
+      sizeBytes: bytes.byteLength,
+      visibility: 'public',
+    })
+    expect(signed.uploadUrl).toMatch(/^https:\/\/apiinstant\.fidscript\.com\/storage\/.+\/consume-upload-url$/)
+    expect(signed.fileId).toMatch(/^[0-9a-f-]{36}$/) // UUID
+
+    // Step 2: Upload bytes to the signed URL
+    await transport.uploadBytes(signed.uploadUrl, bytes, { 'Content-Type': 'image/png' })
+
+    // Step 3: Get signed download URL — should be a Cloudinary CDN URL
+    const dl = await transport.requestSignedDownloadUrl(signed.path)
+    expect(dl.downloadUrl).toMatch(/^https:\/\/res\.cloudinary\.com\//)
+    // Note: we don't fetch the URL here — the environment may not have outbound
+    // access to Cloudinary. The URL shape confirms the CDN path is correct.
   })
 
-  itIf('StorageService degrades gracefully when storage is unavailable', async () => {
+  itIf('StorageService returns committed result after successful upload', async () => {
     const transport = new FidScriptStorageTransport({ appId: APP_ID, token: TOKEN })
     const queue = new FileUploadQueue(new InMemoryFileQueueStorage())
-    const svc = new StorageService({ transport, queue, tenantPrefix: 'integration' })
-    // The promise must always resolve — never throw — even if storage
-    // is unconfigured or returns 4xx/5xx.
+    const svc = new StorageService({ transport, queue, tenantPrefix: 'integration-test' })
+    const bytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47])
+
     const result = await svc.upload({
       kind: 'product.image',
       visibility: 'public',
       contentType: 'image/png',
-      sizeBytes: 4,
-      local: { kind: 'bytes', bytes: new Uint8Array([0x89, 0x50, 0x4e, 0x47]) },
+      sizeBytes: bytes.byteLength,
+      local: { kind: 'bytes', bytes },
     })
-    expect(['committed', 'queued']).toContain(result.kind)
-    const rows = await queue.list()
-    expect(rows.length).toBe(1)
+
+    expect(result.kind).toBe('committed')
+    expect(result.file.id).toMatch(/^[0-9a-f-]{36}$/)
+    expect(result.file.path).toMatch(/^integration-test\/product\.image\/\d{4}\/\d{2}\//)
+    expect(result.file.visibility).toBe('public')
+    expect(result.file.contentType).toBe('image/png')
+    expect(result.file.sizeBytes).toBe(bytes.byteLength)
   })
 })
