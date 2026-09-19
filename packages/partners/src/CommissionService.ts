@@ -46,18 +46,18 @@
  */
 
 import type { BusinessId, SalespersonProfileId, InfluencerProfileId, Money } from '@soostori/core'
-import { newId } from '@soostori/core'
+import { newId, asIdempotencyKey } from '@soostori/core'
+import type { SyncEventId, IdempotencyKey } from '@soostori/core'
 import type { SyncEngine } from '@soostori/contracts'
 import type { PartnerRepository } from './repository.js'
-import type { CommissionEarning, CommissionRole, RecordCommissionInput } from './types.js'
-import {
-  COMMISSION_CREATED,
-} from '@soostori/events'
+import type { CommissionEarning, CommissionRole, InfluencerEligibility, RecordCommissionInput } from './types.js'
+import { COMMISSION_CREATED } from '@soostori/events'
 
 const BASE_AMOUNT = 600 as const
 const COMPANY_BASE = 500 as const
 const SALESPERSON_BASE = 100 as const
 const INFLUENCER_FLAT = 50 as const
+const INFLUENCER_COMMISSION_MONTHS = 24 as const
 
 // ── Commission split result ───────────────────────────────────────────────────
 
@@ -144,6 +144,7 @@ export class CommissionService {
       subscriptionId: input.subscriptionId,
       amount: split.salespersonShare,
       role: 'salesperson',
+      recipientType: 'salesperson',
       idempotencyKey: key,
       createdAt: new Date().toISOString(),
     }
@@ -152,8 +153,8 @@ export class CommissionService {
 
     // Emit sync event — fire and forget; failure does not rollback earning
     this.syncEngine.enqueue({
-      id: newId(),
-      idempotencyKey: key,
+      id: newId() as SyncEventId,
+      idempotencyKey: key as IdempotencyKey,
       businessId: this.businessId,
       entityKind: 'commissionEarning',
       entityId: result.earning.id,
@@ -183,6 +184,11 @@ export class CommissionService {
     salespersonId: SalespersonProfileId,
     influencerId: InfluencerProfileId,
   ): Promise<CommissionEarning> {
+    // Guard: influencer must still be within their 24-month window for this shop
+    if (!(await this.isCommissionEligible(influencerId, input.businessId))) {
+      return { id: 'ineligible' } as unknown as CommissionEarning
+    }
+
     const key = this.buildIdempotencyKey(salespersonId, input.subscriptionId, 'influencer')
 
     const existing = await this.repo.getCommissionEarningByKey(key)
@@ -196,6 +202,7 @@ export class CommissionService {
       subscriptionId: input.subscriptionId,
       amount: INFLUENCER_FLAT as Money,
       role: 'influencer',
+      recipientType: 'influencer',
       idempotencyKey: key,
       createdAt: new Date().toISOString(),
     }
@@ -203,8 +210,8 @@ export class CommissionService {
     const result = await this.repo.upsertCommissionEarning(earning)
 
     this.syncEngine.enqueue({
-      id: newId(),
-      idempotencyKey: key,
+      id: newId() as SyncEventId,
+      idempotencyKey: key as IdempotencyKey,
       businessId: this.businessId,
       entityKind: 'commissionEarning',
       entityId: result.earning.id,
@@ -232,6 +239,57 @@ export class CommissionService {
   }
 
   /**
+   * Record the company earnings share after a qualified conversion.
+   *
+   * Uses 'company' as the idempotency role to avoid colliding with
+   * the salesperson and influencer keys.
+   */
+  async recordCompanyCommission(
+    input: RecordCommissionInput,
+    salespersonId: SalespersonProfileId,
+  ): Promise<CommissionEarning> {
+    const key = this.buildIdempotencyKey(salespersonId, input.subscriptionId, 'company')
+
+    const existing = await this.repo.getCommissionEarningByKey(key)
+    if (existing) return existing
+
+    const split = this.calculateSplit(input.subscriptionAmount)
+
+    const earning: CommissionEarning = {
+      id: newId(),
+      salespersonProfileId: salespersonId,
+      influencerProfileId: null,
+      businessId: input.businessId,
+      subscriptionId: input.subscriptionId,
+      amount: split.companyShare,
+      role: 'company',
+      recipientType: 'company',
+      idempotencyKey: key,
+      createdAt: new Date().toISOString(),
+    }
+
+    const result = await this.repo.upsertCommissionEarning(earning)
+
+    this.syncEngine.enqueue({
+      id: newId() as SyncEventId,
+      idempotencyKey: key as IdempotencyKey,
+      businessId: this.businessId,
+      entityKind: 'commissionEarning',
+      entityId: result.earning.id,
+      operation: 'create',
+      originatingDeviceId: this.deviceId as any,
+      originatingEmployeeId: this.userId as any,
+      clientSequence: Date.now(),
+      clientCreatedAt: new Date().toISOString(),
+      entityVersion: 1,
+      payload: earning as unknown as Record<string, unknown>,
+      state: 'pending',
+    }).catch(() => { /* non-critical */ })
+
+    return result.earning
+  }
+
+  /**
    * List all attribution earnings for an influencer, scoped to this business.
    *
    * INVARIANT 5: Results are filtered by influencerId. An influencer can
@@ -239,5 +297,61 @@ export class CommissionService {
    */
   listInfluencerEarnings(influencerId: InfluencerProfileId): Promise<CommissionEarning[]> {
     return this.repo.listEarningsByInfluencer(influencerId)
+  }
+
+  /**
+   * Returns the 24-month eligibility window for an influencer / shop pair.
+   * Looks up the qualifying enrollment and computes the fixed window boundaries.
+   * Returns null if no qualified enrollment exists for this pair.
+   */
+  async getCommissionPeriod(
+    influencerId: InfluencerProfileId,
+    shopId: BusinessId,
+  ): Promise<InfluencerEligibility | null> {
+    const enrollments = await this.repo.listEnrollmentsByInfluencer(influencerId)
+    const enrollment = enrollments.find(e => e.businessId === shopId && e.status === 'qualified' && e.qualifiedAt)
+    if (!enrollment || !enrollment.qualifiedAt) return null
+
+    const windowStart = new Date(enrollment.qualifiedAt)
+
+    // windowEnd = start + 24 months - 1 day (last inclusive day)
+    const windowEnd = new Date(windowStart)
+    windowEnd.setMonth(windowEnd.getMonth() + INFLUENCER_COMMISSION_MONTHS)
+    windowEnd.setDate(windowEnd.getDate() - 1)
+
+    // Count distinct year-month pairs the influencer has earned for this shop
+    const earnings = await this.repo.listEarningsByInfluencer(influencerId)
+    const shopEarnings = earnings.filter(e => e.businessId === shopId && e.role === 'influencer')
+    const earnedMonths = new Set<string>()
+    for (const e of shopEarnings) {
+      const d = new Date(e.createdAt)
+      earnedMonths.add(`${d.getFullYear()}-${d.getMonth() + 1}`)
+    }
+
+    const now = new Date()
+    const isEligible = now <= windowEnd && earnedMonths.size < INFLUENCER_COMMISSION_MONTHS
+
+    return {
+      influencerId,
+      shopId,
+      windowStartAt: windowStart.toISOString() as any,
+      windowEndAt: windowEnd.toISOString() as any,
+      monthsEarned: earnedMonths.size,
+      isEligible,
+    }
+  }
+
+  /**
+   * Returns true when the influencer's 24-month commission window is still open
+   * for the given shop. Uses the enrollment's qualifiedAt to compute the window.
+   */
+  async isCommissionEligible(
+    influencerId: InfluencerProfileId,
+    shopId: BusinessId,
+    asOf = new Date(),
+  ): Promise<boolean> {
+    const eligibility = await this.getCommissionPeriod(influencerId, shopId)
+    if (!eligibility) return false
+    return asOf <= new Date(eligibility.windowEndAt) && eligibility.monthsEarned < INFLUENCER_COMMISSION_MONTHS
   }
 }

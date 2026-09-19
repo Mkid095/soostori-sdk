@@ -1,2 +1,4 @@
 export * from './client.js'
 export * from './callback.js'
+export { TumaPaymentProvider, TUMA_PAYMENT_PROVIDER_ID, TUMA_PAYMENT_PROVIDER_NAME } from './provider.js'
+export type { TumaUnsupportedError } from './provider.js'

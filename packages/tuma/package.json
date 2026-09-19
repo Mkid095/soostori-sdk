@@ -1,6 +1,6 @@
 {
   "name": "@soostori/tuma",
-  "version": "0.1.0-alpha.2",
+  "version": "0.1.0-alpha.6",
   "description": "Tuma M-Pesa payment integration (STK push, sales, invoices, products). API key via TUMA_API_KEY env var.",
   "type": "module",
   "main": "./dist/index.js",
@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@soostori/core": "^0.1.0-alpha.10",
+    "@soostori/payments": "^0.1.0-alpha.3",
     "zod": "^3.24.0"
   },
   "devDependencies": {

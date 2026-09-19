@@ -303,6 +303,32 @@ export interface AuthApiClient {
     currentPeriodEnd: string
     currentDeviceCount: number
   }>>
+
+  // ── Passwordless challenge ───────────────────────────────────────────────
+  /**
+   * Request a passwordless authentication challenge.
+   * The application layer sends the code via its own communication channel
+   * (Email, WhatsApp, SMS, etc.) — the SDK has no communication dependencies.
+   */
+  requestPasswordlessChallenge(params: {
+    email: string
+    purpose: PasswordlessPurpose
+    /** Code length in digits. Default: 6 */
+    codeLength?: number
+    /** Challenge TTL in minutes. Default: 10 */
+    expiresInMinutes?: number
+  }): Promise<AuthApiResponse<PasswordlessChallengeResult>>
+
+  /**
+   * Verify a passwordless challenge code.
+   * On success: consumes the code and returns an authenticated session.
+   * On failure: increments attempt counter; after MAX attempts the challenge is invalidated.
+   */
+  verifyPasswordlessChallenge(params: {
+    email: string
+    purpose: PasswordlessPurpose
+    code: string
+  }): Promise<AuthApiResponse<SignInResult>>
 }
 
 export interface AuthApiResponse<T> {
@@ -349,6 +375,28 @@ export interface TrustedDeviceResult {
   deviceToken: string
 }
 
+// ─── Passwordless challenge types ─────────────────────────────────────────────
+
+/**
+ * Purpose binding for passwordless challenges.
+ * A credential issued for one purpose cannot be used for another.
+ */
+export type PasswordlessPurpose =
+  | 'salesperson_activation'
+  | 'normal_passwordless_login'
+  | 'influencer_account_setup'
+
+/**
+ * Result returned after a passwordless challenge is successfully created.
+ * The application layer sends the code via its own communication channel.
+ */
+export interface PasswordlessChallengeResult {
+  /** When the challenge expires (ISO8601). */
+  expiresAt: ISO8601
+  /** Minimum seconds before another challenge can be requested for the same email+purpose. */
+  cooldownSeconds: number
+}
+
 // ─── AuthSession (re-exported) ────────────────────────────────────────────────
 
 export interface AuthSession {
@@ -371,6 +419,9 @@ export type AuthEvent =
   | { type: 'EMAIL_VERIFIED'; userId: UserId; email: string }
   | { type: 'DEVICE_REGISTERED'; device: TrustedDevice }
   | { type: 'DEVICE_REVOKED'; deviceId: DeviceId }
+  | { type: 'PASSWORDLESS_CHALLENGE_ISSUED'; email: string; purpose: PasswordlessPurpose }
+  | { type: 'PASSWORDLESS_CHALLENGE_VERIFIED'; email: string; purpose: PasswordlessPurpose }
+  | { type: 'PASSWORDLESS_CHALLENGE_FAILED'; email: string; purpose: PasswordlessPurpose; attemptsRemaining: number }
   | { type: 'ERROR'; error: AuthError }
 
 export type AuthEventListener = (event: AuthEvent) => void
@@ -719,6 +770,105 @@ export class CloudAuth {
     this.emit({ type: 'SIGNED_OUT' })
   }
 
+  // ─── Passwordless challenge ───────────────────────────────────────────────
+
+  /**
+   * Request a passwordless authentication challenge.
+   *
+   * The application layer sends the code via its own communication channel
+   * (Email, WhatsApp, SMS, etc.) — the SDK has no communication dependencies.
+   *
+   * Emits `PASSWORDLESS_CHALLENGE_ISSUED`.
+   *
+   * @param email - The email address to send the challenge to.
+   * @param purpose - The purpose of the challenge. A credential issued for one
+   *   purpose (e.g. `salesperson_activation`) cannot be used for another purpose
+   *   (e.g. `normal_passwordless_login`).
+   * @param codeLength - Number of digits in the code. Default: 6.
+   * @param expiresInMinutes - How long the challenge is valid. Default: 10 minutes.
+   */
+  async requestPasswordlessChallenge(params: {
+    email: string
+    purpose: PasswordlessPurpose
+    codeLength?: number
+    expiresInMinutes?: number
+  }): Promise<AuthResult<PasswordlessChallengeResult>> {
+    try {
+      const result = await this.api.requestPasswordlessChallenge({
+        email: params.email,
+        purpose: params.purpose,
+        codeLength: params.codeLength,
+        expiresInMinutes: params.expiresInMinutes,
+      })
+
+      if (result.error) return { ok: false, error: this._mapApiError(result.error) }
+
+      this.emit({ type: 'PASSWORDLESS_CHALLENGE_ISSUED', email: params.email, purpose: params.purpose })
+      return { ok: true, data: result.data! }
+    } catch (e) {
+      return { ok: false, error: authError('UNKNOWN', String(e)) }
+    }
+  }
+
+  /**
+   * Verify a passwordless challenge code.
+   *
+   * On success: consumes the code and returns an authenticated session.
+   * The session is stored locally and `SIGNED_IN` is emitted.
+   *
+   * On failure: returns an error. The challenge attempt counter is incremented
+   * server-side. After `MAX_ATTEMPTS` failures the challenge is invalidated
+   * and a new one must be requested.
+   *
+   * Emits `PASSWORDLESS_CHALLENGE_VERIFIED` or `PASSWORDLESS_CHALLENGE_FAILED`.
+   */
+  async verifyPasswordlessChallenge(params: {
+    email: string
+    purpose: PasswordlessPurpose
+    code: string
+  }): Promise<AuthResult<SignInResult>> {
+    try {
+      const result = await this.api.verifyPasswordlessChallenge({
+        email: params.email,
+        purpose: params.purpose,
+        code: params.code,
+      })
+
+      if (result.error) {
+        const mappedError = this._mapApiError(result.error)
+        const remaining =
+          mappedError.code === 'CHALLENGE_MAX_ATTEMPTS'
+            ? 0
+            : (result.error as { attemptsRemaining?: number }).attemptsRemaining ?? undefined
+        this.emit({
+          type: 'PASSWORDLESS_CHALLENGE_FAILED',
+          email: params.email,
+          purpose: params.purpose,
+          attemptsRemaining: remaining ?? 0,
+        })
+        return { ok: false, error: mappedError }
+      }
+
+      const data = result.data!
+
+      const session = await this._storeSession({
+        userId: data.userId,
+        employeeId: data.employeeId,
+        shopId: data.shopId,
+        deviceId: data.deviceId,
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        email: data.email,
+      })
+
+      this.emit({ type: 'PASSWORDLESS_CHALLENGE_VERIFIED', email: params.email, purpose: params.purpose })
+      this.emit({ type: 'SIGNED_IN', session })
+      return { ok: true, data: { ...data, session: this._toAuthSession(session) } }
+    } catch (e) {
+      return { ok: false, error: authError('UNKNOWN', String(e)) }
+    }
+  }
+
   // ─── Trusted device management ──────────────────────────────────────────
 
   async registerTrustedDevice(deviceName: string): Promise<AuthResult<TrustedDeviceResult>> {
@@ -817,6 +967,8 @@ export class CloudAuth {
       'ENROLLMENT_TOKEN_EXPIRED', 'ENROLLMENT_TOKEN_CONSUMED', 'ENROLLMENT_TOKEN_REPLAY',
       'ENROLLMENT_TOKEN_SCOPE_MISMATCH',
       'PIN_RECOVERY_REQUIRED', 'RECOVERY_CODE_INVALID', 'RECOVERY_RATE_LIMITED',
+      'INVALID_CHALLENGE_CODE', 'CHALLENGE_EXPIRED', 'CHALLENGE_NOT_FOUND',
+      'CHALLENGE_INVALID_PURPOSE', 'CHALLENGE_MAX_ATTEMPTS', 'CHALLENGE_COOLDOWN',
       'UNKNOWN',
     ]
     return authError(KNOWN_CODES.includes(code) ? code : 'UNKNOWN', apiError.message, apiError.retryAfterMs)

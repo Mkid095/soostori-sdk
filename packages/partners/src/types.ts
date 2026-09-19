@@ -93,7 +93,17 @@ export interface BusinessEnrollment {
 
 // ── Commission earning (idempotent) ───────────────────────────────────────────
 
-export type CommissionRole = 'salesperson' | 'influencer'
+export type CommissionRole = 'salesperson' | 'influencer' | 'company'
+
+/**
+
+ * recipientType — which party this ledger entry is for.
+ * Stored on commissionLedger.recipientType in the backend.
+ * - 'company': company share (company's own earnings)
+ * - 'salesperson': salesperson commission share
+ * - 'influencer': influencer flat attribution fee
+ */
+export type RecipientType = 'company' | 'salesperson' | 'influencer'
 
 /**
  * CommissionEarning — a single commission payment record.
@@ -122,6 +132,8 @@ export interface CommissionEarning {
   /** Amount in KES — computed by CommissionService, not by callers. */
   amount: Money
   role: CommissionRole
+  /** Which party this ledger entry is for: company | salesperson | influencer */
+  recipientType: RecipientType
   /**
    * Uniqueness constraint: salespersonId + subscriptionId + role.
    * A second emit of the same conversion event MUST NOT create a second earning.
@@ -174,4 +186,30 @@ export interface RecordCommissionInput {
   businessId: BusinessId
   subscriptionId: string
   subscriptionAmount: Money
+}
+
+// ── Influencer eligibility ───────────────────────────────────────────────────────
+
+/**
+ * Represents an influencer's 24-month commission eligibility window for a specific shop.
+ *
+ * The window is fixed at qualification time (qualifiedAt on the enrollment) and
+ * runs for exactly 24 months. Commission accrues only while the shop is active.
+ * Requalification after a lapse may resume earning if the original window has not expired.
+ */
+export interface InfluencerEligibility {
+  influencerId: InfluencerProfileId
+  shopId: BusinessId
+  /** When the shop first qualified for this influencer (qualifiedAt from enrollment). */
+  windowStartAt: ISO8601
+  /** Last day of the 24-month window (inclusive): windowStartAt + 24 months − 1 day. */
+  windowEndAt: ISO8601
+  /**
+   * Number of whole months the influencer has earned commission for this shop.
+   * Counted from qualifying events, not calendar time — commission stops accruing
+   * while the shop is inactive but the window end date does not shift.
+   */
+  monthsEarned: number
+  /** Whether the influencer is still within their 24-month window for this shop. */
+  isEligible: boolean
 }

@@ -45,12 +45,27 @@ export class EnrollmentService {
     const profile = await this.repo.getSalespersonProfile(salespersonId)
     if (!profile) throw new Error(`SalespersonProfile ${salespersonId} not found`)
 
+    // Preserve existing enrollment if one already exists for this business.
+    // This prevents re-enrollment from resetting qualifiedAt and creating a fresh
+    // 24-month window for the same influencer→salesperson→shop relationship.
+    const existing = await this.repo.getEnrollmentByBusiness(input.businessId)
+
     const now = new Date().toISOString() as ISO8601
     const enrollment: BusinessEnrollment = {
-      id: `enr-${newId()}`, businessId: input.businessId, salespersonProfileId: salespersonId,
+      id: existing?.id ?? `enr-${newId()}`,
+      businessId: input.businessId,
+      salespersonProfileId: salespersonId,
       /** INVARIANT 1: attribution set from salesperson's referredBy — immutable forever */
       influencerProfileId: profile.referredBy ?? null,
-      status: 'enrolled', enrolledAt: now, createdAt: now, updatedAt: now, version: 1,
+      // Preserve historical qualification timestamps — never reset the commission window
+      status: existing?.status ?? 'enrolled',
+      enrolledAt: existing?.enrolledAt ?? now,
+      qualifyingSinceAt: existing?.qualifyingSinceAt ?? null,
+      qualifiedAt: existing?.qualifiedAt ?? null,
+      convertedAt: existing?.convertedAt ?? null,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+      version: (existing?.version ?? 0) + 1,
     }
 
     await this.repo.upsertEnrollment(enrollment)

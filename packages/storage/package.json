@@ -1,6 +1,6 @@
 {
   "name": "@soostori/storage",
-  "version": "0.1.0-alpha.3",
+  "version": "0.2.0-alpha.2",
   "description": "Local persistence abstraction — keeps SDK SQLite-agnostic",
   "type": "module",
   "main": "./dist/index.js",
@@ -28,6 +28,8 @@
   },
   "dependencies": {
     "@soostori/core": "^0.1.0-alpha.10",
+    "@soostori/contracts": "^0.1.0-alpha.5",
+    "@soostori/cloud": "^0.1.0-alpha.9",
     "zod": "^3.24.0",
     "@soostori/events": "^0.1.0-alpha.2"
   },

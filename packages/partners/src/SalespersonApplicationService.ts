@@ -75,7 +75,7 @@ export class SalespersonApplicationService {
     }
 
     await this.repo.upsertApplication(app)
-    await this.emit(PARTNER_APPLICATION_SUBMITTED, app, 'create')
+    await this.emit(PARTNER_APPLICATION_SUBMITTED, app as unknown as Record<string, unknown>, 'create')
     return app
   }
 

@@ -28,6 +28,7 @@ const stkFailureSchema = z.object({
   result_desc: z.string(),
   timestamp: z.string(),
   failure_reason: z.string(),
+  amount: z.number().optional(),
 })
 
 export const stkCallbackSchema = z.union([stkSuccessSchema, stkFailureSchema])

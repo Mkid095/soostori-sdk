@@ -11,5 +11,6 @@
 
 export * from './data-contract.js'
 export * from './sync-contract.js'
+export * from './file-types.js'
 export { SyncEngineClass, type InstantClient } from './sync-engine.js'
 export { NoOpSyncEngineClass, NoOpSyncEngine, type QueuedSyncEvent } from './sync-stub.js'

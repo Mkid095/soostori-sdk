@@ -84,7 +84,11 @@ export interface LowStockPayload {
 export interface SubscriptionPaymentConfirmedPayload {
   shopId: string
   subscriptionId: string
-  amount: Money
+  /**
+   * Internal: actual payment amount from Tuma — NOT for influencer-facing events.
+   * For commission processing use `CommissionTrigger.amount` (in @soostori/partners).
+   */
+  confirmedPaymentAmount: Money
   planKey: string
   /** Set true on the very first confirmed payment for this customer. */
   isConversion: boolean

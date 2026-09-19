@@ -32,6 +32,12 @@ function mockApi(overrides: Partial<AuthApiClient> = {}): AuthApiClient {
     listTrustedDevices: vi.fn().mockResolvedValue({ ok: true, data: [{ deviceId: 'did', deviceName: 'Test Device', registeredAt: '2026-09-07T00:00:00Z', lastUsedAt: '2026-09-07T00:00:00Z', isAutoApproved: true }] }),
     removeTrustedDevice: vi.fn().mockResolvedValue({ ok: true }),
     signInWithIdToken: vi.fn().mockResolvedValue({ ok: true, data: { userId: 'uid', email: 'a@b.com', displayName: 'Test User', idToken: 'google-id-token', accessToken: 'at', refreshToken: 'rt', isNewUser: false, accountStatus: 'active' } }),
+    requestPasswordlessChallenge: vi.fn().mockResolvedValue({
+      data: { expiresAt: '2027-01-01T00:10:00Z', cooldownSeconds: 60 },
+    }),
+    verifyPasswordlessChallenge: vi.fn().mockResolvedValue({
+      data: { userId: 'uid', employeeId: 'emp-1', shopId: 'shop-1', deviceId: 'dev-1', email: 'a@b.com', accessToken: 'at', refreshToken: 'rt', expiresAt: '2027-01-01T00:00:00Z', isEmailVerified: true, session: {} as any },
+    }),
     ...overrides,
   }
 }
@@ -125,13 +131,13 @@ class TestableCloudAuth {
       .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
   }
 
-  async _storeSession(userId: string, accessToken: string, refreshToken: string) {
+  async _storeSession(userId: string, accessToken: string, refreshToken: string, email = '') {
     const stored: StoredSession = {
       userId,
       employeeId: '',
       shopId: '',
       deviceId: '',
-      email: '',
+      email,
       accessToken,
       refreshToken,
       createdAt: new Date().toISOString() as any,
@@ -308,6 +314,49 @@ class TestableCloudAuth {
     await this._clearStoredSession()
     this.emit({ type: 'SIGNED_OUT' })
     return { ok: true }
+  }
+
+  async requestPasswordlessChallenge(params: {
+    email: string
+    purpose: string
+    codeLength?: number
+    expiresInMinutes?: number
+  }) {
+    const result = await this.api.requestPasswordlessChallenge({
+      email: params.email,
+      purpose: params.purpose as any,
+      codeLength: params.codeLength,
+      expiresInMinutes: params.expiresInMinutes,
+    })
+    if (result.error) return { ok: false, error: { code: (result.error as any).code, message: String(result.error) } }
+    this.emit({ type: 'PASSWORDLESS_CHALLENGE_ISSUED', email: params.email, purpose: params.purpose })
+    return { ok: true, data: result.data }
+  }
+
+  async verifyPasswordlessChallenge(params: {
+    email: string
+    purpose: string
+    code: string
+  }) {
+    const result = await this.api.verifyPasswordlessChallenge({
+      email: params.email,
+      purpose: params.purpose as any,
+      code: params.code,
+    })
+    if (result.error) {
+      this.emit({
+        type: 'PASSWORDLESS_CHALLENGE_FAILED',
+        email: params.email,
+        purpose: params.purpose,
+        attemptsRemaining: 0,
+      })
+      return { ok: false, error: { code: (result.error as any).code, message: String(result.error) } }
+    }
+    const data = result.data!
+    await this._storeSession(data.userId, data.accessToken, data.refreshToken, data.email)
+    this.emit({ type: 'PASSWORDLESS_CHALLENGE_VERIFIED', email: params.email, purpose: params.purpose })
+    this.emit({ type: 'SIGNED_IN', session: this._session })
+    return { ok: true, data }
   }
 }
 
@@ -786,5 +835,357 @@ describe('Event emission', () => {
     await auth.signOut()
     expect(handler).toHaveBeenCalledTimes(1)
     expect(auth.session).toBeNull()
+  })
+})
+
+// ─── Passwordless Challenge ─────────────────────────────────────────────────────
+
+describe('Passwordless challenge', () => {
+  beforeEach(() => testStorage.clear())
+
+  // ── requestPasswordlessChallenge ─────────────────────────────────────────────
+
+  describe('requestPasswordlessChallenge', () => {
+    it('calls the API with correct params and returns result', async () => {
+      const api = mockApi({
+        requestPasswordlessChallenge: vi.fn().mockResolvedValue({
+          data: { expiresAt: '2027-01-01T00:10:00Z', cooldownSeconds: 60 },
+        }),
+      })
+      const auth = new TestableCloudAuth(api, mockPlatform())
+
+      const result = await auth.requestPasswordlessChallenge({
+        email: 'salesperson@example.com',
+        purpose: 'salesperson_activation',
+      })
+
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data.expiresAt).toBe('2027-01-01T00:10:00Z')
+        expect(result.data.cooldownSeconds).toBe(60)
+      }
+      expect(api.requestPasswordlessChallenge).toHaveBeenCalledWith({
+        email: 'salesperson@example.com',
+        purpose: 'salesperson_activation',
+        codeLength: undefined,
+        expiresInMinutes: undefined,
+      })
+    })
+
+    it('passes custom codeLength and expiresInMinutes', async () => {
+      const api = mockApi({
+        requestPasswordlessChallenge: vi.fn().mockResolvedValue({
+          data: { expiresAt: '2027-01-01T00:05:00Z', cooldownSeconds: 30 },
+        }),
+      })
+      const auth = new TestableCloudAuth(api, mockPlatform())
+
+      await auth.requestPasswordlessChallenge({
+        email: 'test@test.com',
+        purpose: 'normal_passwordless_login',
+        codeLength: 8,
+        expiresInMinutes: 5,
+      })
+
+      expect(api.requestPasswordlessChallenge).toHaveBeenCalledWith({
+        email: 'test@test.com',
+        purpose: 'normal_passwordless_login',
+        codeLength: 8,
+        expiresInMinutes: 5,
+      })
+    })
+
+    it('emits PASSWORDLESS_CHALLENGE_ISSUED on success', async () => {
+      const api = mockApi({
+        requestPasswordlessChallenge: vi.fn().mockResolvedValue({
+          data: { expiresAt: '2027-01-01T00:10:00Z', cooldownSeconds: 60 },
+        }),
+      })
+      const auth = new TestableCloudAuth(api, mockPlatform())
+      const handler = vi.fn()
+      auth.on('PASSWORDLESS_CHALLENGE_ISSUED', handler)
+
+      await auth.requestPasswordlessChallenge({
+        email: 'test@test.com',
+        purpose: 'salesperson_activation',
+      })
+
+      expect(handler).toHaveBeenCalledTimes(1)
+      expect(handler).toHaveBeenCalledWith({
+        type: 'PASSWORDLESS_CHALLENGE_ISSUED',
+        email: 'test@test.com',
+        purpose: 'salesperson_activation',
+      })
+    })
+
+    it('returns error when API call fails', async () => {
+      const api = mockApi({
+        requestPasswordlessChallenge: vi.fn().mockResolvedValue({
+          error: { code: 'RATE_LIMITED', message: 'Too many requests' },
+        }),
+      })
+      const auth = new TestableCloudAuth(api, mockPlatform())
+
+      const result = await auth.requestPasswordlessChallenge({
+        email: 'test@test.com',
+        purpose: 'salesperson_activation',
+      })
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error.code).toBe('RATE_LIMITED')
+      }
+    })
+  })
+
+  // ── verifyPasswordlessChallenge ───────────────────────────────────────────
+
+  describe('verifyPasswordlessChallenge', () => {
+    it('calls the API with correct params and stores session on success', async () => {
+      const api = mockApi({
+        verifyPasswordlessChallenge: vi.fn().mockResolvedValue({
+          data: {
+            userId: 'uid',
+            employeeId: 'emp-1',
+            shopId: 'shop-1',
+            deviceId: 'dev-1',
+            email: 'salesperson@example.com',
+            accessToken: 'at',
+            refreshToken: 'rt',
+            expiresAt: '2027-01-01T00:00:00Z',
+            isEmailVerified: true,
+            session: {} as any,
+          },
+        }),
+      })
+      const auth = new TestableCloudAuth(api, mockPlatform())
+      const signedInHandler = vi.fn()
+      const verifiedHandler = vi.fn()
+      auth.on('SIGNED_IN', signedInHandler)
+      auth.on('PASSWORDLESS_CHALLENGE_VERIFIED', verifiedHandler)
+
+      const result = await auth.verifyPasswordlessChallenge({
+        email: 'salesperson@example.com',
+        purpose: 'salesperson_activation',
+        code: '123456',
+      })
+
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.data.userId).toBe('uid')
+        expect(result.data.email).toBe('salesperson@example.com')
+      }
+      expect(api.verifyPasswordlessChallenge).toHaveBeenCalledWith({
+        email: 'salesperson@example.com',
+        purpose: 'salesperson_activation',
+        code: '123456',
+      })
+      expect(signedInHandler).toHaveBeenCalledTimes(1)
+      expect(verifiedHandler).toHaveBeenCalledTimes(1)
+      expect(auth.session).not.toBeNull()
+    })
+
+    it('emits PASSWORDLESS_CHALLENGE_FAILED on bad code', async () => {
+      const api = mockApi({
+        verifyPasswordlessChallenge: vi.fn().mockResolvedValue({
+          error: { code: 'INVALID_CHALLENGE_CODE', message: 'Invalid code' },
+        }),
+      })
+      const auth = new TestableCloudAuth(api, mockPlatform())
+      const handler = vi.fn()
+      auth.on('PASSWORDLESS_CHALLENGE_FAILED', handler)
+
+      await auth.verifyPasswordlessChallenge({
+        email: 'test@test.com',
+        purpose: 'salesperson_activation',
+        code: '000000',
+      })
+
+      expect(handler).toHaveBeenCalledTimes(1)
+      expect(handler).toHaveBeenCalledWith({
+        type: 'PASSWORDLESS_CHALLENGE_FAILED',
+        email: 'test@test.com',
+        purpose: 'salesperson_activation',
+        attemptsRemaining: 0,
+      })
+    })
+
+    it('returns error on invalid code', async () => {
+      const api = mockApi({
+        verifyPasswordlessChallenge: vi.fn().mockResolvedValue({
+          error: { code: 'INVALID_CHALLENGE_CODE', message: 'Invalid code' },
+        }),
+      })
+      const auth = new TestableCloudAuth(api, mockPlatform())
+
+      const result = await auth.verifyPasswordlessChallenge({
+        email: 'test@test.com',
+        purpose: 'salesperson_activation',
+        code: '000000',
+      })
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error.code).toBe('INVALID_CHALLENGE_CODE')
+      }
+    })
+
+    it('returns error on expired challenge', async () => {
+      const api = mockApi({
+        verifyPasswordlessChallenge: vi.fn().mockResolvedValue({
+          error: { code: 'CHALLENGE_EXPIRED', message: 'Challenge has expired' },
+        }),
+      })
+      const auth = new TestableCloudAuth(api, mockPlatform())
+
+      const result = await auth.verifyPasswordlessChallenge({
+        email: 'test@test.com',
+        purpose: 'salesperson_activation',
+        code: '123456',
+      })
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error.code).toBe('CHALLENGE_EXPIRED')
+      }
+    })
+
+    it('returns error on wrong purpose', async () => {
+      const api = mockApi({
+        verifyPasswordlessChallenge: vi.fn().mockResolvedValue({
+          error: { code: 'CHALLENGE_INVALID_PURPOSE', message: 'Purpose mismatch' },
+        }),
+      })
+      const auth = new TestableCloudAuth(api, mockPlatform())
+
+      const result = await auth.verifyPasswordlessChallenge({
+        email: 'test@test.com',
+        purpose: 'normal_passwordless_login',
+        code: '123456',
+      })
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error.code).toBe('CHALLENGE_INVALID_PURPOSE')
+      }
+    })
+
+    it('returns error on max attempts exceeded', async () => {
+      const api = mockApi({
+        verifyPasswordlessChallenge: vi.fn().mockResolvedValue({
+          error: { code: 'CHALLENGE_MAX_ATTEMPTS', message: 'Too many attempts' },
+        }),
+      })
+      const auth = new TestableCloudAuth(api, mockPlatform())
+
+      const result = await auth.verifyPasswordlessChallenge({
+        email: 'test@test.com',
+        purpose: 'salesperson_activation',
+        code: '123456',
+      })
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error.code).toBe('CHALLENGE_MAX_ATTEMPTS')
+      }
+    })
+
+    it('returns error on challenge not found', async () => {
+      const api = mockApi({
+        verifyPasswordlessChallenge: vi.fn().mockResolvedValue({
+          error: { code: 'CHALLENGE_NOT_FOUND', message: 'Challenge not found' },
+        }),
+      })
+      const auth = new TestableCloudAuth(api, mockPlatform())
+
+      const result = await auth.verifyPasswordlessChallenge({
+        email: 'test@test.com',
+        purpose: 'salesperson_activation',
+        code: '123456',
+      })
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error.code).toBe('CHALLENGE_NOT_FOUND')
+      }
+    })
+
+    it('emits SIGNED_IN event on successful verification', async () => {
+      const api = mockApi({
+        verifyPasswordlessChallenge: vi.fn().mockResolvedValue({
+          data: {
+            userId: 'uid',
+            employeeId: 'emp-1',
+            shopId: 'shop-1',
+            deviceId: 'dev-1',
+            email: 'test@test.com',
+            accessToken: 'at',
+            refreshToken: 'rt',
+            expiresAt: '2027-01-01T00:00:00Z',
+            isEmailVerified: true,
+            session: {} as any,
+          },
+        }),
+      })
+      const auth = new TestableCloudAuth(api, mockPlatform())
+      const handler = vi.fn()
+      auth.on('SIGNED_IN', handler)
+
+      await auth.verifyPasswordlessChallenge({
+        email: 'test@test.com',
+        purpose: 'salesperson_activation',
+        code: '123456',
+      })
+
+      expect(handler).toHaveBeenCalledTimes(1)
+    })
+
+    it('session is persisted after successful verification', async () => {
+      const api = mockApi({
+        verifyPasswordlessChallenge: vi.fn().mockResolvedValue({
+          data: {
+            userId: 'uid',
+            employeeId: 'emp-1',
+            shopId: 'shop-1',
+            deviceId: 'dev-1',
+            email: 'test@test.com',
+            accessToken: 'at',
+            refreshToken: 'rt',
+            expiresAt: '2027-01-01T00:00:00Z',
+            isEmailVerified: true,
+            session: {} as any,
+          },
+        }),
+      })
+      const auth = new TestableCloudAuth(api, mockPlatform())
+
+      await auth.verifyPasswordlessChallenge({
+        email: 'test@test.com',
+        purpose: 'salesperson_activation',
+        code: '123456',
+      })
+
+      const stored = await auth._loadStoredSession()
+      expect(stored).not.toBeNull()
+      expect(stored!.accessToken).toBe('at')
+      expect(stored!.email).toBe('test@test.com')
+    })
+
+    it('no session created on failed verification', async () => {
+      const api = mockApi({
+        verifyPasswordlessChallenge: vi.fn().mockResolvedValue({
+          error: { code: 'INVALID_CHALLENGE_CODE', message: 'Invalid code' },
+        }),
+      })
+      const auth = new TestableCloudAuth(api, mockPlatform())
+
+      await auth.verifyPasswordlessChallenge({
+        email: 'test@test.com',
+        purpose: 'salesperson_activation',
+        code: '000000',
+      })
+
+      expect(auth.session).toBeNull()
+    })
   })
 })

@@ -35,6 +35,13 @@ export type AuthErrorCode =
   | 'PIN_RECOVERY_REQUIRED'
   | 'RECOVERY_CODE_INVALID'
   | 'RECOVERY_RATE_LIMITED'
+  // Passwordless challenge
+  | 'INVALID_CHALLENGE_CODE'
+  | 'CHALLENGE_EXPIRED'
+  | 'CHALLENGE_NOT_FOUND'
+  | 'CHALLENGE_INVALID_PURPOSE'
+  | 'CHALLENGE_MAX_ATTEMPTS'
+  | 'CHALLENGE_COOLDOWN'
   | 'UNKNOWN'
 
 export interface AuthError {

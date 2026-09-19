@@ -17,8 +17,9 @@ import type {
   SessionRefreshResult,
   TrustedDevice,
   TrustedDeviceResult,
+  PasswordlessPurpose,
 } from './cloud-auth.js'
-import type { ISO8601 } from '@soostori/core'
+import type { UserId, EmployeeId, ShopId, DeviceId, ISO8601 } from '@soostori/core'
 
 export interface MockAuthApiClientConfig {
   exchangeGoogleCode?: (code: string, codeVerifier: string, redirectUri: string) => AuthApiResponse<GoogleSignInResult>
@@ -46,6 +47,8 @@ export interface MockAuthApiClientConfig {
   getSubscriptionStatus?: (shopId: string) => AuthApiResponse<{ status: 'active' | 'past_due' | 'expired' | 'cancelled' | 'trialing'; planKey: string; deviceLimit: number; currentPeriodEnd: string; currentDeviceCount: number }>
   createEnrollmentToken?: (params: { employeeId: string; deviceId: string }) => AuthApiResponse<{ token: string; expiresAt: ISO8601 }>
   consumeEnrollmentTokenForDevice?: (params: { token: string }) => AuthApiResponse<{ employeeId: string; deviceId: string }>
+  requestPasswordlessChallenge?: (params: { email: string; purpose: PasswordlessPurpose; codeLength?: number; expiresInMinutes?: number }) => AuthApiResponse<{ expiresAt: ISO8601; cooldownSeconds: number }>
+  verifyPasswordlessChallenge?: (params: { email: string; purpose: PasswordlessPurpose; code: string }) => AuthApiResponse<SignInResult>
 }
 
 const ok = <T>(data: T): Promise<AuthApiResponse<T>> => Promise.resolve({ data })
@@ -207,5 +210,40 @@ export class MockAuthApiClient implements AuthApiClient {
     return this.mock.consumeEnrollmentTokenForDevice
       ? this.mock.consumeEnrollmentTokenForDevice(params)
       : ok({ employeeId: 'emp-1', deviceId: 'dev-1' })
+  }
+
+  async requestPasswordlessChallenge(params: {
+    email: string
+    purpose: PasswordlessPurpose
+    codeLength?: number
+    expiresInMinutes?: number
+  }): Promise<AuthApiResponse<{ expiresAt: ISO8601; cooldownSeconds: number }>> {
+    return this.mock.requestPasswordlessChallenge
+      ? this.mock.requestPasswordlessChallenge(params)
+      : ok({
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString() as ISO8601,
+          cooldownSeconds: 60,
+        })
+  }
+
+  async verifyPasswordlessChallenge(params: {
+    email: string
+    purpose: PasswordlessPurpose
+    code: string
+  }): Promise<AuthApiResponse<SignInResult>> {
+    return this.mock.verifyPasswordlessChallenge
+      ? this.mock.verifyPasswordlessChallenge(params)
+      : ok({
+          userId: 'user-1' as UserId,
+          employeeId: 'emp-1' as EmployeeId,
+          shopId: 'shop-1' as ShopId,
+          deviceId: 'dev-1' as DeviceId,
+          email: params.email,
+          accessToken: 'at',
+          refreshToken: 'rt',
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() as ISO8601,
+          isEmailVerified: true,
+          session: {} as any,
+        })
   }
 }

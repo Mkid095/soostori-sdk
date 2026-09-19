@@ -22,10 +22,10 @@ importers:
     dependencies:
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/events':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.3
+        version: 0.1.0-alpha.4
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -63,10 +63,10 @@ importers:
     dependencies:
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/events':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.3
+        version: 0.1.0-alpha.4
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -84,11 +84,11 @@ importers:
   packages/business/customers:
     dependencies:
       '@soostori/core':
-        specifier: workspace:*
-        version: link:../../core
+        specifier: ^0.1.0-alpha.11
+        version: 0.1.0-alpha.11
       '@soostori/events':
-        specifier: workspace:*
-        version: link:../../events
+        specifier: ^0.1.0-alpha.4
+        version: 0.1.0-alpha.4
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -106,11 +106,11 @@ importers:
   packages/business/debts:
     dependencies:
       '@soostori/core':
-        specifier: workspace:*
-        version: link:../../core
+        specifier: ^0.1.0-alpha.11
+        version: 0.1.0-alpha.11
       '@soostori/events':
-        specifier: workspace:*
-        version: link:../../events
+        specifier: ^0.1.0-alpha.4
+        version: 0.1.0-alpha.4
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -128,11 +128,11 @@ importers:
   packages/business/products:
     dependencies:
       '@soostori/core':
-        specifier: workspace:*
-        version: link:../../core
+        specifier: ^0.1.0-alpha.11
+        version: 0.1.0-alpha.11
       '@soostori/events':
-        specifier: workspace:*
-        version: link:../../events
+        specifier: ^0.1.0-alpha.4
+        version: 0.1.0-alpha.4
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -150,14 +150,14 @@ importers:
   packages/business/sales:
     dependencies:
       '@soostori/core':
-        specifier: workspace:*
-        version: link:../../core
+        specifier: ^0.1.0-alpha.11
+        version: 0.1.0-alpha.11
       '@soostori/events':
-        specifier: workspace:*
-        version: link:../../events
+        specifier: ^0.1.0-alpha.4
+        version: 0.1.0-alpha.4
       '@soostori/products':
-        specifier: workspace:*
-        version: link:../products
+        specifier: ^0.1.0-alpha.2
+        version: 0.1.0-alpha.2
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -174,12 +174,15 @@ importers:
 
   packages/cloud:
     dependencies:
+      '@soostori/contracts':
+        specifier: ^0.1.0-alpha.5
+        version: 0.1.0-alpha.5
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/schema':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.2
+        version: 0.1.0-alpha.3
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -198,10 +201,10 @@ importers:
     dependencies:
       '@soostori/contracts':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.2
+        version: 0.1.0-alpha.3
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -216,32 +219,32 @@ importers:
   packages/contract-tests:
     dependencies:
       '@soostori/auth':
-        specifier: ^0.1.0-alpha.8
-        version: 0.1.0-alpha.8
+        specifier: ^0.1.0-alpha.9
+        version: 0.1.0-alpha.9
       '@soostori/cloud':
-        specifier: ^0.1.0-alpha.6
-        version: 0.1.0-alpha.6
+        specifier: ^0.1.0-alpha.7
+        version: 0.1.0-alpha.7
       '@soostori/core':
-        specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        specifier: ^0.1.0-alpha.11
+        version: 0.1.0-alpha.11
       '@soostori/events':
+        specifier: ^0.1.0-alpha.4
+        version: 0.1.0-alpha.4
+      '@soostori/offline':
         specifier: ^0.1.0-alpha.3
         version: 0.1.0-alpha.3
-      '@soostori/offline':
-        specifier: ^0.1.0-alpha.1
-        version: 0.1.0-alpha.1
       '@soostori/schema':
+        specifier: ^0.1.0-alpha.3
+        version: 0.1.0-alpha.3
+      '@soostori/subscription':
+        specifier: ^0.1.0-alpha.4
+        version: 0.1.0-alpha.4
+      '@soostori/sync':
+        specifier: ^0.1.0-alpha.3
+        version: 0.1.0-alpha.3
+      '@soostori/tuma':
         specifier: ^0.1.0-alpha.2
         version: 0.1.0-alpha.2
-      '@soostori/subscription':
-        specifier: ^0.1.0-alpha.1
-        version: 0.1.0-alpha.1
-      '@soostori/sync':
-        specifier: ^0.1.0-alpha.1
-        version: 0.1.0-alpha.1
-      '@soostori/tuma':
-        specifier: ^0.1.0-alpha.1
-        version: 0.1.0-alpha.1
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -260,7 +263,7 @@ importers:
     dependencies:
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -276,7 +279,7 @@ importers:
     dependencies:
       '@soostori/contracts':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.2
+        version: 0.1.0-alpha.3
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -295,13 +298,13 @@ importers:
     dependencies:
       '@soostori/contracts':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.2
+        version: 0.1.0-alpha.3
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/events':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.3
+        version: 0.1.0-alpha.4
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -320,13 +323,13 @@ importers:
     dependencies:
       '@soostori/contracts':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.2
+        version: 0.1.0-alpha.3
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/events':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.3
+        version: 0.1.0-alpha.4
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -345,13 +348,13 @@ importers:
     dependencies:
       '@soostori/auth':
         specifier: ^0.1.0-alpha.8
-        version: 0.1.0-alpha.8
+        version: 0.1.0-alpha.9
       '@soostori/business':
         specifier: ^0.1.0-alpha.1
         version: 0.1.0-alpha.1
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/devices':
         specifier: ^0.1.0-alpha.4
         version: 0.1.0-alpha.4
@@ -385,10 +388,10 @@ importers:
     dependencies:
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/events':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.3
+        version: 0.1.0-alpha.4
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -407,7 +410,7 @@ importers:
     dependencies:
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -426,13 +429,13 @@ importers:
     dependencies:
       '@soostori/contracts':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.2
+        version: 0.1.0-alpha.3
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/events':
         specifier: ^0.1.0-alpha.1
-        version: 0.1.0-alpha.1
+        version: 0.1.0-alpha.4
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -451,17 +454,17 @@ importers:
     dependencies:
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/events':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.3
+        version: 0.1.0-alpha.4
       zod:
         specifier: ^3.24.0
         version: 3.25.76
     devDependencies:
       '@soostori/contracts':
-        specifier: workspace:*
-        version: link:../contracts
+        specifier: ^0.1.0-alpha.3
+        version: 0.1.0-alpha.3
       '@types/node':
         specifier: ^22.0.0
         version: 22.20.1
@@ -476,13 +479,13 @@ importers:
     dependencies:
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/devices':
         specifier: ^0.1.0-alpha.1
-        version: 0.1.0-alpha.1
+        version: 0.1.0-alpha.4
       '@soostori/events':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.3
+        version: 0.1.0-alpha.4
       ws:
         specifier: ^8.18.0
         version: 8.21.3
@@ -507,10 +510,10 @@ importers:
     dependencies:
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/events':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.3
+        version: 0.1.0-alpha.4
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -529,13 +532,13 @@ importers:
     dependencies:
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/events':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.3
+        version: 0.1.0-alpha.4
       '@soostori/subscription':
         specifier: ^0.1.0-alpha.3
-        version: 0.1.0-alpha.3
+        version: 0.1.0-alpha.4
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -554,16 +557,16 @@ importers:
     dependencies:
       '@soostori/auth':
         specifier: ^0.1.0-alpha.7
-        version: 0.1.0-alpha.8
+        version: 0.1.0-alpha.9
       '@soostori/contracts':
-        specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.2
+        specifier: workspace:^0.1.0-alpha.3
+        version: link:../contracts
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/events':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.3
+        version: 0.1.0-alpha.4
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -582,10 +585,10 @@ importers:
     dependencies:
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/events':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.3
+        version: 0.1.0-alpha.4
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -604,13 +607,13 @@ importers:
     dependencies:
       '@soostori/contracts':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.2
+        version: 0.1.0-alpha.3
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/events':
         specifier: ^0.1.0-alpha.1
-        version: 0.1.0-alpha.1
+        version: 0.1.0-alpha.4
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -628,14 +631,14 @@ importers:
   packages/sales:
     dependencies:
       '@soostori/contracts':
-        specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.2
+        specifier: ^0.1.0-alpha.3
+        version: 0.1.0-alpha.3
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/events':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.3
+        version: 0.1.0-alpha.4
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -654,7 +657,7 @@ importers:
     dependencies:
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -671,12 +674,18 @@ importers:
 
   packages/storage:
     dependencies:
+      '@soostori/cloud':
+        specifier: ^0.1.0-alpha.9
+        version: 0.1.0-alpha.9
+      '@soostori/contracts':
+        specifier: ^0.1.0-alpha.5
+        version: 0.1.0-alpha.5
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/events':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.3
+        version: 0.1.0-alpha.4
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -695,7 +704,7 @@ importers:
     dependencies:
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -714,19 +723,19 @@ importers:
     dependencies:
       '@soostori/cloud':
         specifier: ^0.1.0-alpha.5
-        version: 0.1.0-alpha.6
+        version: 0.1.0-alpha.7
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/devices':
         specifier: ^0.1.0-alpha.1
-        version: 0.1.0-alpha.1
+        version: 0.1.0-alpha.4
       '@soostori/events':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.3
+        version: 0.1.0-alpha.4
       '@soostori/schema':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.2
+        version: 0.1.0-alpha.3
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -745,16 +754,16 @@ importers:
     dependencies:
       '@soostori/auth':
         specifier: ^0.1.0-alpha.7
-        version: 0.1.0-alpha.8
+        version: 0.1.0-alpha.9
       '@soostori/contracts':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.2
+        version: 0.1.0-alpha.3
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/events':
         specifier: ^0.1.0-alpha.1
-        version: 0.1.0-alpha.1
+        version: 0.1.0-alpha.4
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -773,7 +782,10 @@ importers:
     dependencies:
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
+      '@soostori/payments':
+        specifier: ^0.1.0-alpha.3
+        version: 0.1.0-alpha.3
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -792,7 +804,7 @@ importers:
     dependencies:
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -811,10 +823,10 @@ importers:
     dependencies:
       '@soostori/core':
         specifier: ^0.1.0-alpha.10
-        version: 0.1.0-alpha.10
+        version: 0.1.0-alpha.11
       '@soostori/events':
         specifier: ^0.1.0-alpha.2
-        version: 0.1.0-alpha.3
+        version: 0.1.0-alpha.4
       '@soostori/notifications':
         specifier: ^0.1.0-alpha.1
         version: 0.1.0-alpha.1
@@ -1120,32 +1132,29 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@soostori/auth@0.1.0-alpha.8':
-    resolution: {integrity: sha512-HuCeVCz9NKgJZYZ8FyQnKia77Ib/u2a1fBYuk2pjo22+RJX9jfpOq5FZto/4a3QuZPH0KM88SC/AQmmy2UHKpA==}
+  '@soostori/auth@0.1.0-alpha.9':
+    resolution: {integrity: sha512-GTL0g8P9VxbZMHf3IemceWf8t0bd9Z7vMj0d+qTXP0REynRo4DHLpjYbwGIlqUtSViIPSKTLvzdRcHNRl01oxw==}
 
   '@soostori/business@0.1.0-alpha.1':
     resolution: {integrity: sha512-4aYNVeE4ve9pY76IHIq6pQm36DhYEFGicbF/Cgpqfm3wBkE3O5A4NRTquAZI1JeHx/P8nUL44+2j7AEdXucKUA==}
 
-  '@soostori/cloud@0.1.0-alpha.1':
-    resolution: {integrity: sha512-BV1gN72+Qa6LpA9gbljISaXaDEOWSOYRZT4+WxrS1XEMqPgSGgMYxBNUxD6yT1HXFPfT+0rFEYZUBI8et4jnjw==}
+  '@soostori/cloud@0.1.0-alpha.7':
+    resolution: {integrity: sha512-p3/swvm9vRtTX+ocu+62FrodYvjnURP7vgCk+IRqJSrASNZtJbMaenvZbCGGuu4wCRz7u3x1QWsBZaCUuE78LQ==}
 
-  '@soostori/cloud@0.1.0-alpha.6':
-    resolution: {integrity: sha512-BW7cg2+IFegmQ+QV/xGVrWfg5Q+Ffgf9AAFPUpfSZI/SJEQheCANnuOx21xgayiCZXYfD0qw46L+PbLhABQe0g==}
+  '@soostori/cloud@0.1.0-alpha.9':
+    resolution: {integrity: sha512-dJGn8y9N89gMaCwvJ9qM5kzOrnY8ZKZNGiDZIT04sfGc/+5iK4QI9nnDpJde3pmy9TnS1PW4oiA7glHfDLhLEA==}
 
-  '@soostori/contracts@0.1.0-alpha.2':
-    resolution: {integrity: sha512-eOoKeyQFUMdmNgVUryyxZqHFjK8fc54bhfMVfwvSwXfNx73SIt7VMqnVVeIj7fdeO4WYpq2++ltLbueKy1zAEQ==}
+  '@soostori/contracts@0.1.0-alpha.3':
+    resolution: {integrity: sha512-IIa1nn/LYJwpkOV2ZF9mrJxVWYek78Yn7OkOI/CSyVpnLRYctFo6EGpATp6zD4ZifcV0KukCP+ahriVW0iiz9Q==}
+
+  '@soostori/contracts@0.1.0-alpha.5':
+    resolution: {integrity: sha512-iEl7EsOoAvzmO5omAG9G5NEHUdwDgyL6p1zpBGDfX8md3qObmeK4egghlhgoETGS8THOts/RRE8fZLmVB9QWpA==}
 
   '@soostori/core@0.1.0-alpha.1':
     resolution: {integrity: sha512-KFNAp3mJLBgd8jpyAW3VqLQ0OSjJgrt6YkjzMwUuKnBUvfkaC/QzS5etxbzpN1lVYw9pRK/kAxo2onXsXv1ELA==}
 
-  '@soostori/core@0.1.0-alpha.10':
-    resolution: {integrity: sha512-Rn3o9Ciomp0JvfPP05oTNqmPu40csUJ6sa0hfghdUzeZ6CO5P9HXSVRZdAzF7EB3HxFdBGmuK1EH+ACqVHjKWQ==}
-
-  '@soostori/core@0.1.0-alpha.9':
-    resolution: {integrity: sha512-SMTxVsqPc57reeJIU9ncWok2NZqM2Kzc10erH1ngCaKVKchSd5P87cBRB5E4gvKN7UZdwvD8P2pdX5cVutcOZQ==}
-
-  '@soostori/devices@0.1.0-alpha.1':
-    resolution: {integrity: sha512-bfnvJpwGdBQ6BCdx2kD+jmTrdAMT4fA1NqUHP7+WxN0tLTiDLzNsQUuOQIApcBv+oHYgWRpSyK8GTgNyULeYhA==}
+  '@soostori/core@0.1.0-alpha.11':
+    resolution: {integrity: sha512-ndBMI/viHzrqY8Hmb7HZuHQiQqr8gkokROCyKfTJQBJbJ2RkN8L005pRizbLUyBRBE+q1czsUrDrrKUOje7tgQ==}
 
   '@soostori/devices@0.1.0-alpha.4':
     resolution: {integrity: sha512-FtWesp2aEmSqubLnAKTkk6LRSbPGzM6dJhrmfXIP43No0bqvm02Ck4PN0b/OdcU+h5NT/j+P/kE7cno6s5Qn9w==}
@@ -1153,8 +1162,8 @@ packages:
   '@soostori/events@0.1.0-alpha.1':
     resolution: {integrity: sha512-luEpj1LP9XzUWlAAeZUix2lrceShesuNkN1zJB2GroWXDOjHt9nTryFQm+qJFEeyxRnK+KgWxfdbYOkQfNi9MA==}
 
-  '@soostori/events@0.1.0-alpha.3':
-    resolution: {integrity: sha512-E5UPn+0+VNxwv1mzmM8NQSgTHwuFDh+ZE7f0zQXWGmISo9H1g1pjHciIZvv2Zw84z0EUxLd1MHRYF76hEhMOwg==}
+  '@soostori/events@0.1.0-alpha.4':
+    resolution: {integrity: sha512-IaIqAuqOJpydem+IJC7rj2X9UoADcUWG3uSMqmfz9LrwCqQ+mXbSYwMM/zixmP3EGfidNjJwhi12+Jd3Cg1vng==}
 
   '@soostori/inventory@0.1.0-alpha.1':
     resolution: {integrity: sha512-BfDh78UMr7ZpPUca12MB0xFhlk5a9AQcwHK8s/CkhHqTrOOxHqQDn67hxm3fm3RJv67tLNbkbRhqH8qOvvWuCg==}
@@ -1162,29 +1171,29 @@ packages:
   '@soostori/notifications@0.1.0-alpha.1':
     resolution: {integrity: sha512-0ZElFOQbr+R8f8f318qRoZggEQxFjZkFlA1JKnPVIpXRSxsTouEqDen3YMM9q7a2/TPUSTBUapMSB8vfIKwJng==}
 
-  '@soostori/offline@0.1.0-alpha.1':
-    resolution: {integrity: sha512-pM26kIUOzRnX82ZN4aWb0cvwSNRguZUgKgBhULyHR/ttwMSray+w2j98R3bPHmRrEN4zX/qIg11N5iyvquCoqg==}
+  '@soostori/offline@0.1.0-alpha.3':
+    resolution: {integrity: sha512-n1sSfWAntjms5S3cBl8ohrvaEIFPjgE08RmFBfRaqsPKd3F+AhMJpR58NbQtozaLp4/CkNuYQlsRYZCOPNSrwg==}
 
-  '@soostori/schema@0.1.0-alpha.1':
-    resolution: {integrity: sha512-gatRXpQB2N21kqOdSRMr/8GUCPL3Wtby/tSGvMVEYfmCft1IdcIvUbN72lv+CrAImlzduM3YvAPTg5SSNCZRXw==}
+  '@soostori/payments@0.1.0-alpha.3':
+    resolution: {integrity: sha512-UZlfnMDNHkJxfWJLExf+KQB6CDvhwbcJXJP8e/p8xpyP3mHDSSOcMla4womtAgrq+/B4/6K368khDGvU0tRXfg==}
 
-  '@soostori/schema@0.1.0-alpha.2':
-    resolution: {integrity: sha512-bjvqRSFi/2oP9Bha0NYdBe1ALcAx0GT5/C2c92wYvMvYecnH8wrkp7H/66OCTE+QcKR4BxtuAwarm1wUHiW/cA==}
+  '@soostori/products@0.1.0-alpha.2':
+    resolution: {integrity: sha512-xa7RWA1ZjzvhoYoRqnzwIOc64nNEKo8nEkbUWvtMZpTo6gix1ErHq9BXR6Vj0hLLu7c14gH/+iyXuOYZ+GeWSg==}
+
+  '@soostori/schema@0.1.0-alpha.3':
+    resolution: {integrity: sha512-7OC9ScqgMUtUfB8Ez9kM5xj0zJv9rxU/PxoCx10GTsl2H7g3GDgfOaO58wUMEfS+g8tmCB/TbGc6iZ7yV4gt3w==}
 
   '@soostori/storage@0.1.0-alpha.1':
     resolution: {integrity: sha512-RpKRxtfwTqTrd2IiXAg+dJKs3nW3zrq85ELfMYQsjH9oG2hVmwCtG02EW56FKiMSDcPt0UOlmhROfbgesoErRQ==}
 
-  '@soostori/subscription@0.1.0-alpha.1':
-    resolution: {integrity: sha512-5Vu+5Krnvu4h2+xFEs19LG9Jsnp5zKsFjNIQr2vNSYX6hVfv7BD5OfP80IvB0BfITmXv5sLQzR2a1vgpge1EXQ==}
+  '@soostori/subscription@0.1.0-alpha.4':
+    resolution: {integrity: sha512-0G8cLQMUm0lhjJDHls9DPfpSqXDgeAVf+9zfo68HjV0mhcyKIXNZkOIqhZimEEf1TlV2rxjCJMKo3CMZMnAa1A==}
 
-  '@soostori/subscription@0.1.0-alpha.3':
-    resolution: {integrity: sha512-8Eut5biSFAX8cj/hChuH5aqatNEAL00PySYHsl7ITsMo8gKknFi0wWU5bK9bz5ECpCt/wWwFRYHYCH6dvxtl9g==}
+  '@soostori/sync@0.1.0-alpha.3':
+    resolution: {integrity: sha512-wz4Pzw1QbTxAkbALQhp3JHV0c51j1BdxXKjMsSkh1AjQ2Kn84mubqkTGJzgG1DPtjdP30p9oCpIP6Ddy6zG0qg==}
 
-  '@soostori/sync@0.1.0-alpha.1':
-    resolution: {integrity: sha512-k/jeeCVqKX13Gfo2PcOD0NAtJapz3sxrAPpMhNOjMJ5pgHZbnEUtDCnxodWOyXKOSdsH2zQTYPD4c2FwFFivhg==}
-
-  '@soostori/tuma@0.1.0-alpha.1':
-    resolution: {integrity: sha512-rfrDkQZoDaJOeruTcmoQnlp8sUVBJVSe1QJQf3+LAT8e19LOu6gd4rb9p5al2YXRB1n3dcF5milZU3rCor8m3w==}
+  '@soostori/tuma@0.1.0-alpha.2':
+    resolution: {integrity: sha512-b7t1DZ2pRciy/62s5P34IyP12Go62OTfPEGUWrp0PJGjlbQVsB84q7f4GdOBD8InqR19Ozg0NuApLsmwK+gONQ==}
 
   '@types/better-sqlite3@7.6.13':
     resolution: {integrity: sha512-NMv9ASNARoKksWtsq/SHakpYAYnhBrQgGD8zkLYk/jaK8jUGn08CfEdTRgYhMypUQAfzSP8W6gNLe0q19/t4VA==}
@@ -1728,7 +1737,7 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.63.1':
     optional: true
 
-  '@soostori/auth@0.1.0-alpha.8':
+  '@soostori/auth@0.1.0-alpha.9':
     dependencies:
       zod: 3.25.76
 
@@ -1738,46 +1747,40 @@ snapshots:
       '@soostori/events': 0.1.0-alpha.1
       zod: 3.25.76
 
-  '@soostori/cloud@0.1.0-alpha.1':
+  '@soostori/cloud@0.1.0-alpha.7':
     dependencies:
-      '@soostori/core': 0.1.0-alpha.1
-      '@soostori/schema': 0.1.0-alpha.1
+      '@soostori/core': 0.1.0-alpha.11
+      '@soostori/schema': 0.1.0-alpha.3
       zod: 3.25.76
 
-  '@soostori/cloud@0.1.0-alpha.6':
+  '@soostori/cloud@0.1.0-alpha.9':
     dependencies:
-      '@soostori/core': 0.1.0-alpha.9
-      '@soostori/schema': 0.1.0-alpha.2
+      '@soostori/contracts': 0.1.0-alpha.5
+      '@soostori/core': 0.1.0-alpha.11
+      '@soostori/schema': 0.1.0-alpha.3
       zod: 3.25.76
 
-  '@soostori/contracts@0.1.0-alpha.2':
+  '@soostori/contracts@0.1.0-alpha.3':
     dependencies:
-      '@soostori/core': 0.1.0-alpha.9
+      '@soostori/core': 0.1.0-alpha.11
+
+  '@soostori/contracts@0.1.0-alpha.5':
+    dependencies:
+      '@soostori/core': 0.1.0-alpha.11
 
   '@soostori/core@0.1.0-alpha.1':
     dependencies:
       zod: 3.25.76
 
-  '@soostori/core@0.1.0-alpha.10':
+  '@soostori/core@0.1.0-alpha.11':
     dependencies:
-      '@soostori/contracts': 0.1.0-alpha.2
-      zod: 3.25.76
-
-  '@soostori/core@0.1.0-alpha.9':
-    dependencies:
-      '@soostori/contracts': 0.1.0-alpha.2
-      zod: 3.25.76
-
-  '@soostori/devices@0.1.0-alpha.1':
-    dependencies:
-      '@soostori/core': 0.1.0-alpha.1
-      '@soostori/events': 0.1.0-alpha.1
+      '@soostori/contracts': 0.1.0-alpha.3
       zod: 3.25.76
 
   '@soostori/devices@0.1.0-alpha.4':
     dependencies:
-      '@soostori/core': 0.1.0-alpha.10
-      '@soostori/events': 0.1.0-alpha.3
+      '@soostori/core': 0.1.0-alpha.11
+      '@soostori/events': 0.1.0-alpha.4
       zod: 3.25.76
 
   '@soostori/events@0.1.0-alpha.1':
@@ -1785,9 +1788,9 @@ snapshots:
       '@soostori/core': 0.1.0-alpha.1
       zod: 3.25.76
 
-  '@soostori/events@0.1.0-alpha.3':
+  '@soostori/events@0.1.0-alpha.4':
     dependencies:
-      '@soostori/core': 0.1.0-alpha.9
+      '@soostori/core': 0.1.0-alpha.11
       zod: 3.25.76
 
   '@soostori/inventory@0.1.0-alpha.1':
@@ -1802,20 +1805,28 @@ snapshots:
       '@soostori/events': 0.1.0-alpha.1
       zod: 3.25.76
 
-  '@soostori/offline@0.1.0-alpha.1':
+  '@soostori/offline@0.1.0-alpha.3':
     dependencies:
-      '@soostori/core': 0.1.0-alpha.1
-      '@soostori/events': 0.1.0-alpha.1
+      '@soostori/core': 0.1.0-alpha.11
+      '@soostori/events': 0.1.0-alpha.4
+      '@soostori/subscription': 0.1.0-alpha.4
       zod: 3.25.76
 
-  '@soostori/schema@0.1.0-alpha.1':
+  '@soostori/payments@0.1.0-alpha.3':
     dependencies:
-      '@soostori/core': 0.1.0-alpha.1
+      '@soostori/core': 0.1.0-alpha.11
+      '@soostori/events': 0.1.0-alpha.4
       zod: 3.25.76
 
-  '@soostori/schema@0.1.0-alpha.2':
+  '@soostori/products@0.1.0-alpha.2':
     dependencies:
-      '@soostori/core': 0.1.0-alpha.9
+      '@soostori/core': 0.1.0-alpha.11
+      '@soostori/events': 0.1.0-alpha.4
+      zod: 3.25.76
+
+  '@soostori/schema@0.1.0-alpha.3':
+    dependencies:
+      '@soostori/core': 0.1.0-alpha.11
       zod: 3.25.76
 
   '@soostori/storage@0.1.0-alpha.1':
@@ -1824,28 +1835,23 @@ snapshots:
       '@soostori/events': 0.1.0-alpha.1
       zod: 3.25.76
 
-  '@soostori/subscription@0.1.0-alpha.1':
+  '@soostori/subscription@0.1.0-alpha.4':
     dependencies:
-      '@soostori/core': 0.1.0-alpha.1
+      '@soostori/core': 0.1.0-alpha.11
       zod: 3.25.76
 
-  '@soostori/subscription@0.1.0-alpha.3':
+  '@soostori/sync@0.1.0-alpha.3':
     dependencies:
-      '@soostori/core': 0.1.0-alpha.10
+      '@soostori/cloud': 0.1.0-alpha.7
+      '@soostori/core': 0.1.0-alpha.11
+      '@soostori/devices': 0.1.0-alpha.4
+      '@soostori/events': 0.1.0-alpha.4
+      '@soostori/schema': 0.1.0-alpha.3
       zod: 3.25.76
 
-  '@soostori/sync@0.1.0-alpha.1':
+  '@soostori/tuma@0.1.0-alpha.2':
     dependencies:
-      '@soostori/cloud': 0.1.0-alpha.1
-      '@soostori/core': 0.1.0-alpha.1
-      '@soostori/devices': 0.1.0-alpha.1
-      '@soostori/events': 0.1.0-alpha.1
-      '@soostori/schema': 0.1.0-alpha.1
-      zod: 3.25.76
-
-  '@soostori/tuma@0.1.0-alpha.1':
-    dependencies:
-      '@soostori/core': 0.1.0-alpha.1
+      '@soostori/core': 0.1.0-alpha.11
       zod: 3.25.76
 
   '@types/better-sqlite3@7.6.13':

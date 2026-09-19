@@ -94,6 +94,7 @@ export interface PartnerRepository {
   upsertEnrollment(enrollment: BusinessEnrollment): Promise<void>
   getEnrollmentByBusiness(businessId: BusinessId): Promise<BusinessEnrollment | null>
   listEnrollmentsBySalesperson(salespersonId: SalespersonProfileId): Promise<BusinessEnrollment[]>
+  listEnrollmentsByInfluencer(influencerId: InfluencerProfileId): Promise<BusinessEnrollment[]>
   updateEnrollmentStatus(id: string, status: EnrollmentStatus): Promise<void>
 
   // ── Commission earnings ────────────────────────────────────────────────

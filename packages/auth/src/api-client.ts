@@ -46,6 +46,7 @@ import type {
   SessionRefreshResult,
   TrustedDevice,
   TrustedDeviceResult,
+  PasswordlessPurpose,
 } from './cloud-auth.js'
 import type { ISO8601 } from '@soostori/core'
 
@@ -374,5 +375,27 @@ export class HttpAuthApiClient implements AuthApiClient {
       '/api/commercial/enrollment-token/consume',
       params,
     )
+  }
+
+  // ── Passwordless challenge ───────────────────────────────────────────────
+
+  requestPasswordlessChallenge(params: {
+    email: string
+    purpose: PasswordlessPurpose
+    codeLength?: number
+    expiresInMinutes?: number
+  }): Promise<AuthApiResponse<{ expiresAt: string; cooldownSeconds: number }>> {
+    return this.post<{ expiresAt: string; cooldownSeconds: number }>(
+      '/api/auth/passwordless/challenge',
+      params,
+    )
+  }
+
+  verifyPasswordlessChallenge(params: {
+    email: string
+    purpose: PasswordlessPurpose
+    code: string
+  }): Promise<AuthApiResponse<SignInResult>> {
+    return this.post<SignInResult>('/api/auth/passwordless/verify', params)
   }
 }

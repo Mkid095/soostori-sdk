@@ -6,7 +6,7 @@
         "/c",
         "npx",
         "-y",
-        "@fidscript/instant-mcp@0.4.22"
+        "@fidscript/instant-mcp@0.4.38"
       ],
       "env": {
         "INSTANT_ACCESS_TOKEN": "per_1ed2c9adc59660f639a6d246102ae0b19a9a41b356eec9d492b0ca6445ce6ce7",

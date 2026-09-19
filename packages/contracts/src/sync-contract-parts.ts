@@ -44,6 +44,8 @@ export type EntityKind =
   | 'subscription'
   | 'salespersonApplication' | 'salespersonProfile' | 'influencerProfile'
   | 'commissionRule' | 'commissionLedger'
+  | 'businessEnrollment' | 'commissionEarning'
+  | 'partnerApplication'
   | 'authAuditEvent'
   | 'teamInvitation' | 'teamMembership'
 

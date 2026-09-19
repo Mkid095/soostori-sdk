@@ -146,6 +146,20 @@ export const TEAM_MEMBER_REMOVED        = 'team.member.removed'
 export const TEAM_MEMBER_ROLE_CHANGED   = 'team.member.role_changed'
 export const TEAM_MEMBER_PERMISSION_CHANGED = 'team.member.permission_changed'
 
+// ── Commission lifecycle events ───────────────────────────────────────────────
+
+/**
+ * Commission status uses a closed vocabulary:
+ *   accrued   — earning recorded, awaiting payout window
+ *   payable   — payout window opened, recipient can receive payment
+ *   paid      — funds disbursed
+ *   reversed  — earning cancelled (dispute, refund, etc.)
+ */
+export const COMMISSION_ACCRUED   = 'commission.accrued'
+export const COMMISSION_PAYABLE  = 'commission.payable'
+export const COMMISSION_PAID     = 'commission.paid'
+export const COMMISSION_REVERSED = 'commission.reversed'
+
 // ── Partner events (Phase 18) ───────────────────────────────────────────────
 
 export const PARTNER_APPLICATION_SUBMITTED = 'partner.application_submitted'
@@ -200,6 +214,8 @@ export const ALL_EVENTS = [
   // Partner
   PARTNER_APPLICATION_SUBMITTED, PARTNER_APPROVED, PARTNER_REJECTED,
   PARTNER_ENROLLED, CONVERSION_QUALIFIED, COMMISSION_CREATED,
+  // Commission lifecycle
+  COMMISSION_ACCRUED, COMMISSION_PAYABLE, COMMISSION_PAID, COMMISSION_REVERSED,
 ] as const
 
 export type SoostoriEventName = typeof ALL_EVENTS[number]

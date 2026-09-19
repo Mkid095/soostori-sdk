@@ -9,16 +9,16 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@soostori/core": "^0.1.0-alpha.10",
-    "@soostori/schema": "^0.1.0-alpha.2",
-    "@soostori/auth": "^0.1.0-alpha.8",
-    "@soostori/cloud": "^0.1.0-alpha.6",
-    "@soostori/sync": "^0.1.0-alpha.1",
-    "@soostori/subscription": "^0.1.0-alpha.1",
-    "@soostori/tuma": "^0.1.0-alpha.1",
+    "@soostori/core": "^0.1.0-alpha.11",
+    "@soostori/schema": "^0.1.0-alpha.3",
+    "@soostori/auth": "^0.1.0-alpha.9",
+    "@soostori/cloud": "^0.1.0-alpha.7",
+    "@soostori/sync": "^0.1.0-alpha.3",
+    "@soostori/subscription": "^0.1.0-alpha.4",
+    "@soostori/tuma": "^0.1.0-alpha.2",
     "zod": "^3.24.0",
-    "@soostori/events": "^0.1.0-alpha.3",
-    "@soostori/offline": "^0.1.0-alpha.1"
+    "@soostori/events": "^0.1.0-alpha.4",
+    "@soostori/offline": "^0.1.0-alpha.3"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
