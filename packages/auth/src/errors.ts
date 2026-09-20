@@ -42,6 +42,7 @@ export type AuthErrorCode =
   | 'CHALLENGE_INVALID_PURPOSE'
   | 'CHALLENGE_MAX_ATTEMPTS'
   | 'CHALLENGE_COOLDOWN'
+  | 'SETUP_TOKEN_INVALID'
   | 'UNKNOWN'
 
 export interface AuthError {

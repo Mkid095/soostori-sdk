@@ -9,7 +9,7 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - '@soostori/core@0.1.0-alpha.2 || 0.1.0-alpha.9 || 0.1.0-alpha.10 || 0.1.0-alpha.11'
   - '@soostori/schema@0.1.0-alpha.2 || 0.1.0-alpha.3'
-  - '@soostori/auth@0.1.0-alpha.8 || 0.1.0-alpha.9'
+  - '@soostori/auth@0.1.0-alpha.8 || 0.1.0-alpha.9 || 0.1.0-alpha.18'
   - '@soostori/cloud@0.1.0-alpha.6 || 0.1.0-alpha.7 || 0.1.0-alpha.8 || 0.1.0-alpha.9 || 0.1.0-alpha.10'
   - '@soostori/contracts@0.1.0-alpha.2 || 0.1.0-alpha.3 || 0.1.0-alpha.4 || 0.1.0-alpha.5'
   - '@soostori/storage@0.2.0-alpha.2 || 0.2.0-alpha.3'

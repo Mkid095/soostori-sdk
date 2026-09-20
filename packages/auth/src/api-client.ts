@@ -398,4 +398,11 @@ export class HttpAuthApiClient implements AuthApiClient {
   }): Promise<AuthApiResponse<SignInResult>> {
     return this.post<SignInResult>('/api/auth/passwordless/verify', params)
   }
+
+  completePasswordSetup(params: {
+    setupToken: string
+    password: string
+  }): Promise<AuthApiResponse<SignInResult>> {
+    return this.post<SignInResult>('/api/auth/passwordless/setup/complete', params)
+  }
 }

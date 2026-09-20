@@ -49,6 +49,7 @@ export interface MockAuthApiClientConfig {
   consumeEnrollmentTokenForDevice?: (params: { token: string }) => AuthApiResponse<{ employeeId: string; deviceId: string }>
   requestPasswordlessChallenge?: (params: { email: string; purpose: PasswordlessPurpose; codeLength?: number; expiresInMinutes?: number }) => AuthApiResponse<{ expiresAt: ISO8601; cooldownSeconds: number }>
   verifyPasswordlessChallenge?: (params: { email: string; purpose: PasswordlessPurpose; code: string }) => AuthApiResponse<SignInResult>
+  completePasswordSetup?: (params: { setupToken: string; password: string }) => AuthApiResponse<SignInResult>
 }
 
 const ok = <T>(data: T): Promise<AuthApiResponse<T>> => Promise.resolve({ data })
@@ -241,6 +242,26 @@ export class MockAuthApiClient implements AuthApiClient {
           email: params.email,
           accessToken: 'at',
           refreshToken: 'rt',
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() as ISO8601,
+          isEmailVerified: true,
+          session: {} as any,
+        })
+  }
+
+  async completePasswordSetup(params: {
+    setupToken: string
+    password: string
+  }): Promise<AuthApiResponse<SignInResult>> {
+    return this.mock.completePasswordSetup
+      ? this.mock.completePasswordSetup(params)
+      : ok({
+          userId: 'user-1' as UserId,
+          employeeId: 'emp-1' as EmployeeId,
+          shopId: 'shop-1' as ShopId,
+          deviceId: 'dev-1' as DeviceId,
+          email: 'test@example.com',
+          accessToken: 'setup-at',
+          refreshToken: 'setup-rt',
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() as ISO8601,
           isEmailVerified: true,
           session: {} as any,

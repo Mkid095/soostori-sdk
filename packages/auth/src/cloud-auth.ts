@@ -329,6 +329,18 @@ export interface AuthApiClient {
     purpose: PasswordlessPurpose
     code: string
   }): Promise<AuthApiResponse<SignInResult>>
+
+  /**
+   * Complete the account setup flow — exchange a setup token (from `verifyPasswordlessChallenge`
+   * with `needsSetup: true`) for a permanent password and an authenticated session.
+   *
+   * The backend validates the setup token, stores the password hash, and returns a session.
+   * The token is consumed atomically — reuse is impossible.
+   */
+  completePasswordSetup(params: {
+    setupToken: string
+    password: string
+  }): Promise<AuthApiResponse<SignInResult>>
 }
 
 export interface AuthApiResponse<T> {
@@ -351,6 +363,19 @@ export interface SignInResult {
   expiresAt: ISO8601
   isEmailVerified: boolean
   session: AuthSession
+  /**
+   * True when a passwordless challenge was verified for an account-setup purpose
+   * (`influencer_account_setup` or `salesperson_onboarding`) but the permanent
+   * password has not yet been created. In this case `session` is absent and
+   * `setupToken` is returned instead. The caller should collect the permanent
+   * password and call `completePasswordSetup`.
+   */
+  needsSetup?: true
+  /**
+   * Present when `needsSetup` is true. A short-lived token bound to the verified
+   * identity. Pass to `completePasswordSetup` to exchange it for a real session.
+   */
+  setupToken?: string
 }
 
 // ─── Auth result type ──────────────────────────────────────────────────────────
@@ -385,6 +410,7 @@ export type PasswordlessPurpose =
   | 'salesperson_activation'
   | 'normal_passwordless_login'
   | 'influencer_account_setup'
+  | 'salesperson_onboarding'
 
 /**
  * Result returned after a passwordless challenge is successfully created.
@@ -851,6 +877,30 @@ export class CloudAuth {
 
       const data = result.data!
 
+      // Account-setup purposes (influencer_account_setup, salesperson_onboarding) return
+      // needsSetup: true + setupToken instead of a full session. The caller must call
+      // completePasswordSetup to create the permanent password and real session.
+      if (data.needsSetup) {
+        this.emit({ type: 'PASSWORDLESS_CHALLENGE_VERIFIED', email: params.email, purpose: params.purpose })
+        return {
+          ok: true,
+          data: {
+            userId: data.userId,
+            employeeId: data.employeeId,
+            shopId: data.shopId,
+            deviceId: data.deviceId,
+            email: data.email,
+            accessToken: data.accessToken,
+            refreshToken: data.refreshToken,
+            expiresAt: data.expiresAt,
+            isEmailVerified: data.isEmailVerified,
+            session: undefined as unknown as AuthSession,
+            needsSetup: true,
+            setupToken: data.setupToken,
+          },
+        }
+      }
+
       const session = await this._storeSession({
         userId: data.userId,
         employeeId: data.employeeId,
@@ -862,6 +912,50 @@ export class CloudAuth {
       })
 
       this.emit({ type: 'PASSWORDLESS_CHALLENGE_VERIFIED', email: params.email, purpose: params.purpose })
+      this.emit({ type: 'SIGNED_IN', session })
+      return { ok: true, data: { ...data, session: this._toAuthSession(session) } }
+    } catch (e) {
+      return { ok: false, error: authError('UNKNOWN', String(e)) }
+    }
+  }
+
+  // ─── Account setup ─────────────────────────────────────────────────────
+
+  /**
+   * Complete account setup — exchange a `setupToken` (from `verifyPasswordlessChallenge`
+   * with `needsSetup: true`) for a permanent password and an authenticated session.
+   *
+   * The backend validates the token, stores the password hash, and returns a real session.
+   * The token is consumed atomically — reuse returns an error.
+   *
+   * Emits `SIGNED_IN` on success.
+   */
+  async completePasswordSetup(params: {
+    setupToken: string
+    password: string
+  }): Promise<AuthResult<SignInResult>> {
+    try {
+      const result = await this.api.completePasswordSetup({
+        setupToken: params.setupToken,
+        password: params.password,
+      })
+
+      if (result.error) {
+        return { ok: false, error: this._mapApiError(result.error) }
+      }
+
+      const data = result.data!
+
+      const session = await this._storeSession({
+        userId: data.userId,
+        employeeId: data.employeeId,
+        shopId: data.shopId,
+        deviceId: data.deviceId,
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        email: data.email,
+      })
+
       this.emit({ type: 'SIGNED_IN', session })
       return { ok: true, data: { ...data, session: this._toAuthSession(session) } }
     } catch (e) {
@@ -969,6 +1063,7 @@ export class CloudAuth {
       'PIN_RECOVERY_REQUIRED', 'RECOVERY_CODE_INVALID', 'RECOVERY_RATE_LIMITED',
       'INVALID_CHALLENGE_CODE', 'CHALLENGE_EXPIRED', 'CHALLENGE_NOT_FOUND',
       'CHALLENGE_INVALID_PURPOSE', 'CHALLENGE_MAX_ATTEMPTS', 'CHALLENGE_COOLDOWN',
+      'SETUP_TOKEN_INVALID',
       'UNKNOWN',
     ]
     return authError(KNOWN_CODES.includes(code) ? code : 'UNKNOWN', apiError.message, apiError.retryAfterMs)
