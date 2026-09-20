@@ -212,6 +212,9 @@ export interface EventPayloadMap {
   'employee.role_changed': { businessId: string; employeeId: string; role: string; changedBy: string }
   'employee.revoked': { businessId: string; employeeId: string }
 
+  'membership.invited': { membershipId: string; businessId: string; personId: string; role: string }
+  'membership.revoked': { membershipId: string; businessId: string; personId: string }
+
   // Team events
   'team.invitation.created': { invitationId: string; email: string; role: string }
   'team.invitation.accepted': { invitationId: string; membershipId: string }
@@ -228,6 +231,11 @@ export interface EventPayloadMap {
   'partner.enrolled': { salespersonProfileId: string; businessId: string }
   'conversion.qualified': { businessId: string; subscriptionId: string; salespersonProfileId: string; influencerProfileId?: string }
   'commission.created': { commissionEarningId: string; salespersonProfileId: string; influencerProfileId?: string; businessId: string; subscriptionId: string; amount: number; role: 'salesperson' | 'influencer' }
+
+  // ── Salesperson lifecycle (Phase 03A) ──────────────────────────────────────
+  'salesperson.training_completed': { salespersonProfileId: string; trainingCompletedAt: string; meetingDate: string }
+  'salesperson.meeting_scheduled':  { salespersonProfileId: string; meetingDate: string }
+  'salesperson.meeting_completed':  { salespersonProfileId: string; meetingDate: string }
 }
 
 export type EventPayload<K extends keyof EventPayloadMap> = EventPayloadMap[K]

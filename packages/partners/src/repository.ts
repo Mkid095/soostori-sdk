@@ -22,6 +22,38 @@ import type {
   EnrollmentStatus,
 } from './types.js'
 
+/**
+ * SalespersonProfileRecord — persistence shape for SalespersonProfile.
+ *
+ * Field notes (Phase 03A):
+ * - trainingCompletedAt: ISO 8601 | null. Set exactly once when training
+ *   transitions to 'completed'. Server-authoritative.
+ * - meetingDate: ISO 8601 | null. First Friday strictly after
+ *   trainingCompletedAt. Null until training completed.
+ * - meetingStatus: 'scheduled' | 'completed' | null. See MeetingStatus.
+ * - activeAt: ISO 8601 | null. Operational activation. NOT set by training
+ *   completion and NOT set by meeting completion. Phase 2 owns this.
+ *
+ * The repository persists the record; the service layer enforces
+ * idempotency and lifecycle semantics.
+ */
+export interface SalespersonProfileRecord {
+  id: SalespersonProfileId
+  applicationId: SalespersonApplicationId
+  personId: string
+  referredBy?: InfluencerProfileId | null
+  trainingStep: number
+  trainingStatus: 'not_started' | 'in_progress' | 'completed' | 'expired'
+  trainingCompletedAt?: string | null
+  meetingDate?: string | null
+  meetingStatus?: 'scheduled' | 'completed' | null
+  activeAt?: string | null
+  suspended: boolean
+  createdAt: string
+  updatedAt: string
+  version: number
+}
+
 export interface PartnerRepository {
   // ── Applications ──────────────────────────────────────────────────────────
 
@@ -38,33 +70,9 @@ export interface PartnerRepository {
 
   // ── Salesperson profiles ────────────────────────────────────────────────
 
-  upsertSalespersonProfile(profile: {
-    id: SalespersonProfileId
-    applicationId: SalespersonApplicationId
-    personId: string
-    referredBy?: InfluencerProfileId | null
-    createdAt: string
-    updatedAt: string
-    version: number
-  }): Promise<void>
-  getSalespersonProfile(id: SalespersonProfileId): Promise<{
-    id: SalespersonProfileId
-    applicationId: SalespersonApplicationId
-    personId: string
-    referredBy?: InfluencerProfileId | null
-    createdAt: string
-    updatedAt: string
-    version: number
-  } | null>
-  listSalespersonProfilesByInfluencer(influencerId: InfluencerProfileId): Promise<Array<{
-    id: SalespersonProfileId
-    applicationId: SalespersonApplicationId
-    personId: string
-    referredBy?: InfluencerProfileId | null
-    createdAt: string
-    updatedAt: string
-    version: number
-  }>>
+  upsertSalespersonProfile(profile: SalespersonProfileRecord): Promise<void>
+  getSalespersonProfile(id: SalespersonProfileId): Promise<SalespersonProfileRecord | null>
+  listSalespersonProfilesByInfluencer(influencerId: InfluencerProfileId): Promise<SalespersonProfileRecord[]>
 
   // ── Influencer profiles ─────────────────────────────────────────────────
 

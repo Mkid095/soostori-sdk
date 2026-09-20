@@ -45,10 +45,18 @@ export type SalespersonApplicationStatus =
   | 'approved' | 'rejected' | 'withdrawn'
 
 /**
- * SalespersonApplication — applicant onboarding state machine.
+ * SalespersonApplication — applicant onboarding state machine (CANONICAL).
  *
  * Lifecycle: draft → submitted → under_review ↔ documents_required
  *          → approved | rejected | withdrawn.
+ *
+ * NOTE: This is the canonical 7-state contract. There is also a legacy
+ * 3-state `PartnerApplication` type in `@soostori/partners/src/types.ts`
+ * with `pending → approved | rejected`. The 3-state type is DEPRECATED —
+ * new code should consume `SalespersonApplication` from this package.
+ * Web/admin workflow UI states (`draft`, `withdrawn`, `documents_required`)
+ * are NOT collapsed into this type; they are workflow metadata over the
+ * canonical lifecycle.
  */
 export interface SalespersonApplication {
   id: SalespersonApplicationId
@@ -77,10 +85,36 @@ export interface SalespersonApplication {
 export type TrainingStatus = 'not_started' | 'in_progress' | 'completed' | 'expired'
 
 /**
+ * MeetingStatus — null until training is completed.
+ *
+ * - null: training not yet complete; no meeting scheduled.
+ * - 'scheduled': training completed; meeting is on the books.
+ * - 'completed': meeting has occurred.
+ *
+ * meetingStatus transition is independent of `activeAt`. Completing a meeting
+ * does NOT activate the salesperson.
+ */
+export type MeetingStatus = 'scheduled' | 'completed' | null
+
+/**
  * SalespersonProfile — created on SalespersonApplication approval.
  *
+ * Lifecycle fields (training → meeting → activation):
+ * - trainingStep / trainingStatus — position in the training pipeline.
+ * - trainingCompletedAt — server-authoritative timestamp; set exactly once
+ *   when the salesperson completes all required training. Independent of
+ *   activeAt.
+ * - meetingDate — first Friday strictly after trainingCompletedAt.
+ *   Null until training is completed.
+ * - meetingStatus — see MeetingStatus.
+ * - activeAt — operational activation. Set by the activation authority
+ *   (Phase 2 owns this transition). NOT set by training completion and
+ *   NOT set by meeting completion.
+ *
  * Training is a 9-step pipeline (steps 0–8). `trainingStep` is the user's
- * position; `trainingStatus` is the high-level state.
+ * position; `trainingStatus` is the high-level state. The curriculum
+ * (which videos are required for which audience) is admin-controlled and
+ * dynamic — the SDK does not embed a fixed step-count invariant.
  */
 export interface SalespersonProfile {
   id: SalespersonProfileId
@@ -93,7 +127,30 @@ export interface SalespersonProfile {
   /** 0..8 — current step in the training pipeline. */
   trainingStep: number
   trainingStatus: TrainingStatus
-  /** When the salesperson became active (i.e. completed training). */
+  /**
+   * ISO 8601 timestamp at which the salesperson completed all required
+   * training. Server-authoritative. Set exactly once — repeated
+   * completion requests MUST NOT overwrite this value.
+   *
+   * Null until training transitions to 'completed'.
+   */
+  trainingCompletedAt?: ISO8601 | null
+  /**
+   * ISO 8601 timestamp of the first Friday strictly after
+   * trainingCompletedAt. Null until training is completed.
+   */
+  meetingDate?: ISO8601 | null
+  /**
+   * Meeting lifecycle. Null until training is completed; 'scheduled' on
+   * completion of training; 'completed' after the meeting occurs.
+   */
+  meetingStatus?: MeetingStatus
+  /**
+   * ISO 8601 timestamp at which the salesperson became operationally
+   * active. CANONICAL MEANING: operational activation by the activation
+   * authority. NOT set by training completion. NOT set by meeting
+   * completion. Phase 2 owns this transition.
+   */
   activeAt?: ISO8601 | null
   /** Admin-disabled — salesperson cannot earn commissions. */
   suspended: boolean

@@ -7,15 +7,19 @@ allowBuilds:
   better-sqlite3: true
 
 minimumReleaseAgeExclude:
-  - '@soostori/core@0.1.0-alpha.2 || 0.1.0-alpha.9 || 0.1.0-alpha.10'
-  - '@soostori/schema@0.1.0-alpha.2'
+  - '@soostori/core@0.1.0-alpha.2 || 0.1.0-alpha.9 || 0.1.0-alpha.10 || 0.1.0-alpha.11 || 0.1.0-alpha.12'
+  - '@soostori/schema@0.1.0-alpha.2 || 0.1.0-alpha.3'
   - '@soostori/auth@0.1.0-alpha.8'
-  - '@soostori/cloud@0.1.0-alpha.6'
-  - '@soostori/contracts@0.1.0-alpha.2'
-  - '@soostori/events@0.1.0-alpha.3'
+  - '@soostori/cloud@0.1.0-alpha.6 || 0.1.0-alpha.7'
+  - '@soostori/contracts@0.1.0-alpha.2 || 0.1.0-alpha.3 || 0.1.0-alpha.4 || 0.1.0-alpha.5 || 0.1.0-alpha.6'
+  - '@soostori/events@0.1.0-alpha.3 || 0.1.0-alpha.4 || 0.1.0-alpha.5 || 0.1.0-alpha.6'
+  - '@soostori/partners@0.1.0-alpha.2 || 0.1.0-alpha.3 || 0.1.0-alpha.4 || 0.1.0-alpha.5 || 0.1.0-alpha.6'
   - '@soostori/devices@0.1.0-alpha.4'
-  - '@soostori/subscription@0.1.0-alpha.3'
-
+  - '@soostori/subscription@0.1.0-alpha.3 || 0.1.0-alpha.4'
+  - '@soostori/offline@0.1.0-alpha.3'
+  - '@soostori/products@0.1.0-alpha.2'
+  - '@soostori/sync@0.1.0-alpha.3'
+  - '@soostori/tuma@0.1.0-alpha.2'
 onlyBuiltDependencies:
   - esbuild
   - better-sqlite3

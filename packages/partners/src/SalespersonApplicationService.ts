@@ -9,9 +9,9 @@
 
 import type {
   BusinessId, SalespersonProfileId, InfluencerProfileId,
-  SalespersonApplicationId, ISO8601,
+  SalespersonApplicationId, ISO8601, DeviceId, EmployeeId,
 } from '@soostori/core'
-import { newId, asIdempotencyKey } from '@soostori/core'
+import { newId, asIdempotencyKey, asSyncEventId } from '@soostori/core'
 import type { SyncEngine, SyncEvent } from '@soostori/contracts'
 import type { PartnerRepository } from './repository.js'
 import type {
@@ -20,27 +20,15 @@ import type {
 } from './types.js'
 import { PARTNER_APPLICATION_SUBMITTED, PARTNER_APPROVED, PARTNER_REJECTED } from '@soostori/events'
 
-export class ApplicationNotFoundError extends Error {
-  constructor(id: string) {
-    super(`Application ${id} not found`)
-    this.name = 'ApplicationNotFoundError'
-  }
-}
-
-export class InvalidApplicationStatusError extends Error {
-  constructor(current: PartnerApplicationStatus, expected: PartnerApplicationStatus) {
-    super(`Application status is ${current}, expected ${expected}`)
-    this.name = 'InvalidApplicationStatusError'
-  }
-}
+import { ApplicationNotFoundError, InvalidApplicationStatusError } from './PartnerService.js'
 
 export class SalespersonApplicationService {
   constructor(
     private readonly repo: PartnerRepository,
     private readonly syncEngine: SyncEngine,
     private readonly businessId: BusinessId,
-    private readonly deviceId: string,
-    private readonly userId?: string,
+    private readonly deviceId: DeviceId,
+    private readonly userId: EmployeeId,
   ) {}
 
   /**
@@ -91,7 +79,15 @@ export class SalespersonApplicationService {
     // INVARIANT 1: referredBy (influencerId) copied from application — permanently immutable
     await this.repo.upsertSalespersonProfile({
       id: profileId, applicationId: app.id, personId: app.applicantPersonId,
-      referredBy: app.referredBy, createdAt: now, updatedAt: now, version: 1,
+      referredBy: app.referredBy,
+      trainingStep: 0,
+      trainingStatus: 'not_started',
+      trainingCompletedAt: null,
+      meetingDate: null,
+      meetingStatus: null,
+      activeAt: null,
+      suspended: false,
+      createdAt: now, updatedAt: now, version: 1,
     })
 
     const updated: PartnerApplication = {
@@ -136,16 +132,16 @@ export class SalespersonApplicationService {
     return this.repo.listSalespersonProfilesByInfluencer(influencerId)
   }
 
-  private async emit(eventType: string, payload: Record<string, unknown>, operation: SyncEvent['operation']): Promise<void> {
+  private async emit(eventType: string, payload: object, operation: SyncEvent['operation']): Promise<void> {
     const event: SyncEvent = {
-      id: newId() as any,
+      id: asSyncEventId(newId()),
       idempotencyKey: asIdempotencyKey(`${this.businessId}:${eventType}:${Date.now()}`),
       businessId: this.businessId,
       entityKind: 'partnerApplication',
       entityId: (payload as any).applicationId ?? (payload as any).salespersonProfileId ?? this.businessId,
       operation,
-      originatingDeviceId: this.deviceId as any,
-      originatingEmployeeId: this.userId as any,
+      originatingDeviceId: this.deviceId,
+      originatingEmployeeId: this.userId,
       clientSequence: Date.now(),
       clientCreatedAt: new Date().toISOString(),
       entityVersion: 1,

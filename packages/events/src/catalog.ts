@@ -155,6 +155,33 @@ export const PARTNER_ENROLLED              = 'partner.enrolled'
 export const CONVERSION_QUALIFIED          = 'conversion.qualified'
 export const COMMISSION_CREATED            = 'commission.created'
 
+// ── Salesperson lifecycle events (Phase 03A) ──────────────────────────────────
+
+/**
+ * SALESPERSON_TRAINING_COMPLETED — emitted by SalespersonLifecycleService
+ * when the salesperson completes all required training videos.
+ *
+ * Payload: { salespersonProfileId, trainingCompletedAt, meetingDate }
+ */
+export const SALESPERSON_TRAINING_COMPLETED = 'salesperson.training_completed'
+
+/**
+ * SALESPERSON_MEETING_SCHEDULED — implicitly emitted alongside
+ * SALESPERSON_TRAINING_COMPLETED. Carries the first Friday strictly after
+ * training completion.
+ *
+ * Payload: { salespersonProfileId, meetingDate }
+ */
+export const SALESPERSON_MEETING_SCHEDULED  = 'salesperson.meeting_scheduled'
+
+/**
+ * SALESPERSON_MEETING_COMPLETED — emitted by SalespersonLifecycleService
+ * when the scheduled meeting occurs.
+ *
+ * Payload: { salespersonProfileId, meetingDate }
+ */
+export const SALESPERSON_MEETING_COMPLETED  = 'salesperson.meeting_completed'
+
 // ── Aggregated event names ──────────────────────────────────────────────────
 
 export const ALL_EVENTS = [
@@ -200,6 +227,9 @@ export const ALL_EVENTS = [
   // Partner
   PARTNER_APPLICATION_SUBMITTED, PARTNER_APPROVED, PARTNER_REJECTED,
   PARTNER_ENROLLED, CONVERSION_QUALIFIED, COMMISSION_CREATED,
+  // Salesperson lifecycle
+  SALESPERSON_TRAINING_COMPLETED, SALESPERSON_MEETING_SCHEDULED,
+  SALESPERSON_MEETING_COMPLETED,
 ] as const
 
 export type SoostoriEventName = typeof ALL_EVENTS[number]

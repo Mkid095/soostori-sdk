@@ -28,9 +28,9 @@
 
 import type {
   BusinessId, SalespersonProfileId, InfluencerProfileId,
-  SalespersonApplicationId, ISO8601,
+  SalespersonApplicationId, ISO8601, DeviceId, EmployeeId,
 } from '@soostori/core'
-import { newId, asIdempotencyKey } from '@soostori/core'
+import { newId, asIdempotencyKey, asSyncEventId } from '@soostori/core'
 import type { SyncEngine, SyncEvent } from '@soostori/contracts'
 import type { PartnerRepository } from './repository.js'
 import type { CommissionService } from './CommissionService.js'
@@ -53,6 +53,7 @@ import {
   PARTNER_ENROLLED,
   CONVERSION_QUALIFIED,
 } from '@soostori/events'
+import { EnrollmentNotFoundError, InvalidEnrollmentStatusError } from './EnrollmentService.js'
 
 // ── Error types ───────────────────────────────────────────────────────────────
 
@@ -63,24 +64,10 @@ export class ApplicationNotFoundError extends Error {
   }
 }
 
-export class EnrollmentNotFoundError extends Error {
-  constructor(businessId: string) {
-    super(`Enrollment for business ${businessId} not found`)
-    this.name = 'EnrollmentNotFoundError'
-  }
-}
-
 export class InvalidApplicationStatusError extends Error {
   constructor(current: PartnerApplicationStatus, expected: PartnerApplicationStatus) {
     super(`Application status is ${current}, expected ${expected}`)
     this.name = 'InvalidApplicationStatusError'
-  }
-}
-
-export class InvalidEnrollmentStatusError extends Error {
-  constructor(current: EnrollmentStatus, expected: EnrollmentStatus) {
-    super(`Enrollment status is ${current}, expected ${expected}`)
-    this.name = 'InvalidEnrollmentStatusError'
   }
 }
 
@@ -92,8 +79,8 @@ export class PartnerService {
     private readonly commissionService: CommissionService,
     private readonly syncEngine: SyncEngine,
     private readonly businessId: BusinessId,
-    private readonly deviceId: string,
-    private readonly userId?: string,
+    private readonly deviceId: DeviceId,
+    private readonly userId: EmployeeId,
   ) {}
 
   // ── Application ─────────────────────────────────────────────────────────────
@@ -167,6 +154,13 @@ export class PartnerService {
       personId: app.applicantPersonId,
       /** INVARIANT 1: influencer attribution copied from application — immutable */
       referredBy: app.referredBy,
+      trainingStep: 0,
+      trainingStatus: 'not_started',
+      trainingCompletedAt: null,
+      meetingDate: null,
+      meetingStatus: null,
+      activeAt: null,
+      suspended: false,
       createdAt: now,
       updatedAt: now,
       version: 1,
@@ -461,18 +455,18 @@ export class PartnerService {
 
   private async emit(
     eventType: string,
-    payload: Record<string, unknown>,
+    payload: object,
     operation: SyncEvent['operation'],
   ): Promise<void> {
     const event: SyncEvent = {
-      id: newId() as any,
+      id: asSyncEventId(newId()),
       idempotencyKey: asIdempotencyKey(`${this.businessId}:${eventType}:${Date.now()}`),
       businessId: this.businessId,
       entityKind: 'partnerApplication',
       entityId: (payload as any).applicationId ?? (payload as any).salespersonProfileId ?? this.businessId,
       operation,
-      originatingDeviceId: this.deviceId as any,
-      originatingEmployeeId: this.userId as any,
+      originatingDeviceId: this.deviceId,
+      originatingEmployeeId: this.userId,
       clientSequence: Date.now(),
       clientCreatedAt: new Date().toISOString(),
       entityVersion: 1,
