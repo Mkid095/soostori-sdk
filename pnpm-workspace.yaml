@@ -13,7 +13,7 @@ minimumReleaseAgeExclude:
   - '@soostori/cloud@0.1.0-alpha.6 || 0.1.0-alpha.7'
   - '@soostori/contracts@0.1.0-alpha.2 || 0.1.0-alpha.3 || 0.1.0-alpha.4 || 0.1.0-alpha.5 || 0.1.0-alpha.6'
   - '@soostori/events@0.1.0-alpha.3 || 0.1.0-alpha.4 || 0.1.0-alpha.5 || 0.1.0-alpha.6'
-  - '@soostori/partners@0.1.0-alpha.2 || 0.1.0-alpha.3 || 0.1.0-alpha.4 || 0.1.0-alpha.5 || 0.1.0-alpha.6'
+  - '@soostori/partners@0.1.0-alpha.2 || 0.1.0-alpha.3 || 0.1.0-alpha.4 || 0.1.0-alpha.5 || 0.1.0-alpha.6 || 0.1.0-alpha.7'
   - '@soostori/devices@0.1.0-alpha.4'
   - '@soostori/subscription@0.1.0-alpha.3 || 0.1.0-alpha.4'
   - '@soostori/offline@0.1.0-alpha.3'
