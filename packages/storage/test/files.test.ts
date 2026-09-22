@@ -62,12 +62,14 @@ function makeTransport(opts: {
   uploadOk?: boolean
   downloadUrl?: string
   deleteOk?: boolean
+  deleteByPathOk?: boolean
   signedError?: unknown
   uploadError?: unknown
   downloadError?: unknown
   deleteError?: unknown
-} = {}): StorageTransport & { __calls: { signed: number; upload: number; download: number; delete: number } } {
-  const calls = { signed: 0, upload: 0, download: 0, delete: 0 }
+  deleteByPathError?: unknown
+} = {}): StorageTransport & { __calls: { signed: number; upload: number; download: number; delete: number; deleteByPath: number } } {
+  const calls = { signed: 0, upload: 0, download: 0, delete: 0, deleteByPath: 0 }
   return {
     __calls: calls,
     requestSignedUploadUrl: vi.fn(async () => {
@@ -96,6 +98,11 @@ function makeTransport(opts: {
       calls.delete += 1
       if (opts.deleteError) throw opts.deleteError
       return { ok: opts.deleteOk ?? true }
+    }),
+    deleteByPath: vi.fn(async () => {
+      calls.deleteByPath += 1
+      if (opts.deleteByPathError) throw opts.deleteByPathError
+      return { ok: opts.deleteByPathOk ?? true }
     }),
   } as any
 }
@@ -343,6 +350,79 @@ describe('StorageService — delete', () => {
   })
 })
 
+// ── StorageService: delete by path ─────────────────────────────────────────────
+
+describe('StorageService — deleteByPath', () => {
+  it('resolves path via queue row and calls deleteFile', async () => {
+    const transport = makeTransport({ deleteOk: true })
+    const queue = new FileUploadQueue(new InMemoryFileQueueStorage())
+    const svc = new StorageService({ transport, queue })
+    const ref = makeFileRef({ path: 'biz-1/training.video/2026/09/video-1.mp4' })
+    const row = await queue.enqueue(makePending())
+    await queue.commit(row.localId, ref)
+
+    const result = await svc.deleteByPath('biz-1/training.video/2026/09/video-1.mp4')
+    expect(result.ok).toBe(true)
+    expect(transport.__calls.delete).toBe(1)
+    expect(transport.__calls.deleteByPath).toBe(0)
+  })
+
+  it('calls deleteByPath directly when no queue record exists', async () => {
+    const transport = makeTransport({ deleteByPathOk: true })
+    const queue = new FileUploadQueue(new InMemoryFileQueueStorage())
+    const svc = new StorageService({ transport, queue })
+
+    const result = await svc.deleteByPath('biz-1/training.video/2026/09/video-1.mp4')
+    expect(result.ok).toBe(true)
+    expect(transport.__calls.delete).toBe(0)
+    expect(transport.__calls.deleteByPath).toBe(1)
+  })
+
+  it('treats not_found as success (idempotent)', async () => {
+    const transport = makeTransport({ deleteByPathError: new CloudError('not found', 'X', 404) })
+    const queue = new FileUploadQueue(new InMemoryFileQueueStorage())
+    const svc = new StorageService({ transport, queue })
+
+    const result = await svc.deleteByPath('nonexistent/path.txt')
+    expect(result.ok).toBe(true)
+  })
+
+  it('throws on 5xx', async () => {
+    const transport = makeTransport({ deleteByPathError: new CloudError('boom', 'X', 503) })
+    const queue = new FileUploadQueue(new InMemoryFileQueueStorage())
+    const svc = new StorageService({ transport, queue })
+
+    await expect(svc.deleteByPath('biz-1/training.video/2026/09/video-1.mp4')).rejects.toBeTruthy()
+  })
+
+  it('does NOT persist signed URLs — only path in FileReference', async () => {
+    const transport = makeTransport()
+    const queue = new FileUploadQueue(new InMemoryFileQueueStorage())
+    const svc = new StorageService({ transport, queue })
+    const r = await svc.upload(makePending())
+    const blob = JSON.stringify(r)
+    expect(blob).not.toMatch(/https:\/\//)
+  })
+
+  it('queue row remote contains path, not fileId as the primary reference', async () => {
+    const transport = makeTransport({
+      signedResponse: {
+        uploadUrl: 'https://x/u',
+        fileId: 'remote-99',
+        path: 'biz-1/training.video/2026/09/video-1.mp4',
+      },
+    })
+    const queue = new FileUploadQueue(new InMemoryFileQueueStorage())
+    const svc = new StorageService({ transport, queue })
+    const r = await svc.upload(makePending())
+    expect(r.kind).toBe('committed')
+    if (r.kind === 'committed') {
+      expect(r.file.path).toBe('biz-1/training.video/2026/09/video-1.mp4')
+      expect(r.file.id).toBe('remote-99')
+    }
+  })
+})
+
 // ── StorageService: retry classification ────────────────────────────────────
 
 describe('StorageService — retry behaviour', () => {
@@ -460,6 +540,7 @@ describe('StorageService — offline to online recovery', () => {
       uploadBytes: vi.fn(async () => { if (!online) throw new NetworkError('offline') }),
       requestSignedDownloadUrl: vi.fn(async () => ({ downloadUrl: 'https://x/d' })),
       deleteFile: vi.fn(async () => ({ ok: true })),
+      deleteByPath: vi.fn(async () => ({ ok: true })),
     } as any
     const svc = new StorageService({ transport, queue })
     // Offline: queued
@@ -602,5 +683,29 @@ describe('FidScriptStorageTransport', () => {
     })
     expect(res.uploadUrl).toContain('/storage/file-123/consume-upload-url')
     expect(res.fileId).toBe('file-123')
+  })
+
+  it('deleteFile returns ok:true on 200 with empty body (FIDScript returns no JSON)', async () => {
+    const fetchMock = vi.fn(async (url: string, _init: any) => {
+      if (url.includes('/storage/delete')) {
+        return { ok: true, status: 200, json: async () => { throw new SyntaxError('no JSON') }, headers: new Map() }
+      }
+      return { ok: true, status: 200, json: async () => ({ data: 'x' }) } as any
+    }) as any
+    const t = new FidScriptStorageTransport({ appId: 'a', fetch: fetchMock })
+    const result = await t.deleteFile('file-123' as any)
+    expect(result).toEqual({ ok: true })
+  })
+
+  it('deleteByPath returns ok:true on 200 with empty body', async () => {
+    const fetchMock = vi.fn(async (url: string, _init: any) => {
+      if (url.includes('/storage/delete')) {
+        return { ok: true, status: 200, json: async () => { throw new SyntaxError('no JSON') }, headers: new Map() }
+      }
+      return { ok: true, status: 200, json: async () => ({ data: 'x' }) } as any
+    }) as any
+    const t = new FidScriptStorageTransport({ appId: 'a', fetch: fetchMock })
+    const result = await t.deleteByPath('test/path.txt' as any)
+    expect(result).toEqual({ ok: true })
   })
 })

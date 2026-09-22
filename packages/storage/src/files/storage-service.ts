@@ -221,6 +221,38 @@ export class StorageService {
     }
   }
 
+  /**
+   * Delete a stored file by its provider-neutral storage path.
+   *
+   * Use this when the `FileId` is not available but the storage path
+   * (e.g. `trainingVideos.mediaReference`) is. The queue is consulted first
+   * to find the matching committed row; if found, `delete(fileId)` is called.
+   * If the queue has no record, the transport's `deleteByPath` is called
+   * directly.
+   *
+   * Returns `{ ok: true }` for `not_found` (idempotent).
+   * Throws on transport errors (5xx, network).
+   */
+  async deleteByPath(path: string): Promise<{ ok: boolean }> {
+    if (this.transport === null) return { ok: false }
+    // Try to resolve via the queue first.
+    const all = await this.queue.list()
+    const row = all.find(r => r.remote?.path === path)
+    if (row?.remote) {
+      return this.delete(row.remote.id)
+    }
+    // No queue record — delegate directly to transport's path-based delete.
+    try {
+      const { asStoragePath } = await import('@soostori/cloud')
+      await this.transport.deleteByPath(asStoragePath(path))
+      return { ok: true }
+    } catch (err) {
+      const failure = classifyTransportError(err)
+      if (failure.kind === 'not_found') return { ok: true }
+      throw err
+    }
+  }
+
   /** Subscribe to local queue state transitions. */
   onStateChange(listener: (event: FileStateEvent) => void): () => void {
     return this.queue.onStateChange(listener)

@@ -1,6 +1,6 @@
 {
   "name": "@soostori/cloud",
-  "version": "0.1.0-alpha.10",
+  "version": "0.1.0-alpha.11",
   "description": "FIDScript REST transport — magic code auth, queries, mutations",
   "type": "module",
   "main": "./dist/index.js",

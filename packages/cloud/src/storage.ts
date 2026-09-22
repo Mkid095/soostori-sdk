@@ -61,6 +61,12 @@ export interface DeleteResponse {
   readonly ok: true
 }
 
+/** Options for delete-by-path. One of `fileId` or `path` is required. */
+export interface DeleteFileOptions {
+  readonly fileId?: FileId
+  readonly path?: StoragePath
+}
+
 /** Transport interface implemented by the FIDScript-backed client. */
 export interface StorageTransport {
   requestSignedUploadUrl(request: SignedUploadRequest): Promise<SignedUploadResponse>
@@ -73,6 +79,10 @@ export interface StorageTransport {
 
   /** Provider may not support delete via REST; if not supported, throws. */
   deleteFile(fileId: FileId): Promise<DeleteResponse>
+
+  /** Delete by path — used when the fileId is unknown but the storage path is known.
+   *  The FIDScript endpoint accepts either fileId OR path (Cloudinary public_id). */
+  deleteByPath(path: StoragePath): Promise<DeleteResponse>
 }
 
 /** Options for the FIDScript-backed transport. */
@@ -220,7 +230,40 @@ export class FidScriptStorageTransport implements StorageTransport {
   }
 
   async deleteFile(fileId: FileId): Promise<DeleteResponse> {
-    return this.request<DeleteResponse>('POST', '/storage/delete', { app_id: this.appId, fileId })
+    const res = await this.fetch(this.url('/storage/delete'), {
+      method: 'POST',
+      headers: this.authHeaders(),
+      body: JSON.stringify({ app_id: this.appId, fileId }),
+    })
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}))
+      throw new CloudError(
+        `Storage delete failed: ${res.status} ${res.statusText}`,
+        'STORAGE_DELETE_FAILED',
+        res.status,
+        errBody
+      )
+    }
+    // Endpoint returns 200 with empty body — not valid JSON
+    return { ok: true }
+  }
+
+  async deleteByPath(path: StoragePath): Promise<DeleteResponse> {
+    const res = await this.fetch(this.url('/storage/delete'), {
+      method: 'POST',
+      headers: this.authHeaders(),
+      body: JSON.stringify({ app_id: this.appId, path }),
+    })
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}))
+      throw new CloudError(
+        `Storage delete by path failed: ${res.status} ${res.statusText}`,
+        'STORAGE_DELETE_FAILED',
+        res.status,
+        errBody
+      )
+    }
+    return { ok: true }
   }
 }
 
