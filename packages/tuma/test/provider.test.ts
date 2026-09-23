@@ -439,6 +439,71 @@ describe('TumaPaymentProvider — verifyCallback', () => {
   })
 })
 
+describe('TumaPaymentProvider — HMAC signature verification', () => {
+  const SECRET = 'test-webhook-secret'
+  const VALID_BODY = JSON.stringify({
+    status: 'completed',
+    result_code: 0,
+    result_desc: 'The request was successful.',
+    merchant_request_id: 'MERCH-001',
+    checkout_request_id: 'CHECK-001',
+    mpesa_receipt_number: 'MPXX123456789',
+    amount: 500,
+    timestamp: '2026-02-23 14:27:46',
+  })
+
+  function makeSig(body: string, secret: string): string {
+    const { createHmac } = require('crypto') as typeof import('crypto')
+    return createHmac('sha256', secret).update(body, 'utf8').digest('hex')
+  }
+
+  it('accepts valid signature when webhookSecret is configured', () => {
+    const mockClient = mockTumaClient()
+    const provider = new TumaPaymentProvider(mockClient, SECRET)
+    const sig = makeSig(VALID_BODY, SECRET)
+    expect(() => provider.verifyCallback(VALID_BODY, sig)).not.toThrow()
+    const result = provider.verifyCallback(VALID_BODY, sig)
+    expect(result.status).toBe('completed')
+  })
+
+  it('rejects invalid signature when webhookSecret is configured', () => {
+    const mockClient = mockTumaClient()
+    const provider = new TumaPaymentProvider(mockClient, SECRET)
+    const wrongSig = makeSig(VALID_BODY, 'wrong-secret')
+    expect(() => provider.verifyCallback(VALID_BODY, wrongSig)).toThrow(/signature/i)
+  })
+
+  it('rejects missing signature when webhookSecret is configured', () => {
+    const mockClient = mockTumaClient()
+    const provider = new TumaPaymentProvider(mockClient, SECRET)
+    expect(() => provider.verifyCallback(VALID_BODY, undefined as unknown as string)).toThrow(/missing/i)
+  })
+
+  it('accepts unsigned callback when webhookSecret is NOT configured (backward compat)', () => {
+    const mockClient = mockTumaClient()
+    const provider = new TumaPaymentProvider(mockClient)  // no secret
+    expect(() => provider.verifyCallback(VALID_BODY)).not.toThrow()
+    expect(provider.verifyCallback(VALID_BODY).status).toBe('completed')
+  })
+
+  it('accepts arbitrary signature when webhookSecret is NOT configured', () => {
+    const mockClient = mockTumaClient()
+    const provider = new TumaPaymentProvider(mockClient)
+    expect(() => provider.verifyCallback(VALID_BODY, 'any-value')).not.toThrow()
+  })
+
+  it('parses body correctly after HMAC verification passes', () => {
+    const mockClient = mockTumaClient()
+    const provider = new TumaPaymentProvider(mockClient, SECRET)
+    const sig = makeSig(VALID_BODY, SECRET)
+    const result = provider.verifyCallback(VALID_BODY, sig)
+    expect(result.providerId).toBe('tuma')
+    expect(result.amount).toBe(500)
+    expect(result.receiptNumber).toBe('MPXX123456789')
+    expect(result.status).toBe('completed')
+  })
+})
+
 describe('TumaPaymentProvider — constants', () => {
   it('TUMA_PAYMENT_PROVIDER_ID is "tuma"', () => {
     expect(TUMA_PAYMENT_PROVIDER_ID).toBe('tuma')

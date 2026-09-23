@@ -23,6 +23,7 @@ import type { PaymentProvider } from '@soostori/payments'
 
 import { TumaClient } from './client.js'
 import { parseCallback } from './callback.js'
+import { verifyTumaSignature, getSignatureFromHeaders } from './verify.js'
 
 export const TUMA_PAYMENT_PROVIDER_ID = 'tuma' as const
 export const TUMA_PAYMENT_PROVIDER_NAME = 'Tuma M-Pesa' as const
@@ -36,6 +37,18 @@ export class TumaUnsupportedError extends Error {
   constructor(operation: string, reason: string) {
     super(`TumaPaymentProvider.${operation}: ${reason}`)
     this.name = 'TumaUnsupportedError'
+  }
+}
+
+/**
+ * Error thrown when callback signature verification fails.
+ * @deprecated Import from './verify.js' instead.
+ */
+export class TumaSignatureVerificationError extends Error {
+  readonly code = 'TUMA_SIGNATURE_INVALID'
+  constructor(reason: string) {
+    super(`Tuma callback signature verification failed: ${reason}`)
+    this.name = 'TumaSignatureVerificationError'
   }
 }
 
@@ -135,14 +148,27 @@ export class TumaPaymentProvider implements PaymentProvider {
   private readonly client: TumaClient
 
   /**
+   * Webhook signing secret for HMAC signature verification.
+   * When provided, verifyCallback will reject unsigned or mismatched payloads.
+   * Set via constructor or leave undefined to skip verification (backward compat).
+   */
+  private readonly webhookSecret?: string
+
+  /**
    * Optional receipt repository.
    * The provider itself does not persist receipts — the caller decides how
    * and where to store them using the data returned by verifyCallback.
    */
   receiptRepository?: PaymentReceiptRepository
 
-  constructor(client: TumaClient) {
+  /**
+   * @param client         - TumaClient instance (server-side credentials)
+   * @param webhookSecret  - Optional HMAC signing secret (from TUMA_WEBHOOK_SECRET env).
+   *                         When provided, verifyCallback will enforce signature verification.
+   */
+  constructor(client: TumaClient, webhookSecret?: string) {
     this.client = client
+    this.webhookSecret = webhookSecret
   }
 
   /**
@@ -235,12 +261,20 @@ export class TumaPaymentProvider implements PaymentProvider {
   /**
    * Verify and parse a Tuma webhook callback into the canonical PaymentCallback.
    *
+   * When a webhookSecret is configured, this method performs HMAC-SHA256 signature
+   * verification before parsing. Callers SHOULD always provide the signature when
+   * the secret is configured — unsigned callbacks are rejected.
+   *
    * Reuses the existing parseCallback from ./callback.ts — does NOT introduce
    * a duplicate callback parser.
+   *
+   * @param rawBody   - Raw request body string (exactly as received, before JSON.parse)
+   * @param signature - HMAC hex signature from X-Tuma-Signature header (required when secret is set)
    */
-  verifyCallback(rawBody: string, _signature?: string): PaymentCallback {
-    // signature parameter is accepted for interface compatibility.
-    // Tuma does not currently sign callbacks with HMAC, so it is unused.
+  verifyCallback(rawBody: string, signature?: string): PaymentCallback {
+    if (this.webhookSecret) {
+      verifyTumaSignature(rawBody, signature ?? '', this.webhookSecret)
+    }
     return translateCallback(rawBody)
   }
 }

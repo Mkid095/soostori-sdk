@@ -14,6 +14,15 @@ export type PaymentProviderType = 'tuma' | 'payhero' | 'pesapal' | 'other'
 export type PaymentReceiptStatus = 'pending' | 'completed' | 'failed' | 'cancelled'
 export type Currency = string  // ISO 4217 code e.g. 'KES'
 
+/**
+ * PaymentReceipt — canonical idempotency key components for a payment.
+ *
+ * The canonical identifier is {providerId}:{receiptNumber} for confirmed payments
+ * and {providerId}:{checkoutRequestId} for pending ones.
+ *
+ * Repository implementations MUST enforce uniqueness on the appropriate identifier
+ * to prevent duplicate receipts from duplicate callbacks.
+ */
 export interface PaymentReceipt {
   readonly id: PaymentReceiptId
   readonly shopId: BusinessId
@@ -33,6 +42,30 @@ export interface PaymentReceipt {
   /** When payment was confirmed (null if pending/failed). */
   readonly paidAt: ISO8601 | null
   readonly createdAt: ISO8601
+}
+
+/**
+ * Build the canonical idempotency key for a payment receipt.
+ *
+ * For confirmed payments (receiptNumber present):
+ *   {providerId}:{receiptNumber}
+ *   e.g. "tuma:MPXX123456789"
+ *
+ * For pending/failed payments (no receipt number yet):
+ *   {providerId}:{checkoutRequestId}
+ *   e.g. "tuma:CHECK-001"
+ *
+ * The Web repository SHOULD use this key format when storing payment records
+ * to ensure duplicate callbacks (same receiptNumber or checkoutRequestId) cannot
+ * create duplicate records.
+ */
+export function buildPaymentIdempotencyKey(
+  providerId: string,
+  receiptNumber: string | undefined,
+  checkoutRequestId: string,
+): string {
+  const ref = receiptNumber ?? checkoutRequestId
+  return `${providerId}:${ref}`
 }
 
 // ── Repository contract ───────────────────────────────────────────────────────
