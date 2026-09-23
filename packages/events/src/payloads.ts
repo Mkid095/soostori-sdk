@@ -232,6 +232,14 @@ export interface EventPayloadMap {
   'partner.enrolled': { salespersonProfileId: string; businessId: string }
   'conversion.qualified': { businessId: string; subscriptionId: string; salespersonProfileId: string; influencerProfileId?: string }
   'commission.created': { commissionEarningId: string; salespersonProfileId: string; influencerProfileId?: string; businessId: string; subscriptionId: string; amount: number; role: 'salesperson' | 'influencer' }
+
+  // Withdrawal lifecycle events
+  'withdrawal.requested': { withdrawalRequestId: string; recipientId: string; recipientType: 'salesperson' | 'influencer'; amount: Money; availableBalanceAtRequest: Money }
+  'withdrawal.approved': { withdrawalRequestId: string; recipientId: string; recipientType: 'salesperson' | 'influencer'; amount: Money; approvedBy: string }
+  'withdrawal.rejected': { withdrawalRequestId: string; recipientId: string; recipientType: 'salesperson' | 'influencer'; amount: Money; rejectedBy: string; reason: string }
+  'withdrawal.processing': { withdrawalRequestId: string; recipientId: string; recipientType: 'salesperson' | 'influencer'; amount: Money; processedBy: string }
+  'withdrawal.paid': { withdrawalRequestId: string; recipientId: string; recipientType: 'salesperson' | 'influencer'; amount: Money; paymentReference: string; processedBy: string }
+  'withdrawal.cancelled': { withdrawalRequestId: string; recipientId: string; recipientType: 'salesperson' | 'influencer'; amount: Money }
 }
 
 export type EventPayload<K extends keyof EventPayloadMap> = EventPayloadMap[K]

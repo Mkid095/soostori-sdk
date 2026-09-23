@@ -232,6 +232,147 @@ describe('CommissionProcessor.processPaymentConfirmed', () => {
   })
 })
 
+describe('CommissionProcessor.processPaymentConfirmed — full pipeline', () => {
+  it('calls all three earning methods when enrollment is qualified and salesperson exists', async () => {
+    const repo = createMockRepo()
+    const commissionSvc = createMockCommissionService()
+    const syncEngine = createMockSyncEngine()
+
+    repo.getEnrollmentByBusiness.mockResolvedValue(makeEnrollment('qualified'))
+    repo.getSalespersonProfile.mockResolvedValue(makeProfile())
+
+    commissionSvc.recordSalespersonCommission.mockResolvedValue({ id: 'sp-1' } as any)
+    commissionSvc.recordInfluencerCommission.mockResolvedValue({ id: 'inf-1' } as any)
+    commissionSvc.recordCompanyCommission.mockResolvedValue({ id: 'co-1' } as any)
+
+    const processor = new CommissionProcessor(
+      repo as PartnerRepository,
+      commissionSvc as unknown as CommissionService,
+      syncEngine,
+      'biz-1',
+      'dev-1',
+    )
+
+    await processor.processPaymentConfirmed(makeTrigger())
+
+    expect(commissionSvc.recordSalespersonCommission).toHaveBeenCalledTimes(1)
+    expect(commissionSvc.recordInfluencerCommission).toHaveBeenCalledTimes(1)
+    expect(commissionSvc.recordCompanyCommission).toHaveBeenCalledTimes(1)
+  })
+
+  it('no company earning when enrollment has no salesperson', async () => {
+    const repo = createMockRepo()
+    const commissionSvc = createMockCommissionService()
+    const syncEngine = createMockSyncEngine()
+
+    repo.getEnrollmentByBusiness.mockResolvedValue({ ...makeEnrollment('enrolled'), salespersonProfileId: 'unknown' })
+    repo.getEnrollmentByBusiness
+      .mockResolvedValueOnce({ ...makeEnrollment('enrolled'), salespersonProfileId: 'unknown' })
+      .mockResolvedValueOnce({ ...makeEnrollment('qualifying'), salespersonProfileId: 'unknown' })
+
+    repo.getSalespersonProfile.mockResolvedValue(null)
+
+    const processor = new CommissionProcessor(
+      repo as PartnerRepository,
+      commissionSvc as unknown as CommissionService,
+      syncEngine,
+      'biz-1',
+      'dev-1',
+    )
+
+    await processor.processPaymentConfirmed(makeTrigger())
+
+    expect(commissionSvc.recordCompanyCommission).not.toHaveBeenCalled()
+  })
+
+  it('company earning is recorded alongside salesperson and influencer', async () => {
+    const repo = createMockRepo()
+    const commissionSvc = createMockCommissionService()
+    const syncEngine = createMockSyncEngine()
+
+    repo.getEnrollmentByBusiness.mockResolvedValue(makeEnrollment('qualified'))
+    repo.getSalespersonProfile.mockResolvedValue(makeProfile())
+
+    commissionSvc.recordSalespersonCommission.mockResolvedValue({ id: 'sp-1' } as any)
+    commissionSvc.recordInfluencerCommission.mockResolvedValue({ id: 'inf-1' } as any)
+    commissionSvc.recordCompanyCommission.mockResolvedValue({ id: 'co-1' } as any)
+
+    const processor = new CommissionProcessor(
+      repo as PartnerRepository,
+      commissionSvc as unknown as CommissionService,
+      syncEngine,
+      'biz-1',
+      'dev-1',
+    )
+
+    await processor.processPaymentConfirmed(makeTrigger())
+
+    expect(commissionSvc.recordCompanyCommission).toHaveBeenCalledTimes(1)
+    expect(commissionSvc.recordCompanyCommission).toHaveBeenCalledWith(
+      { businessId: 'biz-1', subscriptionId: 'sub-1', subscriptionAmount: 1000 },
+      'sp-1',
+    )
+  })
+
+  it('same trigger with no influencer: only salesperson + company earnings', async () => {
+    const repo = createMockRepo()
+    const commissionSvc = createMockCommissionService()
+    const syncEngine = createMockSyncEngine()
+
+    repo.getEnrollmentByBusiness.mockResolvedValue({ ...makeEnrollment('qualified'), influencerProfileId: null })
+    repo.getSalespersonProfile.mockResolvedValue(makeProfile(null))
+
+    commissionSvc.recordSalespersonCommission.mockResolvedValue({ id: 'sp-1' } as any)
+    commissionSvc.recordCompanyCommission.mockResolvedValue({ id: 'co-1' } as any)
+
+    const processor = new CommissionProcessor(
+      repo as PartnerRepository,
+      commissionSvc as unknown as CommissionService,
+      syncEngine,
+      'biz-1',
+      'dev-1',
+    )
+
+    await processor.processPaymentConfirmed(makeTrigger())
+
+    expect(commissionSvc.recordSalespersonCommission).toHaveBeenCalledTimes(1)
+    expect(commissionSvc.recordInfluencerCommission).not.toHaveBeenCalled()
+    expect(commissionSvc.recordCompanyCommission).toHaveBeenCalledTimes(1)
+  })
+
+  it('idempotency: duplicate trigger calls recordSalespersonCommission multiple times but service returns existing earning', async () => {
+    const repo = createMockRepo()
+    const commissionSvc = createMockCommissionService()
+    const syncEngine = createMockSyncEngine()
+
+    repo.getEnrollmentByBusiness.mockResolvedValue(makeEnrollment('qualified'))
+    repo.getSalespersonProfile.mockResolvedValue(makeProfile())
+
+    // Service idempotency: returns existing earning on replay
+    commissionSvc.recordSalespersonCommission.mockResolvedValue({ id: 'existing-sp' } as any)
+    commissionSvc.recordInfluencerCommission.mockResolvedValue({ id: 'existing-inf' } as any)
+    commissionSvc.recordCompanyCommission.mockResolvedValue({ id: 'existing-co' } as any)
+
+    const processor = new CommissionProcessor(
+      repo as PartnerRepository,
+      commissionSvc as unknown as CommissionService,
+      syncEngine,
+      'biz-1',
+      'dev-1',
+    )
+
+    const trigger = makeTrigger()
+
+    // Three calls = processor invokes service three times
+    await processor.processPaymentConfirmed(trigger)
+    await processor.processPaymentConfirmed(trigger)
+    await processor.processPaymentConfirmed(trigger)
+
+    // But the service deduplicates internally → one earning in DB
+    expect(commissionSvc.recordSalespersonCommission).toHaveBeenCalledTimes(3)
+  })
+})
+
 describe('CommissionProcessor status transitions', () => {
   it('markPayable emits sync event with payable status', async () => {
     const repo = createMockRepo()

@@ -169,6 +169,15 @@ export const PARTNER_ENROLLED              = 'partner.enrolled'
 export const CONVERSION_QUALIFIED          = 'conversion.qualified'
 export const COMMISSION_CREATED            = 'commission.created'
 
+// ── Withdrawal lifecycle events ───────────────────────────────────────────────
+
+export const WITHDRAWAL_REQUESTED   = 'withdrawal.requested'
+export const WITHDRAWAL_APPROVED   = 'withdrawal.approved'
+export const WITHDRAWAL_REJECTED   = 'withdrawal.rejected'
+export const WITHDRAWAL_PROCESSING = 'withdrawal.processing'
+export const WITHDRAWAL_PAID      = 'withdrawal.paid'
+export const WITHDRAWAL_CANCELLED  = 'withdrawal.cancelled'
+
 // ── Aggregated event names ──────────────────────────────────────────────────
 
 export const ALL_EVENTS = [
@@ -216,6 +225,9 @@ export const ALL_EVENTS = [
   PARTNER_ENROLLED, CONVERSION_QUALIFIED, COMMISSION_CREATED,
   // Commission lifecycle
   COMMISSION_ACCRUED, COMMISSION_PAYABLE, COMMISSION_PAID, COMMISSION_REVERSED,
+  // Withdrawal
+  WITHDRAWAL_REQUESTED, WITHDRAWAL_APPROVED, WITHDRAWAL_REJECTED,
+  WITHDRAWAL_PROCESSING, WITHDRAWAL_PAID, WITHDRAWAL_CANCELLED,
 ] as const
 
 export type SoostoriEventName = typeof ALL_EVENTS[number]
