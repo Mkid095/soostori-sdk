@@ -2,6 +2,146 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] — P0-3c SDK Canonical Business Contract (audit 2026-10-05)
+
+### Fixed
+- **`@soostori/contracts`**: `Business` is now explicitly marked as the **CANONICAL BUSINESS CONTRACT** in the JSDoc (mirrors the P0-3a canonical-Product contract marking). The relationship between the canonical `Business` contract and the deployed `shops` storage namespace is documented:
+  - `Business` (contract) ↔ `shops` (schema/cloud). `BusinessId === ShopId` (same brand per `@soostori/core/ids.ts`). Legacy cloud rows use `shops` as the storage namespace; contract-conformant writes use `Business`. Both keys resolve to the same underlying tenant row.
+  - `taxRate`, `subscriptionExpiry`, `status` semantically belong on `BusinessSettings` (the operational projection of a tenant) but live on `Business` for backwards compatibility with the deployed cloud; a future P0-3x cycle may split them into a separate `businessSettings` entity without breaking existing rows.
+- **`@soostori/contracts`**: New canonical field on `Business` — **`country: string`** (ISO 3166-1 alpha-2 country code, e.g. `'KE'`). Required identity field for tenant locale; defaults to `'KE'` in the schema layer.
+- **`@soostori/schema`**: `cloudEntities.shops` reconciled against `@soostori/contracts` `Business`. Previously missing fields added:
+  - `ownerPersonId: uuid({ indexed: true })` — canonical owner link (the structural drift bug P0-3c actually fixes; was previously absent from the schema entirely).
+  - `currency: str({ default: 'KES' })` — ISO 4217 currency code.
+  - `country: str({ default: 'KE' })` — ISO 3166-1 alpha-2 country code.
+  - `createdAt: str({ required: true })` — entity creation timestamp (audit invariant).
+  - `updatedAt: str({ required: true })` — last-update timestamp.
+  - `version: num({ default: 1 })` — entity version for last-writer-wins conflict resolution (mirrors the P0-3a `version` addition on `products`).
+- **`@soostori/schema`**: `taxRate`, `subscriptionExpiry`, `status` kept and **documented as schema-only extensions** on the `Business` entity (semantically `BusinessSettings`). The `subscriptionExpiry` field stays as `date({})` (canonical ISO 8601); the `status` field stays as `str({ default: 'active' })` for backwards compatibility with deployed cloud rows that may carry legacy values (the contract codifies the enum).
+
+### Added
+- **`packages/contract-tests/test/contract-drift-business.test.ts`** (new) — locks the `Business` ↔ `shops` reconciliation. Asserts:
+  - `cloudEntities.shops.ownerPersonId` exists (the canonical owner link).
+  - `cloudEntities.shops.id` is uuid (`BusinessId === ShopId`).
+  - Every `Business` contract field is present in `cloudEntities.shops` with a compatible primitive type.
+  - The P0-3c additions (`ownerPersonId`, `currency`, `country`, `createdAt`, `updatedAt`, `version`) are present with correct types and defaults (`'KES'`, `'KE'`, `1`).
+  - The schema-only extensions (`taxRate`, `subscriptionExpiry`, `status`) are preserved.
+  - `subscriptionExpiry` stays as `date` (canonical ISO 8601).
+  - A contract-conformant `Business` round-trips through `validateEntity('shops', …)` without error (3 scenarios: fully-populated, null `subscriptionExpiry`, `status=suspended`).
+  - The schema stays strict — rejects unknown fields.
+  - `@soostori/contracts` still exports `Business` with the 13 canonical fields, including the `status` enum (`active | inactive | suspended`).
+  - Backwards-compat: legacy deployed `shops` rows (no ownerPersonId, no audit timestamps) correctly fail validation until they receive an audit backfill, documenting the migration expectation.
+- **`packages/schema/test/schema-business-match.test.ts`** (new) — runtime leg of the drift guard. Verifies that contract-conformant `Business`es validate against the schema's `validateEntity('shops', …)`. Also enforces field-type invariants and that strict-Zod is still enforced (rejects unknown fields, rejects rows missing `name`/`createdAt`).
+
+### Tests
+- `packages/contract-tests/test/contract-drift-business.test.ts` — 12 new tests (all passing).
+- `packages/schema/test/schema-business-match.test.ts` — 11 new tests (all passing).
+
+### Published
+- `@soostori/contracts@0.1.0-alpha.7 → 0.1.0-alpha.8` (canonical Business contract marked + documented + `country` field added)
+- `@soostori/schema@0.1.0-alpha.4 → 0.1.0-alpha.5` (cloudEntities.shops reconciled with `Business` contract)
+
+### Follow-ups (not part of P0-3c)
+- **`taxRate`, `subscriptionExpiry`, `status` split into `BusinessSettings`**: a future P0-3x iteration may extract these into a separate `businessSettings` entity. Today's P0-3c keeps them on `Business` for backwards compatibility with the deployed cloud rows. Tracked as a separate audit item.
+- **Deployed-cloud audit-timestamp backfill**: rows written before this commit land lack `createdAt` / `updatedAt` and now fail `validateEntity('shops', …)` strict-mode validation. The Web / Desktop / Mobile / FIDScript cloud rows need a one-shot backfill before the next read cycle. The drift test explicitly documents this migration expectation.
+- **`@soostori/business` legacy packages**: still pending the deprecation sweep recommended by P0-3 audit §6.1. P0-3a deprecated `@soostori/products`; `@soostori/customers`, `@soostori/sales`, `@soostori/debts` remain to be deprecated in a future cycle.
+
+## [Unreleased] — P0-3b SDK SyncEvent Contract Reconciliation (audit 2026-10-05)
+
+### Fixed
+
+- **`packages/events/src/envelope.ts`** (245 lines): P0-3b reconciliation. The canonical `SyncEvent` and `createSyncEvent` from `@soostori/contracts/sync-contract` are now re-exported. Legacy `SoostoriEvent<T>` interface preserved as `@deprecated` alias with bridge helpers `toSyncEvent(legacy)` and `toSoostoriEvent(contract)`. The legacy camelCase shape `SoostoriEvent` (with `id`, `name`, `version`, `deviceId`, `userId`, `shopId`, `timestamp`, `sequence`, `idempotencyKey`, `entityId`, `entity`, `source`, `payload`) remains for the 75+ legacy callers but the `SyncEngine` and all new code MUST use the contract shape.
+- **`packages/sync/src/engine.ts`**: imports `SyncEvent`, `EntityKind`, `SyncOperation`, `createSyncEvent` from `@soostori/contracts` (the contract package), NOT from `@soostori/events`. The legacy `STOCK_SENSITIVE_EVENTS` table is preserved with a `@deprecated` note for callers still passing `payload._legacyName`. A new `STOCK_SENSITIVE_ENTITY_KINDS` table is the canonical routing set for new code using `createSyncEvent`.
+- **`packages/contracts/src/sync-contract.ts`**: re-exports `createSyncEvent` and `CreateSyncEventArgs` from a new sibling file `./sync-event-factory.ts` so `sync-contract.ts` stays type-only. This prevents the circular import `data-contract.ts → sync-contract.ts → sync-engine.ts → sync-contract.ts`.
+- **Migration helpers** (in `packages/events/src/envelope.ts`):
+  - `toSyncEvent(legacy: SoostoriEvent): SyncEvent` — converts legacy camelCase to contract snake_case. Maps `entity → payload._legacyEntity`, `source → state` (local/lan→pending, cloud→replayed, system→acked), `userId → originatingEmployeeId`, `shopId → businessId`, `timestamp → clientCreatedAt`, `sequence → clientSequence`. Defaults `entityVersion: 1`.
+  - `toSoostoriEvent(contract: SyncEvent): SoostoriEvent` — inverts the mapping. Reads back `_legacyName`, `_legacySource`, `_legacyEntity` from `payload` if present; otherwise falls back to safe defaults.
+- **`packages/contract-tests/test/contract-drift-sync.test.ts`** (new, 9 tests): structural drift guard. Asserts: (1) `createSyncEvent` from contracts returns all 12 required fields per Cycle 04 brief §6; (2) `@soostori/events` re-export is structurally identical to the contract; (3) legacy `SoostoriEvent` round-trips through `toSyncEvent` + `toSoostoriEvent` with `_legacy*` fields preserved; (4) legacy `source` maps correctly to contract `state` (local/lan→pending, cloud→replayed, system→acked); (5) SyncEvent has all 12 required fields; (6) operations are limited to the 4-value union; (7) EntityKind is typed not freeform; (8) idempotencyKey is distinct from id; (9) engine accepts the contract shape.
+- **Version bumps**:
+  - `@soostori/contracts`: `0.1.0-alpha.7 → 0.1.0-alpha.8` (SyncEvent shape pinned)
+  - `@soostori/events`: `0.1.0-alpha.6 → 0.1.0-alpha.7` (re-exports contract)
+  - `@soostori/sync`: `0.1.0-alpha.4 → 0.1.0-alpha.5` (consumes contract shape)
+
+### Migration guide
+
+| Old (legacy `SoostoriEvent`) | New (canonical `SyncEvent` via `createSyncEvent`) |
+| --- | --- |
+| `createEvent({ name, shopId, deviceId, payload })` | `createSyncEvent({ entityKind, businessId, originatingDeviceId, ... })` |
+| `event.name` | `event.entityKind` + `event.operation` |
+| `event.shopId` | `event.businessId` (same brand — ShopId === BusinessId) |
+| `event.deviceId` | `event.originatingDeviceId` |
+| `event.userId` | `event.originatingEmployeeId` |
+| `event.timestamp` | `event.clientCreatedAt` |
+| `event.sequence` | `event.clientSequence` |
+| `event.source` | `event.state` (local/lan→pending, cloud→replayed, system→acked) |
+| `event.entity` (freeform) | `payload._legacyEntity` (kept for back-compat) |
+
+The 75+ legacy call sites across the SDK continue to work via the `SoostoriEvent` deprecated alias. New code MUST use the contract shape.
+
+### Status
+
+- **P0-3b DONE.** P0-3a (Product), P0-3b (SyncEvent), and P0-3c (Business) all closed as of 2026-10-05.
+
+---
+
+## [Unreleased] — P0-3a SDK Canonical Product Contract (audit 2026-10-05)
+
+### Fixed
+- **`@soostori/contracts`**: `Product` is now explicitly marked as the **CANONICAL PRODUCT CONTRACT** in the JSDoc. Bridged divergences from the schema layer are documented inline:
+  - `businessId` (contract) ↔ `shopId` (schema/cloud) — same brand (BusinessId === ShopId), both keys now coexist in the schema so contract-conformant AND legacy deployed rows validate.
+  - `groupPrices` (contract: `unknown`) ↔ `groupPrices` (schema: `string` — JSON-stringified). Documented; cloud column stays a string for legacy-compat.
+- **`@soostori/schema`**: `cloudEntities.products` reconciled against `@soostori/contracts` `Product`. Previously missing fields added:
+  - `description: str({})` — product description (now in the schema).
+  - `version: num({ default: 1 })` — entity version for last-writer-wins conflict resolution (was missing from the schema — this is what the brief called the "the runtime Zod validation in `@soostori/schema` validates a shape that does NOT match the contract" bug).
+  - `businessId: uuid({ indexed: true })` — added as an alias to the existing `shopId` so contract-conformant rows (which use `businessId`) AND deployed cloud rows (which use `shopId`) both round-trip through `validateEntity('products', ...)`.
+- **`@soostori/schema`**: `categoryName` field kept and **documented as a schema-only denormalized projection** (cached at write-time for list/grid views without a join). Not in the contract; the contract-drift test now enforces its continued presence.
+- **`@soostori/business/products`**: Marked **DEPRECATED** as of 2026-10-05. The canonical `Product` type now lives in `@soostori/contracts` (`data-contract-2-operational.ts`); the canonical `ProductService` lives in `@soostori/inventory`. The package remains as a backwards-compatible shim:
+  - All existing named exports (`Product`, `Category`, `ProductVariant`, `ProductRepository`, `ProductService`, `ProductNotFoundError`, `InsufficientStockError`) remain available unchanged.
+  - New **`default` export** re-exports the canonical `ProductService` from `@soostori/inventory` — consumers can `import ProductService from '@soostori/products'` to opt-in to the new implementation without touching any other code.
+  - **One-shot `console.warn`** fires the first time the module is loaded (subsequent imports in the same process are silent). The warning points consumers at `@soostori/contracts`, `@soostori/inventory`, and `@soostori/schema`'s `validateEntity('products', …)`.
+  - All legacy types and the legacy `ProductService` now carry `@deprecated` JSDoc markers with explicit migration targets.
+  - `package.json` description updated: "DEPRECATED — product/catalog domain shim. Use @soostori/contracts (types) and @soostori/inventory (services)."
+
+### Added
+- **`packages/contract-tests/test/contract-drift.test.ts`** (new) — locks the schema ↔ contracts reconciliation. Asserts:
+  - `cloudEntities.products.businessId` exists (the new contract-conformant tenant key).
+  - `cloudEntities.products.shopId` still exists (the legacy cloud key).
+  - Every `Product` contract field is present in `cloudEntities.products` with a compatible primitive type.
+  - The P0-3a additions (`description`, `version`) are present.
+  - The schema-only extension (`categoryName`) is preserved.
+  - A contract-conformant `Product` round-trips through `validateEntity('products', …)` without error.
+  - Adjacent operational entities (`Category`, `StockMovement`, `Device`, `Invitation`) are present in the schema with the right field markers.
+- **`packages/schema/test/schema-product-match.test.ts`** (new) — runtime leg of the drift guard. Verifies that contract-conformant Products (with `businessId`), legacy cloud rows (with `shopId`), and bridged rows (with both keys) all validate against the schema's `validateEntity`. Also enforces field-type invariants and that strict-Zod is still enforced (rejects unknown fields).
+- **`packages/business/products/test/deprecation-warning.test.ts`** (new) — verifies the one-shot `console.warn` fires with the right message, legacy exports still resolve, the default export is the canonical `ProductService` from `@soostori/inventory` (verified via constructor arity: legacy=4 args, canonical=6 args), and the named-export `ProductService` is the legacy class (different from default).
+
+### Tests
+- `packages/contract-tests/test/contract-drift.test.ts` — 9 new tests (all passing).
+- `packages/schema/test/schema-product-match.test.ts` — 11 new tests (all passing).
+- `packages/business/products/test/deprecation-warning.test.ts` — 6 new tests (all passing).
+
+### Published
+- `@soostori/contracts@0.1.0-alpha.6 → 0.1.0-alpha.7` (canonical Product contract marked + documented)
+- `@soostori/schema@0.1.0-alpha.3 → 0.1.0-alpha.4` (cloudEntities.products reconciled)
+- `@soostori/products@0.1.0-alpha.2 → 0.1.0-alpha.3` (deprecation only — no behavioural change)
+
+### Follow-ups (not part of P0-3a)
+- **P0-3b — SyncEvent shape reconciliation.** Two definitions still exist (`contracts/sync-contract.ts:45-69` vs `events/src/envelope.ts`). P0-3a does not change `SyncEvent`; the next iteration reconciles the P0-3b second leg.
+- **P0-3c — Business vs Shops.** Two definitions still exist (`canonical` `Business` vs `shops` schema entity). P0-3a does not change `Business`; the P0-3c iteration will reconcile that entity using the same approach as P0-3a (mark the contract as canonical, document the schema/cloud divergence, add a drift test).
+- **`@soostori/products` deletion timeline:** the package is deprecated in alpha.3; consumers should migrate before the next major (1.0) release. Track migration in the audit's P0-3 → P0-3c final-section.
+- **`ProductVariant` deprecation stub:** the contract has no equivalent today; if a future contract entry is added, the legacy `@soostori/products` `ProductVariant` can be re-exported from `@soostori/contracts`. Tracked as a separate audit item.
+
+## [0.1.0-alpha.24] — 2026-10-05
+
+### Fixed
+- **`@soostori/sync`**: `SyncEngine.broadcastToLan()` is no longer a literal stub — the LAN wire is now actually driven when the primary device has stock-mutation authority. The decision matrix in `publish()` (`STOCK_SENSITIVE_EVENTS` + `primary.canAuthorStockOps()`) was correct but the WebSocket frame was never sent; terminals on the LAN would not see stock events from the primary, leading to inconsistent stock counts. **Closes P0-4 from the 2026-10-05 ecosystem audit.**
+  - New `LanClient` interface — minimal contract (`broadcast(event): void | Promise<void>`) so `@soostori/sync` does not depend on `@soostori/lan` directly. Platforms (Desktop host) inject an adapter that wraps `PrimaryHost.broadcast()`; Web / non-LAN devices pass `null` for graceful no-op.
+  - New `SyncEngine.setLanClient(client | null)` runtime setter so platforms can inject the LAN broadcaster after construction without breaking the public constructor signature.
+  - New `LAN_BROADCAST_TIMEOUT_MS = 5_000` constant — bounds the worst-case latency of `publish()` so a stuck LAN transport cannot block the publish path indefinitely. LAN is best-effort; cloud is canonical.
+  - Errors from `lanClient.broadcast()` (sync throw, async rejection, or timeout) are logged via `console.warn` and swallowed — the local mutation still gets queued for cloud push, so LAN failure cannot lose data.
+  - `LanClient` and `LAN_BROADCAST_TIMEOUT_MS` re-exported from `@soostori/sync` barrel.
+
+### Added
+- **`packages/sync/test/lan-broadcast.test.ts`**: 9 new tests covering the P0-4 fix — null client is a no-op; injected client receives the exact event from `publish()`; sync throws and async rejections are swallowed (event still queued); `setLanClient(null)` clears the client; `LAN_BROADCAST_TIMEOUT_MS` is a stable exported constant; stuck client times out at exactly 5s; non-stock events are NOT broadcast over LAN; LAN is skipped when `primary.canAuthorStockOps() === false`. All 9 pass; existing 10 sync tests still pass (19/19 total).
+
 ## [Unreleased] — Phase 02 Storage Foundation
 
 ### Fixed
@@ -19,6 +159,64 @@ All notable changes to this project will be documented in this file.
 ### Published
 - `@soostori/cloud@0.1.0-alpha.10`
 - `@soostori/storage@0.2.0-alpha.4` (rebuilt with corrected cloud@alpha.10)
+
+## [Unreleased] — P0-2a Subscription State Machine (audit 2026-10-05)
+
+### Added
+- **`@soostori/core`**: New constants in `packages/core/src/constants.ts`:
+  - `SETUP_GRACE_DAYS = 14` — first-month setup grace (admin-configurable).
+  - `SETUP_GRACE_DAYS_DEFAULT = 14` — default for `SETUP_GRACE_DAYS` when not configured.
+  - `SUBSCRIPTION_PERIOD_DAYS = 30` — 30-day fixed subscription period (NOT calendar arithmetic).
+  - `RENEWAL_GRACE_DAYS = 3` — post-expiry renewal grace (admin-configurable).
+  - `RENEWAL_GRACE_DAYS_DEFAULT = 3` — default for `RENEWAL_GRACE_DAYS` when not configured.
+- **`@soostori/core`**: `setupGraceEndsAt: ISO8601 | null` field added to both `Subscription` and `SubscriptionEntitlement` entities. Set ONLY on the first payment cycle; null on all subsequent renewals. Existing rows in the wild will have `null` and are treated as not-in-setup-grace (safe migration).
+- **`@soostori/subscription`**: `computeSubscriptionState({ currentPeriodEnd, setupGraceEndsAt, now? })` — canonical 5-state derivation. Returns one of `ACTIVE | SETUP_GRACE | RENEWAL_GRACE | DEACTIVATED` (EXPIRED is preserved as a valid `SubscriptionStatus` value for backwards compatibility). Pure, idempotent, side-effect-free.
+- **`@soostori/subscription`**: `enforceSubscriptionStatus(status: SubscriptionStatus)` — direct status-based enforcer. Allows `ACTIVE | SETUP_GRACE | RENEWAL_GRACE`; throws `SubscriptionExpiredError` on `EXPIRED`; throws `SubscriptionDeactivatedError` on `DEACTIVATED`.
+- **`@soostori/subscription`**: `SubscriptionDeactivatedError` new error class (complements `SubscriptionExpiredError`).
+- **`@soostori/subscription`**: `SubscriptionState.status: SubscriptionStatus` field added — the canonical 5-state value is now exposed on the derived state.
+- **`@soostori/subscription`**: `isStatusActive()` updated for new vocabulary — returns `true` for `ACTIVE | SETUP_GRACE | RENEWAL_GRACE`; `false` for `EXPIRED | DEACTIVATED`.
+- **`@soostori/subscription`**: `defaultEntitlement()` now produces a `SETUP_GRACE` entitlement with `setupGraceEndsAt` set 14 days from now (was a 7-day `trialing` placeholder).
+- **`@soostori/subscription`**: `enforcement-sync.ts` — `SubscriptionCancelledError` replaced by `SubscriptionDeactivatedError` (P0-2a vocabulary; the cancelled-state semantic is folded into DEACTIVATED).
+- **`@soostori/contracts`**: `data-contract-4a-platform.ts` — `SubscriptionStatus` re-exported from `@soostori/core` (single source of truth). Added `setupGraceEndsAt: ISO8601 | null` to the platform `Subscription` entity.
+- **`@soostori/schema`**: `cloudEntities.subscriptions` — added `setupGraceEndsAt: str({})` field.
+
+### Changed
+- **`@soostori/core`**: `SubscriptionStatus` union replaced with the user-specified 5-state vocabulary:
+  - `ACTIVE` — currentPeriodEnd > now (in paid subscription period)
+  - `SETUP_GRACE` — first 14-day setup window after first payment
+  - `EXPIRED` — currentPeriodEnd < now, within RENEWAL_GRACE_DAYS
+  - `RENEWAL_GRACE` — 3-day post-expiry window where warnings are shown
+  - `DEACTIVATED` — past everything; no further access without renewal
+  - **BREAKING**: previously-valid lowercase values (`active`, `trialing`, `past_due`, `cancelled`) are no longer in the union. All SDK consumers must migrate. The audit's PKG-3 will sweep the platform call sites.
+
+### Fixed
+- **P0-2 from the 2026-10-05 ecosystem audit**: User-specified subscription model is now implemented at the SDK layer. The 14+30+3=47-day initial cycle is encoded as constants; the 5-state vocabulary is the single source of truth across `core`, `contracts`, and `subscription` packages (previously three competing enums existed in three packages).
+- **`@soostori/subscription`**: `computeState()` now also returns the canonical `status` field on the derived `SubscriptionState` (was previously absent — callers had to inspect `expired`/`inGracePeriod` booleans to reconstruct the status).
+- **`@soostori/subscription`**: `enforceSubscription()` now uses the 5-state vocabulary for the primary decision (status-based) and keeps the legacy boolean checks as a fallback for back-compat with the old `computeState()` callers.
+
+### Tests
+- **`@soostori/subscription`**: New test file `packages/subscription/test/subscription-state-machine.test.ts` — 17 tests covering:
+  - Constants (SETUP_GRACE_DAYS=14, SUBSCRIPTION_PERIOD_DAYS=30, RENEWAL_GRACE_DAYS=3)
+  - `computeSubscriptionState()` — all 5 state regions + boundary cases + idempotency + SETUP_GRACE-on-renewal null-handling
+  - `enforceSubscription()` — allows SETUP_GRACE/ACTIVE/RENEWAL_GRACE; blocks EXPIRED (SubscriptionExpiredError); blocks DEACTIVATED (SubscriptionDeactivatedError)
+  - `enforceSubscriptionStatus()` — pure status-based enforcement for all 5 states
+- **`@soostori/subscription`**: `subscription.test.ts` updated to use the new 5-state vocabulary throughout (`ACTIVE`/`SETUP_GRACE`/`RENEWAL_GRACE`/`DEACTIVATED`). `SubscriptionDeactivatedError` re-exported and tested.
+- **`@soostori/subscription`**: `enforcement-sync.test.ts` updated for the new vocabulary — `SubscriptionDeactivatedError` replaces `SubscriptionCancelledError`; RENEWAL_GRACE warning asserted.
+
+### Published
+- `@soostori/core@0.1.0-alpha.14`
+- `@soostori/contracts@0.1.0-alpha.6`
+- `@soostori/subscription@0.1.0-alpha.5`
+
+## [0.1.0-alpha.23] — 2026-10-05
+
+### Fixed
+- **`@soostori/auth`**: `CloudAuth` is now usable as-is. `_saveStoredSession`, `_loadStoredSession`, and `_clearStoredSession` no longer require a platform subclass to override — they ship with sensible in-memory defaults that store a single `StoredSession` per instance. Subclasses can still override the three hooks for cross-restart persistence (platform keychain, IndexedDB, filesystem, etc.). **Closes P0-5 from the 2026-10-05 ecosystem audit.**
+- **`@soostori/auth`**: Web app's `/api/auth/signout` route no longer silently swallows the "CloudAuth: _clearStoredSession not overridden" error — the SDK now resolves sign-out without forcing a try/catch around it (the existing defensive try/catch is still preserved for safety).
+
+### Added
+- **`@soostori/auth`**: New test file `packages/auth/test/cloud-auth-default-storage.test.ts` — 6 tests covering: default save/load/clear round-trip, overwrite-on-save semantics, clear-no-op-on-empty, instance isolation, subclass-override is invoked, and the parent-web-app regression case (sign-out no longer throws).
+- **`@soostori/auth`**: `CloudAuth` now stores its in-memory backing session in a private `_sessionStore` field (separate from the existing `_session` live-state field), making the boundary between live state and persisted state explicit in the source.
 
 ## [0.1.0-alpha.22] — 2026-09-12
 

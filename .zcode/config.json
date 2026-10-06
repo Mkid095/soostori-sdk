@@ -1,0 +1,21 @@
+{
+  "mcp": {
+    "servers": {
+      "instant-self": {
+        "type": "stdio",
+        "command": "cmd",
+        "args": [
+          "/c",
+          "npx",
+          "-y",
+          "@fidscript/instant-mcp@0.4.40"
+        ],
+        "env": {
+          "INSTANT_ACCESS_TOKEN": "per_1ed2c9adc59660f639a6d246102ae0b19a9a41b356eec9d492b0ca6445ce6ce7",
+          "INSTANT_API_URI": "https://apiinstant.fidscript.com",
+          "INSTANT_APP_ID": "487be5c5-7615-4bbd-b3b7-3aa97154ca99"
+        }
+      }
+    }
+  }
+}

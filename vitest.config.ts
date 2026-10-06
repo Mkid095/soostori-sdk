@@ -1,7 +1,9 @@
 import { defineConfig } from 'vitest/config'
-import { resolve } from 'path'
+import { fileURLToPath } from 'url'
+import { dirname, resolve } from 'path'
 
-const ROOT = resolve(import.meta.dirname)
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const ROOT = resolve(__dirname)
 
 export default defineConfig({
   test: {
@@ -9,6 +11,16 @@ export default defineConfig({
     environment: 'node',
     exclude: ['**/desktop-orchestrator.test.ts'],
     cache: false,
+    server: {
+      deps: {
+        // Force vitest to transform/inline these workspace packages
+        // instead of resolving from the hoisted node_modules cache
+        // (which may have stale registry versions).
+        inline: [
+          /^@soostori\//,
+        ],
+      },
+    },
   },
   resolve: {
     alias: {
@@ -36,6 +48,9 @@ export default defineConfig({
       '@soostori/debts': resolve(ROOT, 'packages/business/debts/src/index.ts'),
       '@soostori/business': resolve(ROOT, 'packages/business/src/index.ts'),
       '@soostori/contracts': resolve(ROOT, 'packages/contracts/src/index.ts'),
+      '@soostori/contracts/sync-contract': resolve(ROOT, 'packages/contracts/src/sync-contract.ts'),
+      '@soostori/contracts/sync-event-factory': resolve(ROOT, 'packages/contracts/src/sync-event-factory.ts'),
+      '@soostori/contracts/sync-contract-parts': resolve(ROOT, 'packages/contracts/src/sync-contract-parts.ts'),
       '@soostori/partners': resolve(ROOT, 'packages/partners/src/index.ts'),
       '@soostori/updates': resolve(ROOT, 'packages/updates/src/index.ts'),
       '@soostori/team': resolve(ROOT, 'packages/team/src/index.ts'),
