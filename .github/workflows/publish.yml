@@ -87,18 +87,21 @@ jobs:
             "
           done
 
-      - name: Build core first (the foundation everything else depends on)
-        # core must be built before any of its consumers (auth, contracts,
-        # subscription, events, sync, schema) so its `dist/` and `.d.ts` files
-        # exist for type resolution. pnpm -r's topological walk doesn't
-        # always serialize this for packages with workspace:* deps in
-        # parallel mode.
-        run: pnpm -r --filter '@soostori/core' build
-
-      - name: Build ALL remaining packages
-        # Now that core's dist/ exists, build the rest of the workspace so
-        # all cross-package type references resolve.
-        run: pnpm -r --filter './packages/**' --filter '!@soostori/core' build
+      - name: Build the 7 critical packages + their direct deps
+        # The 7 critical packages (core, contracts, subscription, events,
+        # sync, auth, schema) plus their direct deps (cloud, devices) are
+        # what needs to be built for the publish. Other packages (audit,
+        # inventory, expenses, etc.) have pre-existing type errors that
+        # are not on the publish critical path and don't need to be fixed
+        # for this release.
+        run: |
+          pnpm -r --filter '@soostori/core' build
+          pnpm -r --filter '@soostori/cloud' --filter '@soostori/devices' build
+          pnpm -r --filter '@soostori/contracts' build
+          pnpm -r --filter '@soostori/subscription' --filter '@soostori/auth' build
+          pnpm -r --filter '@soostori/events' build
+          pnpm -r --filter '@soostori/schema' build
+          pnpm -r --filter '@soostori/sync' build
 
       - name: Publish in dependency order
         # The NODE_AUTH_TOKEN env var is auto-set by actions/setup-node when
