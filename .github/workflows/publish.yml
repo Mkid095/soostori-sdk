@@ -87,12 +87,12 @@ jobs:
             "
           done
 
-      - name: Build the 7 critical packages
-        run: |
-          for pkg in core contracts subscription events sync auth schema; do
-            echo "  Building $pkg..."
-            (cd "packages/$pkg" && npx tsc) || exit 1
-          done
+      - name: Build ALL packages (so the 7 critical packages' deps resolve)
+        # The 7 critical packages depend on @soostori/cloud, @soostori/devices,
+        # and others. Those packages must be built first so their `dist/` and
+        # `.d.ts` files exist for type resolution. `pnpm -r build` walks
+        # the workspace in topological order.
+        run: pnpm -r --filter './packages/**' build
 
       - name: Publish in dependency order
         # The NODE_AUTH_TOKEN env var is auto-set by actions/setup-node when
