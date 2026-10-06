@@ -1,6 +1,6 @@
 {
   "name": "@soostori/core",
-  "version": "0.1.0-alpha.11",
+  "version": "0.2.0",
   "description": "Canonical Soostori core: branded IDs, domain types, validation, errors, constants",
   "type": "module",
   "main": "./dist/index.js",
@@ -27,7 +27,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@soostori/contracts": "^0.1.0-alpha.2",
+    "@soostori/contracts": "workspace:*",
     "zod": "^3.24.0"
   },
   "devDependencies": {
@@ -47,5 +47,6 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Mkid095/soostori-sdk.git"
-  }
+  },
+  "peerDependencies": {}
 }

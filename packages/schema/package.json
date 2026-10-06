@@ -1,6 +1,6 @@
 {
   "name": "@soostori/schema",
-  "version": "0.1.0-alpha.3",
+  "version": "0.2.0",
   "description": "Canonical Soostori cloud entity definitions + migrations + schema versions",
   "type": "module",
   "main": "./dist/index.js",
@@ -27,7 +27,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@soostori/core": "^0.1.0-alpha.10",
+    "@soostori/core": "workspace:*",
     "zod": "^3.24.0"
   },
   "devDependencies": {
@@ -40,5 +40,6 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Mkid095/soostori-sdk.git"
-  }
+  },
+  "peerDependencies": {}
 }

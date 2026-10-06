@@ -7,18 +7,18 @@ allowBuilds:
   better-sqlite3: true
 
 minimumReleaseAgeExclude:
-  - '@soostori/core@0.1.0-alpha.2 || 0.1.0-alpha.9 || 0.1.0-alpha.10 || 0.1.0-alpha.11'
-  - '@soostori/schema@0.1.0-alpha.2 || 0.1.0-alpha.3'
-  - '@soostori/auth@0.1.0-alpha.8 || 0.1.0-alpha.9 || 0.1.0-alpha.18'
+  - '@soostori/core@0.1.0-alpha.2 || 0.1.0-alpha.9 || 0.1.0-alpha.10 || 0.1.0-alpha.11 || 0.1.0-alpha.13 || 0.1.0-alpha.14'
+  - '@soostori/schema@0.1.0-alpha.2 || 0.1.0-alpha.3 || 0.1.0-alpha.4'
+  - '@soostori/auth@0.1.0-alpha.8 || 0.1.0-alpha.9 || 0.1.0-alpha.18 || 0.1.0-alpha.23'
   - '@soostori/cloud@0.1.0-alpha.6 || 0.1.0-alpha.7 || 0.1.0-alpha.8 || 0.1.0-alpha.9 || 0.1.0-alpha.10 || 0.1.0-alpha.11'
-  - '@soostori/contracts@0.1.0-alpha.2 || 0.1.0-alpha.3 || 0.1.0-alpha.4 || 0.1.0-alpha.5'
+  - '@soostori/contracts@0.1.0-alpha.2 || 0.1.0-alpha.3 || 0.1.0-alpha.4 || 0.1.0-alpha.5 || 0.1.0-alpha.6 || 0.1.0-alpha.7'
   - '@soostori/storage@0.2.0-alpha.2 || 0.2.0-alpha.3 || 0.2.0-alpha.4'
   - '@soostori/events@0.1.0-alpha.3 || 0.1.0-alpha.4'
   - '@soostori/devices@0.1.0-alpha.4'
-  - '@soostori/subscription@0.1.0-alpha.3 || 0.1.0-alpha.4'
-  - '@soostori/products@0.1.0-alpha.2'
+  - '@soostori/subscription@0.1.0-alpha.3 || 0.1.0-alpha.4 || 0.1.0-alpha.5'
+  - '@soostori/products@0.1.0-alpha.2 || 0.1.0-alpha.3'
   - '@soostori/offline@0.1.0-alpha.3'
-  - '@soostori/sync@0.1.0-alpha.3'
+  - '@soostori/sync@0.1.0-alpha.3 || 0.1.0-alpha.24'
   - '@soostori/tuma@0.1.0-alpha.2'
 
 onlyBuiltDependencies:
