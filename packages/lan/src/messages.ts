@@ -72,3 +72,15 @@ export interface LanFrame {
   message: ClientMessage | ServerMessage
   timestamp: ISO8601
 }
+
+
+// ── Encrypted frame ──────────────────────────────────────────────────────────
+
+import type { EncryptedFrame } from './crypto.js'
+
+/** Discriminant union for the two wire formats. */
+export type { EncryptedFrame } from './crypto.js';
+
+export type WireFrame =
+  | { encrypted: false; frame: LanFrame }
+  | { encrypted: true;  envelope: EncryptedFrame }

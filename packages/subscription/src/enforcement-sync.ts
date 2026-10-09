@@ -9,12 +9,14 @@
  *   - expired within grace period   → allow with logged warning
  *   - expired past grace period     → throw SubscriptionGracePeriodExpiredError
  *   - cancelled                     → throw SubscriptionCancelledError
+ *   - payment_failed                → throw SubscriptionPaymentFailedError
  */
 
 import { SoostoriError } from '@soostori/core'
 import type { SubscriptionCache } from './cache.js'
 import type { SubscriptionState } from './entitlement.js'
 import { computeState } from './entitlement.js'
+import { SubscriptionPaymentFailedError } from './enforcement.js'
 
 export class SubscriptionGracePeriodExpiredError extends SoostoriError {
   constructor(message: string) {
@@ -55,6 +57,22 @@ export async function enforceSubscriptionForSync(
     throw new SubscriptionCancelledError(
       `Subscription is cancelled for shop ${shopId}. ` +
       `Sync mutations are not permitted.`
+    )
+  }
+
+  // P1-04: payment_failed is Web-only block — subscription is read-only
+  if (entitlement?.status === 'payment_failed') {
+    if (!state.expired) {
+      // Period is still valid (not past expiry) → payment failed makes it read-only
+      throw new SubscriptionPaymentFailedError(
+        `Subscription payment has failed for shop ${shopId}. ` +
+        `Please update payment details to resume full operations.`
+      )
+    }
+    // Period IS expired → expiry takes precedence over payment-failed
+    throw new SubscriptionGracePeriodExpiredError(
+      `Subscription has expired for shop ${shopId}. ` +
+      `Payment failed and the subscription period has ended.`
     )
   }
 

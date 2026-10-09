@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
+import { encrypt, decrypt, type LanKey } from '../src/crypto.js'
 import { TerminalClient, PrimaryHost } from '../src/index'
 import type { LanTransport, HostConnection, StockAuthorizer } from '../src/index'
 import { newId, asShopId, asDeviceId } from '@soostori/core'
@@ -102,6 +103,41 @@ describe('TerminalClient', () => {
     expect(client.getPrimaryUrl()).toContain('192.168.1.10')
   })
 })
+
+describe('Encryption', () => {
+  it('encrypts plaintext so it cannot be read as JSON', () => {
+    
+    const key = Buffer.alloc(32, 'x')  // dummy key
+    const plaintext = JSON.stringify({ type: 'SALE_REQUEST', amount: 500 })
+    const envelope = encrypt(plaintext, key)
+    // iv and data must be base64url strings
+    expect(typeof envelope.iv).toBe('string')
+    expect(typeof envelope.data).toBe('string')
+    // ciphertext must NOT be parseable as JSON (not readable plaintext)
+    expect(() => JSON.parse(envelope.data)).toThrow()
+  })
+
+  it('decrypt correctly recovers original plaintext', () => {
+    
+    const key = Buffer.alloc(32, 'y')  // dummy key
+    const original = JSON.stringify({ type: 'STOCK_ADJUSTMENT', delta: -3 })
+    const envelope = encrypt(original, key)
+    const recovered = decrypt(envelope, key)
+    expect(recovered).toBe(original)
+  })
+
+  it('rejects tampered ciphertext (wrong auth tag)', () => {
+    
+    const key = Buffer.alloc(32, 'z')
+    const envelope = encrypt('secret data', key)
+    // Flip a bit in the ciphertext — corrupts the auth tag
+    const tamperedData = Buffer.from(envelope.data, 'base64url')
+    tamperedData[0] ^= 0xff
+    const tampered = { ...envelope, data: tamperedData.toString('base64url') }
+    expect(() => decrypt(tampered, key)).toThrow()
+  })
+})
+
 
 describe('PrimaryHost', () => {
   it('authorizes sale via authorizer', async () => {

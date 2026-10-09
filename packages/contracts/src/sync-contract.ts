@@ -129,7 +129,7 @@ export interface SyncEngine {
  * intentionally minimal so feature work can call
  * `syncEngine.enqueue(event)` without depending on a real backend.
  */
-export { NoOpSyncEngine, NoOpSyncEngineClass, defaultSyncEngine, type QueuedSyncEvent } from './sync-stub.js'
+export { NoOpSyncEngine, NoOpSyncEngineClass, defaultSyncEngine, createSyncEngine, type QueuedSyncEvent } from './sync-stub.js'
 
 // ── Real SyncEngine (Cycle 05) ────────────────────────────────────────────────
 //

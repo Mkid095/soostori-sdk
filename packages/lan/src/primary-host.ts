@@ -4,6 +4,7 @@
  * Provides:
  * - UDP discovery broadcast (every 5s)
  * - WebSocket server on port 18792
+ * - AES-256-GCM encrypted frames once a shared key is provisioned
  * - Token-validated connections
  * - Stock authorization for sale/stock adjustment requests
  * - Event broadcast to all connected terminals
@@ -11,11 +12,15 @@
 
 import type { ShopId, DeviceId, UUID } from '@soostori/core'
 import type { SoostoriEvent } from '@soostori/events'
+import type { EncryptedFrame, WireFrame } from "./messages.js";
 import {
   ClientMessage, ServerMessage, DiscoveryAdvert, LanFrame,
 } from './messages.js'
 import { DISCOVERY_MAGIC, DISCOVERY_VERSION } from './messages.js'
 import { DISCOVERY_PORT, SYNC_PORT } from './protocol.js'
+import { encrypt, decrypt, type LanKey } from './crypto.js'
+
+export const PRIMARY_ENCRYPTED = true
 
 /** Inject the platform-specific transport. */
 export interface LanHostTransport {
@@ -58,6 +63,8 @@ export interface PrimaryHostConfig {
   primaryDeviceName: string
   shopName: string
   appVersion: string
+  /** 256-bit AES key provisioned during device authorization. */
+  encryptionKey: LanKey | null
   /** Function to validate a pairing token. Returns the deviceId if valid. */
   validateToken: (token: string) => Promise<UUID | null>
   authorizer: StockAuthorizer
@@ -102,7 +109,12 @@ export class PrimaryHost {
     this.connections.set(conn.id, conn)
     conn.onMessage(async (raw) => {
       try {
-        const frame = JSON.parse(raw) as LanFrame
+        const wire = JSON.parse(raw) as unknown as WireFrame
+        const frame = this.unwrapFrame(wire)
+        if (!frame) {
+          conn.send(JSON.stringify({ type: 'ERROR', code: 'DECRYPTION_FAILED', message: 'Unable to decrypt frame' } satisfies ServerMessage))
+          return
+        }
         const msg = frame.message as ClientMessage
         // First message must include device ID; we authenticate via X-Soostori-Token header
         // For simplicity: require a REGISTER_PAIRING first, or expect headers
@@ -112,21 +124,21 @@ export class PrimaryHost {
             conn.deviceId = deviceId
             conn.authenticated = true
             const token = msg.pairingCode  // simplified — real impl returns fresh token
-            conn.send(JSON.stringify({
+            this.sendRaw(conn, {
               type: 'PAIRING_APPROVED', deviceId, connectionToken: token,
-            } satisfies ServerMessage))
+            })
           } else {
-            conn.send(JSON.stringify({
+            this.sendRaw(conn, {
               type: 'PAIRING_REJECTED', pairingCode: msg.pairingCode, reason: 'invalid_token',
-            } satisfies ServerMessage))
+            })
             conn.close()
           }
           return
         }
         if (!conn.authenticated) {
-          conn.send(JSON.stringify({
+          this.sendRaw(conn, {
             type: 'ERROR', code: 'NOT_AUTHENTICATED', message: 'Send REGISTER_PAIRING first',
-          } satisfies ServerMessage))
+          })
           return
         }
         await this.routeMessage(conn, msg)
@@ -139,9 +151,9 @@ export class PrimaryHost {
 
   private async routeMessage(conn: HostConnection, msg: ClientMessage): Promise<void> {
     if (msg.type === 'HEARTBEAT') {
-      conn.send(JSON.stringify({
+      this.sendRaw(conn, {
         type: 'HEARTBEAT_ACK', primaryStockSequence: 0, primaryOnline: true,
-      } satisfies ServerMessage))
+      })
       return
     }
     if (msg.type === 'SALE_REQUEST') {
@@ -150,15 +162,15 @@ export class PrimaryHost {
         deviceId: conn.deviceId as DeviceId,
       })
       if (result.accepted) {
-        conn.send(JSON.stringify({
+        this.sendRaw(conn, {
           type: 'SALE_ACCEPTED', idempotencyKey: msg.idempotencyKey,
           saleId: result.saleId ?? msg.idempotencyKey, stockAfter: result.stockAfter ?? {},
-        } satisfies ServerMessage))
+        })
       } else {
-        conn.send(JSON.stringify({
+        this.sendRaw(conn, {
           type: 'SALE_REJECTED', idempotencyKey: msg.idempotencyKey,
           reason: result.reason ?? 'UNKNOWN', message: result.message ?? 'Sale rejected',
-        } satisfies ServerMessage))
+        })
       }
       return
     }
@@ -167,25 +179,20 @@ export class PrimaryHost {
         idempotencyKey: msg.idempotencyKey, payload: msg.payload,
         deviceId: conn.deviceId as DeviceId,
       })
-      conn.send(JSON.stringify({
+      this.sendRaw(conn, {
         type: result.accepted ? 'STOCK_ADJUSTMENT_OK' : 'STOCK_ADJUSTMENT_REJECTED',
         idempotencyKey: msg.idempotencyKey,
         reason: result.reason ?? '',
-      } satisfies ServerMessage))
+      })
       return
     }
   }
 
   /** Broadcast an event to all connected terminals. */
   broadcast(event: SoostoriEvent): void {
-    const frame: LanFrame = {
-      protocol: 'soostori-lan', version: 1,
-      message: { type: 'PRODUCT_BROADCAST', event } satisfies ServerMessage,
-      timestamp: new Date().toISOString(),
-    }
-    const data = JSON.stringify(frame)
+    const msg: ServerMessage = { type: 'PRODUCT_BROADCAST', event }
     for (const conn of this.connections.values()) {
-      try { conn.send(data) } catch { /* ignore */ }
+      try { this.sendRaw(conn, msg) } catch { /* ignore */ }
     }
   }
 
@@ -195,6 +202,22 @@ export class PrimaryHost {
     if (this.broadcastTimer) clearInterval(this.broadcastTimer)
     for (const conn of this.connections.values()) conn.close()
     this.connections.clear()
+  }
+
+  private unwrapFrame(wire: WireFrame): LanFrame | null {
+    if (!wire.encrypted) return wire.frame
+    if (!this.cfg.encryptionKey) return null
+    try { return JSON.parse(decrypt(wire.envelope, this.cfg.encryptionKey)) as LanFrame } catch { return null }
+  }
+
+  private sendRaw(conn: HostConnection, msg: ServerMessage): void {
+    const frame: LanFrame = { protocol: 'soostori-lan', version: 1, message: msg, timestamp: new Date().toISOString() }
+    conn.send(JSON.stringify(this.wrapFrame(frame)))
+  }
+
+  private wrapFrame(frame: LanFrame): WireFrame {
+    if (!this.cfg.encryptionKey) return { encrypted: false, frame }
+    return { encrypted: true, envelope: encrypt(JSON.stringify(frame), this.cfg.encryptionKey) }
   }
 
   getConnectionCount(): number {

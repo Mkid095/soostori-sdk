@@ -21,3 +21,9 @@ Thumbs.db
 
 # Claude agent worktrees
 .claude/worktrees/
+
+# Published tarballs and local Verdaccio artifacts
+dist-tarballs-all/
+*.tgz
+verdaccio-db/
+verdaccio/

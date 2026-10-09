@@ -98,7 +98,35 @@ export class NoOpSyncEngineClass implements SyncEngine {
   }
 }
 
-// ── Singleton instance (preserves the Sub-cycle A const-object shape) ─────────
+// ── Factory (P2-08: replaces monkey-patch pattern) ───────────────────────────────
+
+/**
+ * Factory — creates a fresh NoOp engine instance.
+ * Call this instead of relying on the singleton when you need an isolated
+ * engine (e.g. Mobile/SQLite calls this after init; the singleton remains
+ * the default for apps that don't need isolation).
+ *
+ * Usage:
+ *   // App / Desktop — use the singleton (created lazily at first import)
+ *   import { defaultSyncEngine } from '@soostori/contracts'
+ *
+ *   // Mobile — create explicitly after SQLite is ready
+ *   import { createSyncEngine } from '@soostori/contracts'
+ *   const engine = createSyncEngine()
+ */
+export function createSyncEngine(): SyncEngine {
+  return new NoOpSyncEngineClass()
+}
+
+/**
+ * Default engine — singleton NoOp for apps that don't need an isolated instance.
+ * Created lazily via the factory so that consumers in the same module-graph
+ * that import `defaultSyncEngine` before Mobile calls `createSyncEngine()`
+ * still get a valid NoOp engine (not an undefined/mutated singleton).
+ */
+export const defaultSyncEngine: SyncEngine = createSyncEngine()
+
+// ── Back-compat singleton (preserves Sub-cycle A const-object shape) ──────────
 
 const _instance = new NoOpSyncEngineClass()
 
@@ -118,6 +146,3 @@ export const NoOpSyncEngine: SyncEngine = {
   pull: (cursor) => _instance.pull(cursor),
   apply: (local, event) => _instance.apply(local, event),
 }
-
-/** defaultSyncEngine — apps should import this today. */
-export const defaultSyncEngine: SyncEngine = _instance

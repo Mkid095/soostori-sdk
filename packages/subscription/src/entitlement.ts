@@ -28,6 +28,8 @@ export interface SubscriptionState {
   plan: string | null
   source: 'cloud' | 'cache' | 'default'
   checkedAt: string
+  /** True when entitlement.status === 'payment_failed' (subscription is read-only). */
+  paymentFailed: boolean
 }
 
 /** Build a default trial entitlement. */
@@ -56,13 +58,14 @@ export function computeState(cached: CachedEntitlement | null, now = new Date())
       plan: null,
       source: 'default',
       checkedAt: now.toISOString(),
+      paymentFailed: false,
     }
   }
-  const { entitlement, lastVerifiedAt } = cached
+  const { entitlement } = cached
   const expiry = new Date(entitlement.expiresAt).getTime()
-  const verified = new Date(lastVerifiedAt).getTime()
   const daysUntilExpiry = Math.floor((expiry - now.getTime()) / (1000 * 60 * 60 * 24))
-  const graceElapsed = Math.floor((now.getTime() - verified) / (1000 * 60 * 60 * 24))
+  // P1-05: measure grace from expiresAt so brief re-connection does NOT reset the clock
+  const graceElapsed = Math.floor((now.getTime() - expiry) / (1000 * 60 * 60 * 24))
   const graceRemaining = Math.max(0, OFFLINE_GRACE_DAYS - graceElapsed)
   const expired = expiry < now.getTime()
   const inGracePeriod = expired && graceRemaining > 0
@@ -76,12 +79,13 @@ export function computeState(cached: CachedEntitlement | null, now = new Date())
     plan: entitlement.plan,
     source: 'cache',
     checkedAt: now.toISOString(),
+    paymentFailed: entitlement.status === 'payment_failed',
   }
 }
 
 /** Check if an entitlement status allows POS operations. */
 export function isStatusActive(status: SubscriptionStatus): boolean {
-  return status === 'active' || status === 'trialing'
+  return status === 'active' || status === 'trialing' || status === 'payment_failed'
 }
 
 /** Compute the next time the entitlement should be re-verified. */

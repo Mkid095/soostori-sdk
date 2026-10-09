@@ -29,7 +29,7 @@ export type EmployeeRole = 'owner' | 'manager' | 'cashier' | 'attendant' | 'view
 
 export type DeviceType = 'desktop' | 'mobile'
 
-export type SubscriptionStatus = 'active' | 'past_due' | 'expired' | 'cancelled' | 'trialing'
+export type SubscriptionStatus = 'active' | 'past_due' | 'expired' | 'cancelled' | 'trialing' | 'payment_failed'
 
 export type BillingCycle = 'monthly' | 'yearly'
 

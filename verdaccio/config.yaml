@@ -1,0 +1,78 @@
+# Verdaccio configuration for the Soostori SDK registry
+#
+# This registry serves @soostori/* packages at version 0.2.0+ to the Web,
+# Desktop, and Mobile apps via standard `npm install` / `pnpm install`.
+#
+# Replace `your.domain.com` with the public hostname where this registry
+# is reachable (e.g., npm.internal.yourcompany.com or a Cloudflare tunnel
+# hostname if running on a home network).
+
+# Path to the storage directory (where the package tarballs are kept).
+# Mounted from the host via docker-compose volumes.
+storage: /verdaccio/db
+
+# Plugins
+plugins: /verdaccio/plugins
+
+# Web UI is enabled by default at / (e.g., https://your.domain.com/-/web)
+# It allows browsing the registry, seeing who published what, etc.
+web:
+  title: Soostori SDK Registry
+  enable: true
+
+# Authentication: htpasswd-based. One user `soostori` is created initially.
+# To add more users:
+#   docker compose exec verdaccio htpasswd -b /verdaccio/conf/htpasswd <user> <pass>
+auth:
+  htpasswd:
+    file: /verdaccio/conf/htpasswd
+    # Set to a non-empty value for the maximum number of users, -1 means unlimited
+    max_users: -1
+
+# Upstream registry for proxying non-@soostori packages
+uplinks:
+  npmjs:
+    url: https://registry.npmjs.org/
+
+# The packages to serve. The pattern matches the @soostori/* scope.
+packages:
+  # Anything in the @soostori scope is served from this registry ONLY.
+  # proxy: false prevents Verdaccio from falling through to the npmjs uplink
+  # when a version is not found locally. This is critical — without it,
+  # Verdaccio will proxy @soostori/* versions it doesn't have to npmjs.org,
+  # exposing old alpha versions to consumers.
+  "@soostori/*":
+    access: $authenticated
+    publish: $authenticated
+    unpublish: $authenticated
+    proxy: false
+
+  # Anything else (lodash, react, zod, etc.) is proxied to the public
+  # npmjs.org registry. This is what makes pnpm install work for the apps
+  # without us having to mirror the entire public npm.
+  "**":
+    access: $anonymous
+    publish: $anonymous
+    proxy: npmjs
+
+# Logging configuration
+log:
+  type: stdout
+  format: pretty
+  level: warn
+
+# Listen address inside the container. The Docker port mapping already
+# exposes 4873 on the host.
+listen: 0.0.0.0:4873
+
+# Security
+security:
+  apiLegacy: true
+  # Allowed CORS origins (the apps' dev servers). Comma-separated.
+  # Replace with the actual origins for Web (localhost:3000), Desktop
+  # (electron dev server), and any production URLs.
+  cors:
+    allowed_origins:
+      - "http://localhost:3000"
+      - "http://localhost:5173"
+      - "http://localhost:8080"
