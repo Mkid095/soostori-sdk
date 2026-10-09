@@ -1,6 +1,6 @@
 {
   "name": "@soostori/lan",
-  "version": "0.1.2-alpha.4",
+  "version": "0.1.3-alpha.4",
   "description": "LAN discovery + WebSocket protocol — extracted from Desktop's sync infrastructure",
   "type": "module",
   "main": "./dist/index.js",
@@ -26,9 +26,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@soostori/core": "workspace:*",
-    "@soostori/events": "workspace:*",
-    "@soostori/devices": "workspace:*",
+    "@soostori/core": "^0.2.6",
+    "@soostori/events": "^0.2.3",
+    "@soostori/devices": "^0.2.0",
     "ws": "^8.18.0",
     "zod": "^3.24.0"
   },

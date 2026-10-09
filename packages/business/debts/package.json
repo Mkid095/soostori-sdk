@@ -1,6 +1,6 @@
 {
   "name": "@soostori/debts",
-  "version": "0.1.2-alpha.1",
+  "version": "0.1.3-alpha.1",
   "description": "Debt/credit domain â€” extracted from Desktop's debts schema",
   "type": "module",
   "main": "./dist/index.js",
@@ -26,8 +26,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@soostori/core": "workspace:*",
-    "@soostori/events": "workspace:*",
+    "@soostori/core": "^0.2.6",
+    "@soostori/events": "^0.2.2",
     "zod": "^3.24.0"
   },
   "devDependencies": {

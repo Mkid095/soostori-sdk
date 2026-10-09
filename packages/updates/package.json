@@ -1,6 +1,6 @@
 {
   "name": "@soostori/updates",
-  "version": "0.1.2-alpha.3",
+  "version": "0.1.3-alpha.3",
   "description": "Platform-neutral application update contract — update states, OTA/binary distinction, progress, and adapter interface",
   "type": "module",
   "main": "./dist/index.js",
@@ -26,7 +26,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@soostori/core": "workspace:*",
+    "@soostori/core": "^0.2.6",
     "zod": "^3.24.0"
   },
   "devDependencies": {

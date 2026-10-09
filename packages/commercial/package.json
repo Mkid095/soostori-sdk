@@ -1,6 +1,6 @@
 {
   "name": "@soostori/commercial",
-  "version": "0.1.2-alpha.5",
+  "version": "0.1.3-alpha.5",
   "description": "Commercial — Package enrollment, commission aggregation, and CommissionService for the Soostori platform",
   "type": "module",
   "main": "./dist/index.js",
@@ -26,8 +26,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@soostori/core": "workspace:*",
-    "@soostori/contracts": "workspace:*"
+    "@soostori/core": "^0.2.6",
+    "@soostori/contracts": "^0.2.5"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

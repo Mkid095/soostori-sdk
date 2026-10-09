@@ -1,6 +1,6 @@
 {
   "name": "@soostori/storage",
-  "version": "0.2.2-alpha.5",
+  "version": "0.2.3-alpha.5",
   "description": "Local persistence abstraction — keeps SDK SQLite-agnostic",
   "type": "module",
   "main": "./dist/index.js",
@@ -26,11 +26,11 @@
     "access": "public"
   },
   "dependencies": {
-    "@soostori/core": "workspace:*",
-    "@soostori/contracts": "workspace:*",
-    "@soostori/cloud": "workspace:*",
+    "@soostori/core": "^0.2.6",
+    "@soostori/contracts": "^0.2.6",
+    "@soostori/cloud": "^0.2.3",
     "zod": "^3.24.0",
-    "@soostori/events": "workspace:*"
+    "@soostori/events": "^0.2.3"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

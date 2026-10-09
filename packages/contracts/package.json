@@ -1,6 +1,6 @@
 {
   "name": "@soostori/contracts",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Canonical Soostori data contract — all 22 entities + sync/event contract + NoOpSyncEngine stub. Source of truth for Web, Desktop, Mobile.",
   "type": "module",
   "main": "./dist/index.js",
@@ -26,7 +26,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@soostori/core": "workspace:*"
+    "@soostori/core": "^0.2.6"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

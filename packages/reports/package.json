@@ -1,6 +1,6 @@
 {
   "name": "@soostori/reports",
-  "version": "0.1.2-alpha.14",
+  "version": "0.1.3-alpha.14",
   "description": "Phase 12 — canonical report query/aggregation contracts and reconciliation invariants for soostori-sdk",
   "type": "module",
   "main": "./dist/index.js",
@@ -20,9 +20,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@soostori/contracts": "workspace:*",
-    "@soostori/core": "workspace:*",
-    "@soostori/events": "workspace:*",
+    "@soostori/contracts": "^0.2.6",
+    "@soostori/core": "^0.2.6",
+    "@soostori/events": "^0.2.3",
     "zod": "^3.24.0"
   },
   "devDependencies": {
