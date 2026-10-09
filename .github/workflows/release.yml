@@ -1,0 +1,44 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'sdk-v*'
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  publish:
+    name: Publish to Verdaccio
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        run: npm install -g pnpm@9
+
+      - name: Configure Verdaccio registry
+        run: |
+          echo "@soostori:registry=${{ secrets.VERDACCIO_REGISTRY }}" >> .npmrc
+          echo "//${{ secrets.VERDACCIO_REGISTRY_HOST }}/:_authToken=${{ secrets.VERDACCIO_AUTH_TOKEN }}" >> .npmrc
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Build all packages
+        run: pnpm run build
+
+      - name: Publish to Verdaccio
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.VERDACCIO_AUTH_TOKEN }}
+        run: |
+          pnpm -r --filter "./packages/**" publish --no-git-checks --registry=${{ secrets.VERDACCIO_REGISTRY }} --access=public

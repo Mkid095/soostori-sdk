@@ -27,10 +27,10 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@soostori/core": "^0.1.0-alpha.10",
-    "@soostori/events": "^0.1.0-alpha.2",
+    "@soostori/core": "workspace:*",
+    "@soostori/events": "workspace:*",
     "zod": "^3.24.0",
-    "@soostori/notifications": "^0.1.0-alpha.1"
+    "@soostori/notifications": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

@@ -27,11 +27,11 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@soostori/core": "^0.1.0-alpha.10",
-    "@soostori/contracts": "^0.1.0-alpha.5",
-    "@soostori/cloud": "^0.1.0-alpha.11",
+    "@soostori/core": "workspace:*",
+    "@soostori/contracts": "workspace:*",
+    "@soostori/cloud": "workspace:*",
     "zod": "^3.24.0",
-    "@soostori/events": "^0.1.0-alpha.2"
+    "@soostori/events": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

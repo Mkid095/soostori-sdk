@@ -27,8 +27,8 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@soostori/core": "^0.1.0-alpha.11",
-    "@soostori/events": "^0.1.0-alpha.4",
+    "@soostori/core": "workspace:*",
+    "@soostori/events": "workspace:*",
     "zod": "^3.24.0"
   },
   "devDependencies": {

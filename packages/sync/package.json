@@ -27,13 +27,13 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@soostori/core": "^0.2.0",
-    "@soostori/schema": "^0.2.0",
-    "@soostori/storage": "0.2.0-alpha.5",
+    "@soostori/core": "workspace:*",
+    "@soostori/schema": "workspace:*",
+    "@soostori/storage": "workspace:*",
     "zod": "^3.24.0",
-    "@soostori/cloud": "^0.2.0",
-    "@soostori/devices": "^0.2.0",
-    "@soostori/events": "^0.2.0"
+    "@soostori/cloud": "workspace:*",
+    "@soostori/devices": "workspace:*",
+    "@soostori/events": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

@@ -27,7 +27,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "dependencies": {
-    "@soostori/core": "^0.2.1"
+    "@soostori/core": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
