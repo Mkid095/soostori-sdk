@@ -1,6 +1,6 @@
 {
   "name": "@soostori/tuma",
-  "version": "0.1.0-alpha.6",
+  "version": "0.1.1-alpha.6",
   "description": "Tuma M-Pesa payment integration (STK push, sales, invoices, products). API key via TUMA_API_KEY env var.",
   "type": "module",
   "main": "./dist/index.js",
@@ -23,8 +23,7 @@
     "lint": "echo 'lint placeholder'"
   },
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+    "access": "public"
   },
   "dependencies": {
     "@soostori/core": "workspace:*",

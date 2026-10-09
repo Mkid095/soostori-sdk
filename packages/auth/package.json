@@ -1,6 +1,6 @@
 {
   "name": "@soostori/auth",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Cloud auth (Google OAuth, email/password, session) + OperationalAuth (device-local PIN, enrollment)",
   "type": "module",
   "main": "./dist/index.js",
@@ -44,8 +44,7 @@
     "lint": "echo 'lint placeholder'"
   },
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+    "access": "public"
   },
   "dependencies": {
     "zod": "^3.24.0"

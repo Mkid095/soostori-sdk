@@ -1,6 +1,6 @@
 {
   "name": "@soostori/core",
-  "version": "0.2.1",
+  "version": "0.2.4",
   "description": "Canonical Soostori core: branded IDs, domain types, validation, errors, constants",
   "type": "module",
   "main": "./dist/index.js",
@@ -23,8 +23,7 @@
     "lint": "echo 'lint placeholder'"
   },
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+    "access": "public"
   },
   "dependencies": {
     "@soostori/contracts": "workspace:*",

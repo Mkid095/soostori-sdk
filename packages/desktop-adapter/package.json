@@ -1,6 +1,6 @@
 {
   "name": "@soostori/desktop-adapter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Desktop (Electron) platform adapter — implements SDK repository contracts over better-sqlite3",
   "type": "module",
   "main": "./dist/index.js",

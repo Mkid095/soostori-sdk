@@ -1,6 +1,6 @@
 {
   "name": "@soostori/debts",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.1-alpha.1",
   "description": "Debt/credit domain â€” extracted from Desktop's debts schema",
   "type": "module",
   "main": "./dist/index.js",
@@ -23,8 +23,7 @@
     "lint": "echo 'lint placeholder'"
   },
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+    "access": "public"
   },
   "dependencies": {
     "@soostori/core": "workspace:*",

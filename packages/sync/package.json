@@ -1,6 +1,6 @@
 {
   "name": "@soostori/sync",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "SyncEvent contract, push/pull, conflict resolution, idempotency, cursors, snapshots",
   "type": "module",
   "main": "./dist/index.js",
@@ -23,8 +23,7 @@
     "lint": "echo 'lint placeholder'"
   },
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+    "access": "public"
   },
   "dependencies": {
     "@soostori/core": "workspace:*",

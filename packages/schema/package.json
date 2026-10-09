@@ -1,6 +1,6 @@
 {
   "name": "@soostori/schema",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Canonical Soostori cloud entity definitions + migrations + schema versions",
   "type": "module",
   "main": "./dist/index.js",
@@ -23,8 +23,7 @@
     "lint": "echo 'lint placeholder'"
   },
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+    "access": "public"
   },
   "dependencies": {
     "@soostori/core": "workspace:*",

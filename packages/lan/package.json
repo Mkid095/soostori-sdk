@@ -1,6 +1,6 @@
 {
   "name": "@soostori/lan",
-  "version": "0.1.0-alpha.4",
+  "version": "0.1.1-alpha.4",
   "description": "LAN discovery + WebSocket protocol — extracted from Desktop's sync infrastructure",
   "type": "module",
   "main": "./dist/index.js",
@@ -23,8 +23,7 @@
     "lint": "echo 'lint placeholder'"
   },
   "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org/"
+    "access": "public"
   },
   "dependencies": {
     "@soostori/core": "workspace:*",
