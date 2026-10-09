@@ -20,7 +20,10 @@ import type {
   CommissionEarning,
   BusinessEnrollment,
   EnrollmentStatus,
+  SalespersonProfileRecord,
 } from './types.js'
+
+export type { SalespersonProfileRecord }
 
 export interface PartnerRepository {
   // ── Applications ──────────────────────────────────────────────────────────
@@ -38,33 +41,9 @@ export interface PartnerRepository {
 
   // ── Salesperson profiles ────────────────────────────────────────────────
 
-  upsertSalespersonProfile(profile: {
-    id: SalespersonProfileId
-    applicationId: SalespersonApplicationId
-    personId: string
-    referredBy?: InfluencerProfileId | null
-    createdAt: string
-    updatedAt: string
-    version: number
-  }): Promise<void>
-  getSalespersonProfile(id: SalespersonProfileId): Promise<{
-    id: SalespersonProfileId
-    applicationId: SalespersonApplicationId
-    personId: string
-    referredBy?: InfluencerProfileId | null
-    createdAt: string
-    updatedAt: string
-    version: number
-  } | null>
-  listSalespersonProfilesByInfluencer(influencerId: InfluencerProfileId): Promise<Array<{
-    id: SalespersonProfileId
-    applicationId: SalespersonApplicationId
-    personId: string
-    referredBy?: InfluencerProfileId | null
-    createdAt: string
-    updatedAt: string
-    version: number
-  }>>
+  upsertSalespersonProfile(profile: SalespersonProfileRecord): Promise<void>
+  getSalespersonProfile(id: SalespersonProfileId): Promise<SalespersonProfileRecord | null>
+  listSalespersonProfilesByInfluencer(influencerId: InfluencerProfileId): Promise<SalespersonProfileRecord[]>
 
   // ── Influencer profiles ─────────────────────────────────────────────────
 

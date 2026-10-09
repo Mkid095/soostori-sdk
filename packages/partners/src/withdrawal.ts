@@ -147,7 +147,7 @@ export function applyWithdrawalTransition(
     throw new IllegalWithdrawalTransitionError(request.status, nextStatus, request.id)
   }
 
-  const updates: Partial<WithdrawalRequest> = { status: nextStatus, updatedAt: now }
+  const updates: Record<string, unknown> = { status: nextStatus, updatedAt: now }
 
   if (nextStatus === 'approved')    updates.approvedAt    = now
   if (nextStatus === 'processing')   updates.processingAt   = now
@@ -164,7 +164,7 @@ export function applyWithdrawalTransition(
     updates.processedBy = options?.processedBy
   }
 
-  return { ...request, ...updates }
+  return { ...request, ...updates } as WithdrawalRequest
 }
 
 // ── Idempotency key ───────────────────────────────────────────────────────────

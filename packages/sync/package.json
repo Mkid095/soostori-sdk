@@ -1,6 +1,6 @@
 {
   "name": "@soostori/sync",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "SyncEvent contract, push/pull, conflict resolution, idempotency, cursors, snapshots",
   "type": "module",
   "main": "./dist/index.js",

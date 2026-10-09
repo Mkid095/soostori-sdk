@@ -167,6 +167,8 @@ export class PartnerService {
       personId: app.applicantPersonId,
       /** INVARIANT 1: influencer attribution copied from application — immutable */
       referredBy: app.referredBy,
+      trainingStatus: 'not_started',
+      meetingStatus: 'not_scheduled',
       createdAt: now,
       updatedAt: now,
       version: 1,

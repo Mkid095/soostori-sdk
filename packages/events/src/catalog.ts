@@ -178,6 +178,12 @@ export const WITHDRAWAL_PROCESSING = 'withdrawal.processing'
 export const WITHDRAWAL_PAID      = 'withdrawal.paid'
 export const WITHDRAWAL_CANCELLED  = 'withdrawal.cancelled'
 
+// ── Salesperson lifecycle events ──────────────────────────────────────────────
+
+export const SALESPERSON_TRAINING_COMPLETED = 'salesperson.training_completed'
+export const SALESPERSON_MEETING_SCHEDULED  = 'salesperson.meeting_scheduled'
+export const SALESPERSON_MEETING_COMPLETED  = 'salesperson.meeting_completed'
+
 // ── Aggregated event names ──────────────────────────────────────────────────
 
 export const ALL_EVENTS = [
@@ -228,6 +234,9 @@ export const ALL_EVENTS = [
   // Withdrawal
   WITHDRAWAL_REQUESTED, WITHDRAWAL_APPROVED, WITHDRAWAL_REJECTED,
   WITHDRAWAL_PROCESSING, WITHDRAWAL_PAID, WITHDRAWAL_CANCELLED,
+  // Salesperson
+  SALESPERSON_TRAINING_COMPLETED, SALESPERSON_MEETING_SCHEDULED,
+  SALESPERSON_MEETING_COMPLETED,
 ] as const
 
 export type SoostoriEventName = typeof ALL_EVENTS[number]

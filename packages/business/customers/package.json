@@ -1,6 +1,6 @@
 {
   "name": "@soostori/customers",
-  "version": "0.1.1-alpha.1",
+  "version": "0.1.2-alpha.1",
   "description": "Customer domain â€” extracted from Desktop's customers schema",
   "type": "module",
   "main": "./dist/index.js",

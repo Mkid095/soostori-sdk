@@ -14,8 +14,9 @@
 
 import type { SyncEvent, SyncEngine } from '@soostori/contracts'
 import type {
-  BusinessId, ProductId, EmployeeId, DeviceId, Product, StockMovement,
-} from '@soostori/inventory'
+  BusinessId, ProductId, EmployeeId, DeviceId, Product,
+} from '@soostori/core'
+import type { StockMovement } from './types.js'
 import type { StockMovementLedger } from './ledger.js'
 import type { ProductStore } from './ProductService.js'
 import { InsufficientStockError } from './repository.js'
@@ -287,7 +288,7 @@ export class InventoryService {
       id: asSyncEventId(newId()),
       idempotencyKey: asIdempotencyKey(newId()),
       businessId: this.businessId,
-      entityKind: 'inventory',
+      entityKind: 'stockMovement',
       entityId: (payload as any)?.fromMovement?.id ?? (payload as any)?.id ?? newId() as any,
       operation: 'update',
       originatingDeviceId: this.deviceId,

@@ -2,6 +2,15 @@
 node_modules/
 dist/
 *.tsbuildinfo
+# Stale .js/.d.ts files in src/ (from prior tsc runs that emitted alongside sources)
+packages/*/src/*.js
+packages/*/src/*.js.map
+packages/*/src/*.d.ts
+packages/*/src/*.d.ts.map
+packages/business/*/src/*.js
+packages/business/*/src/*.js.map
+packages/business/*/src/*.d.ts
+packages/business/*/src/*.d.ts.map
 
 # Editor
 .vscode/

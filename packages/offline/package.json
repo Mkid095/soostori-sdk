@@ -1,6 +1,6 @@
 {
   "name": "@soostori/offline",
-  "version": "0.1.1-alpha.3",
+  "version": "0.1.2-alpha.3",
   "description": "3-day offline policy enforcement — central authority for online/offline state",
   "type": "module",
   "main": "./dist/index.js",

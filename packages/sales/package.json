@@ -1,6 +1,6 @@
 {
   "name": "@soostori/sales",
-  "version": "0.1.1-alpha.4",
+  "version": "0.1.2-alpha.4",
   "description": "Sales SDK — createSale, voidSale, refundSale, getSale, listSales + ReceiptFormatter + SyncEvents",
   "type": "module",
   "main": "./dist/index.js",

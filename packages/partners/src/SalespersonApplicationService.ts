@@ -91,7 +91,10 @@ export class SalespersonApplicationService {
     // INVARIANT 1: referredBy (influencerId) copied from application — permanently immutable
     await this.repo.upsertSalespersonProfile({
       id: profileId, applicationId: app.id, personId: app.applicantPersonId,
-      referredBy: app.referredBy, createdAt: now, updatedAt: now, version: 1,
+      referredBy: app.referredBy,
+      trainingStatus: 'not_started',
+      meetingStatus: 'not_scheduled',
+      createdAt: now, updatedAt: now, version: 1,
     })
 
     const updated: PartnerApplication = {

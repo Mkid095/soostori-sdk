@@ -213,3 +213,18 @@ export interface InfluencerEligibility {
   /** Whether the influencer is still within their 24-month window for this shop. */
   isEligible: boolean
 }
+
+/** Salesperson profile record — runtime shape with full lifecycle state. */
+export interface SalespersonProfileRecord {
+  id: SalespersonProfileId
+  applicationId: SalespersonApplicationId
+  personId: string
+  referredBy?: InfluencerProfileId | null
+  trainingStatus: "not_started" | "in_progress" | "completed"
+  trainingCompletedAt?: string
+  meetingStatus: "not_scheduled" | "scheduled" | "completed"
+  meetingDate?: string
+  createdAt: string
+  updatedAt: string
+  version: number
+}
