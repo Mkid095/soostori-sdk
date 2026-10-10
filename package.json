@@ -13,6 +13,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "packageManager": "pnpm@9.15.0",
   "devDependencies": {
     "typescript": "^5.7.0",
     "vite-tsconfig-paths": "^6.1.1",
@@ -20,7 +21,19 @@
   },
   "pnpm": {
     "overrides": {
-      "@soostori/core": "workspace:*"
+      "@soostori/audit": "workspace:*",
+      "@soostori/auth": "workspace:*",
+      "@soostori/business": "workspace:*",
+      "@soostori/cloud": "workspace:*",
+      "@soostori/contracts": "workspace:*",
+      "@soostori/core": "workspace:*",
+      "@soostori/devices": "workspace:*",
+      "@soostori/events": "workspace:*",
+      "@soostori/inventory": "workspace:*",
+      "@soostori/schema": "workspace:*",
+      "@soostori/storage": "workspace:*",
+      "@soostori/subscription": "workspace:*",
+      "@soostori/sync": "workspace:*"
     }
   }
 }

@@ -21,12 +21,12 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@soostori/core": "^0.2.6",
-    "@soostori/auth": "^0.2.3",
-    "@soostori/devices": "^0.2.0",
-    "@soostori/storage": "^0.2.0-alpha.5",
-    "@soostori/inventory": "^0.1.0-alpha.3",
-    "@soostori/business": "^0.1.0-alpha.4",
+    "@soostori/core": "workspace:*",
+    "@soostori/auth": "workspace:*",
+    "@soostori/devices": "workspace:*",
+    "@soostori/storage": "workspace:*",
+    "@soostori/inventory": "workspace:*",
+    "@soostori/business": "workspace:*",
     "better-sqlite3": "^11.6.0",
     "zod": "^3.24.0"
   },
