@@ -1,6 +1,6 @@
 {
   "name": "@soostori/sales",
-  "version": "0.1.3-alpha.2",
+  "version": "0.1.3-alpha.3",
   "description": "Sales domain â€” extracted from Desktop's sales/sale_items schema + SALE_PENDING state machine",
   "type": "module",
   "main": "./dist/index.js",
