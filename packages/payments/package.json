@@ -1,6 +1,6 @@
 {
   "name": "@soostori/payments",
-  "version": "0.1.3-alpha.3",
+  "version": "0.1.3-alpha.4",
   "description": "Payments abstraction — Tuma is one implementation. STK Push, sales, invoices.",
   "type": "module",
   "main": "./dist/index.js",

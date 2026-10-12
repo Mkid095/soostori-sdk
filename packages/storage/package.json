@@ -1,6 +1,6 @@
 {
   "name": "@soostori/storage",
-  "version": "0.2.3-alpha.5",
+  "version": "0.2.3-alpha.6",
   "description": "Local persistence abstraction — keeps SDK SQLite-agnostic",
   "type": "module",
   "main": "./dist/index.js",

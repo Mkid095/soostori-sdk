@@ -1,6 +1,6 @@
 {
   "name": "@soostori/inventory",
-  "version": "0.1.3-alpha.3",
+  "version": "0.1.3-alpha.4",
   "description": "Stock movement ledger — event-sourced inventory, not just quantity columns",
   "type": "module",
   "main": "./dist/index.js",

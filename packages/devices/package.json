@@ -1,6 +1,6 @@
 {
   "name": "@soostori/devices",
-  "version": "0.1.3-alpha.5",
+  "version": "0.1.3-alpha.6",
   "description": "Device identity + Primary Device model — the LAN authority for stock mutations",
   "type": "module",
   "main": "./dist/index.js",

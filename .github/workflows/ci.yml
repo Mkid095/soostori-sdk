@@ -76,7 +76,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.VERDACCIO_AUTH_TOKEN }}
           NPM_CONFIG_REGISTRY: ${{ env.VERDACCIO_URL }}
         run: |
-          pnpm -r --workspace-concurrency=1 publish \
+          pnpm -r publish \
             --no-git-checks \
             --registry "$NPM_CONFIG_REGISTRY" \
             --access public
