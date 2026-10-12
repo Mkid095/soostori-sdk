@@ -84,11 +84,11 @@ importers:
   packages/business/customers:
     dependencies:
       '@soostori/core':
-        specifier: ^0.2.6
-        version: 0.2.6
+        specifier: workspace:*
+        version: link:../../core
       '@soostori/events':
-        specifier: ^0.2.2
-        version: 0.2.3
+        specifier: workspace:*
+        version: link:../../events
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -106,11 +106,11 @@ importers:
   packages/business/debts:
     dependencies:
       '@soostori/core':
-        specifier: ^0.2.6
-        version: 0.2.6
+        specifier: workspace:*
+        version: link:../../core
       '@soostori/events':
-        specifier: ^0.2.2
-        version: 0.2.3
+        specifier: workspace:*
+        version: link:../../events
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -150,14 +150,14 @@ importers:
   packages/business/sales:
     dependencies:
       '@soostori/core':
-        specifier: ^0.2.6
-        version: 0.2.6
+        specifier: workspace:*
+        version: link:../../core
       '@soostori/events':
-        specifier: ^0.2.2
-        version: 0.2.3
+        specifier: workspace:*
+        version: link:../../events
       '@soostori/products':
-        specifier: ^0.1.0-alpha.1
-        version: 0.1.0-alpha.1
+        specifier: workspace:*
+        version: link:../products
       zod:
         specifier: ^3.24.0
         version: 3.25.76
@@ -1057,21 +1057,6 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@soostori/core@0.1.0-alpha.1':
-    resolution: {integrity: sha512-KFNAp3mJLBgd8jpyAW3VqLQ0OSjJgrt6YkjzMwUuKnBUvfkaC/QzS5etxbzpN1lVYw9pRK/kAxo2onXsXv1ELA==}
-
-  '@soostori/core@0.2.6':
-    resolution: {integrity: sha512-OkTAArDSDN3jSLT+CQpjmgHvR0OKVTarrasHtLcCaoGQ6oSdsT2gRBJZXyACbpQk5RMSkLwXk0hmZNy/S1/nVQ==}
-
-  '@soostori/events@0.1.0-alpha.1':
-    resolution: {integrity: sha512-luEpj1LP9XzUWlAAeZUix2lrceShesuNkN1zJB2GroWXDOjHt9nTryFQm+qJFEeyxRnK+KgWxfdbYOkQfNi9MA==}
-
-  '@soostori/events@0.2.3':
-    resolution: {integrity: sha512-6+ElRMQK66X+V0gSs/tySgyaLsVDklEYb2aTZjiKck4p7GWQecowUOrGffi5SgyZ0Wnfr3BfpUiiFbWcS73I6w==}
-
-  '@soostori/products@0.1.0-alpha.1':
-    resolution: {integrity: sha512-h4/l6XqSDuplixIJuKJGH0Zzf444h+nu7IQpptZV9NnNm3gyIwffaDhRi6NQIHrSz1+GoU+H9MVCxdSSQv8FRQ==}
-
   '@types/better-sqlite3@7.6.13':
     resolution: {integrity: sha512-NMv9ASNARoKksWtsq/SHakpYAYnhBrQgGD8zkLYk/jaK8jUGn08CfEdTRgYhMypUQAfzSP8W6gNLe0q19/t4VA==}
 
@@ -1613,30 +1598,6 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.63.1':
     optional: true
-
-  '@soostori/core@0.1.0-alpha.1':
-    dependencies:
-      zod: 3.25.76
-
-  '@soostori/core@0.2.6':
-    dependencies:
-      zod: 3.25.76
-
-  '@soostori/events@0.1.0-alpha.1':
-    dependencies:
-      '@soostori/core': 0.1.0-alpha.1
-      zod: 3.25.76
-
-  '@soostori/events@0.2.3':
-    dependencies:
-      '@soostori/core': 0.2.6
-      zod: 3.25.76
-
-  '@soostori/products@0.1.0-alpha.1':
-    dependencies:
-      '@soostori/core': 0.1.0-alpha.1
-      '@soostori/events': 0.1.0-alpha.1
-      zod: 3.25.76
 
   '@types/better-sqlite3@7.6.13':
     dependencies:
