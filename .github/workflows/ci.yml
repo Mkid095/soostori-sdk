@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main]
 
+# Supersede in-progress runs for the same ref so rapid pushes do not leave
+# several stale builds competing for runners.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   NODE_VERSION: '20'
   # Verdaccio is the self-hosted registry for all @soostori/* packages.
