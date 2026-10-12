@@ -580,7 +580,7 @@ export class OperationalAuth {
    */
   async verifyPin(params: {
     pin: string
-    verifyPin: (pin: string, hashHex: string, saltHex: string) => boolean
+    verifyPin: (pin: string, hashHex: string, saltHex: string) => boolean | Promise<boolean>
     employeeId: EmployeeId
     shopId: ShopId
     deviceId: DeviceId
@@ -606,7 +606,9 @@ export class OperationalAuth {
       return { ok: false, error: PIN_NOT_SET() }
     }
 
-    const isValid = verifyPin(pin, storedHash, salt)
+    // Must be awaited: React Native's WebCrypto deriveBits is async, and an
+    // un-awaited Promise is always truthy, which would accept every PIN.
+    const isValid = await verifyPin(pin, storedHash, salt)
 
     if (!isValid) {
       this._recordFailedAttempt()
@@ -646,7 +648,7 @@ export class OperationalAuth {
   async changePin(params: {
     oldPin: string
     newPin: string
-    verifyPin: (pin: string, hashHex: string, saltHex: string) => boolean
+    verifyPin: (pin: string, hashHex: string, saltHex: string) => boolean | Promise<boolean>
     hashPin: (pin: string, salt?: string) => { hash: string; salt: string }
     employeeId: EmployeeId
     shopId: ShopId
