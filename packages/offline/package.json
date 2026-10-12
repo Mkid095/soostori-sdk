@@ -26,10 +26,10 @@
     "access": "public"
   },
   "dependencies": {
-    "@soostori/core": "^0.2.6",
-    "@soostori/events": "^0.2.3",
+    "@soostori/core": "workspace:*",
+    "@soostori/events": "workspace:*",
     "zod": "^3.24.0",
-    "@soostori/subscription": "^0.2.5"
+    "@soostori/subscription": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

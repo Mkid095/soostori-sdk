@@ -26,9 +26,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@soostori/core": "^0.2.6",
-    "@soostori/events": "^0.2.3",
-    "@soostori/devices": "^0.2.0",
+    "@soostori/core": "workspace:*",
+    "@soostori/events": "workspace:*",
+    "@soostori/devices": "workspace:*",
     "ws": "^8.18.0",
     "zod": "^3.24.0"
   },

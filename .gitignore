@@ -36,3 +36,4 @@ dist-tarballs-all/
 *.tgz
 verdaccio-db/
 verdaccio/
+.claude/worktrees/

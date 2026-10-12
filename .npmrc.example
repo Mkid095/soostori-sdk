@@ -1,0 +1,3 @@
+# Copy to .npmrc and fill in your token. Never commit .npmrc — it is gitignored.
+@soostori:registry=https://registry.nextmavens.com/
+//registry.nextmavens.com/:_authToken=<YOUR_VERDACCIO_TOKEN>

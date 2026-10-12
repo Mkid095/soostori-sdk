@@ -26,11 +26,11 @@
     "access": "public"
   },
   "dependencies": {
-    "@soostori/core": "^0.2.6",
-    "@soostori/contracts": "^0.2.6",
-    "@soostori/cloud": "^0.2.3",
+    "@soostori/core": "workspace:*",
+    "@soostori/contracts": "workspace:*",
+    "@soostori/cloud": "workspace:*",
     "zod": "^3.24.0",
-    "@soostori/events": "^0.2.3"
+    "@soostori/events": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
