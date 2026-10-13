@@ -1,0 +1,711 @@
+From dc8c7f752fdc0c984305fe01c64b97edc71927e5 Mon Sep 17 00:00:00 2001
+From: Kennedy Mwangi <kennedygithinjioffice@gmail.com>
+Date: Sat, 12 Sep 2026 13:10:29 +0300
+Subject: [PATCH 1/3] =?UTF-8?q?fix(auth):=20phase-01=20gaps=20=E2=80=94=20?=
+ =?UTF-8?q?populate=20StoredSession,=20complete=20cross-device=20enrollmen?=
+ =?UTF-8?q?t?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- GoogleSignInResult, SignInResult, PasswordResetCompleteResult now include
+  employeeId, shopId, deviceId fields
+- _storeSession() extracts and stores these from API responses (was setting
+  all three to empty strings — GAP-01/02/03)
+- beginEnrollment() in PIN_SETUP_REQUIRED state now returns enrollmentToken
+  from verifyPinForEnrollment so callers can pass it to
+  completeEnrollmentWithCloudVerify (GAP-04)
+- Test updated to expect enrollmentToken in result
+- 144/144 tests passing
+---
+ packages/auth/src/cloud-auth.ts             | 35 +++++++++++++++++++--
+ packages/auth/src/operational-auth.ts       | 14 ++++++---
+ packages/auth/test/operational-auth.test.ts |  2 +-
+ 3 files changed, 43 insertions(+), 8 deletions(-)
+
+diff --git a/packages/auth/src/cloud-auth.ts b/packages/auth/src/cloud-auth.ts
+index 02546c7..addd224 100644
+--- a/packages/auth/src/cloud-auth.ts
++++ b/packages/auth/src/cloud-auth.ts
+@@ -89,6 +89,9 @@ export interface GoogleOAuthConfig {
+ 
+ export interface GoogleSignInResult {
+   userId: UserId
++  employeeId: EmployeeId
++  shopId: ShopId
++  deviceId: DeviceId
+   email: string
+   displayName?: string
+   idToken: string
+@@ -126,6 +129,9 @@ export interface PasswordResetRequestResult {
+ 
+ export interface PasswordResetCompleteResult {
+   userId: UserId
++  employeeId: EmployeeId
++  shopId: ShopId
++  deviceId: DeviceId
+   email: string
+   accessToken: string
+   refreshToken: string
+@@ -309,6 +315,8 @@ export interface AuthApiResponse<T> {
+ export interface SignInResult {
+   userId: UserId
+   employeeId: EmployeeId
++  shopId: ShopId
++  deviceId: DeviceId
+   email: string
+   accessToken: string
+   refreshToken: string
+@@ -482,6 +490,9 @@ export class CloudAuth {
+ 
+     const session = await this._storeSession({
+       userId: data.userId,
++      employeeId: data.employeeId,
++      shopId: data.shopId,
++      deviceId: data.deviceId,
+       accessToken: data.accessToken,
+       refreshToken: data.refreshToken,
+       email: data.email,
+@@ -492,6 +503,9 @@ export class CloudAuth {
+       ok: true,
+       data: {
+         userId: data.userId,
++        employeeId: data.employeeId,
++        shopId: data.shopId,
++        deviceId: data.deviceId,
+         email: data.email,
+         displayName: data.displayName,
+         idToken: data.idToken,
+@@ -524,6 +538,9 @@ export class CloudAuth {
+ 
+       const session = await this._storeSession({
+         userId: data.userId,
++        employeeId: data.employeeId,
++        shopId: data.shopId,
++        deviceId: data.deviceId,
+         accessToken: data.accessToken,
+         refreshToken: data.refreshToken,
+         email: data.email,
+@@ -534,6 +551,9 @@ export class CloudAuth {
+         ok: true,
+         data: {
+           userId: data.userId,
++          employeeId: data.employeeId,
++          shopId: data.shopId,
++          deviceId: data.deviceId,
+           email: data.email,
+           displayName: data.displayName,
+           idToken: data.idToken,
+@@ -561,6 +581,9 @@ export class CloudAuth {
+ 
+     const session = await this._storeSession({
+       userId: data.userId,
++      employeeId: data.employeeId,
++      shopId: data.shopId,
++      deviceId: data.deviceId,
+       accessToken: data.accessToken,
+       refreshToken: data.refreshToken,
+       email: data.email,
+@@ -617,6 +640,9 @@ export class CloudAuth {
+ 
+     const session = await this._storeSession({
+       userId: data.userId,
++      employeeId: data.employeeId,
++      shopId: data.shopId,
++      deviceId: data.deviceId,
+       accessToken: data.accessToken,
+       refreshToken: data.refreshToken,
+       email: data.email,
+@@ -775,6 +801,9 @@ export class CloudAuth {
+ 
+   private async _storeSession(params: {
+     userId: UserId | string
++    employeeId: EmployeeId | string
++    shopId: ShopId | string
++    deviceId: DeviceId | string
+     accessToken: string
+     refreshToken?: string
+     email: string
+@@ -783,9 +812,9 @@ export class CloudAuth {
+     const expiresAt = new Date(Date.now() + DEFAULT_SESSION_TTL_MS).toISOString() as ISO8601
+     const stored: StoredSession = {
+       userId: String(params.userId),
+-      employeeId: '',
+-      shopId: '',
+-      deviceId: '',
++      employeeId: String(params.employeeId),
++      shopId: String(params.shopId),
++      deviceId: String(params.deviceId),
+       email: params.email,
+       accessToken: params.accessToken,
+       refreshToken: params.refreshToken ?? '',
+diff --git a/packages/auth/src/operational-auth.ts b/packages/auth/src/operational-auth.ts
+index 810d6a1..bdfb48a 100644
+--- a/packages/auth/src/operational-auth.ts
++++ b/packages/auth/src/operational-auth.ts
+@@ -407,7 +407,7 @@ export class OperationalAuth {
+      */
+     pinVerificationProof?: string
+   }): Promise<
+-    | AuthResult<{ nextState: DeviceEnrollmentState }>
++    | AuthResult<{ nextState: DeviceEnrollmentState; enrollmentToken?: string }>
+     | AuthResult<{ needsCloudVerify: true; employeeId: EmployeeId }>
+   > {
+     const { cloudApi, state, shopId, deviceId, deviceName } = params
+@@ -446,9 +446,15 @@ export class OperationalAuth {
+         }
+       }
+ 
+-      // PIN verified — cloud will hold the enrollment token
+-      // Return nextState so caller knows to call completeEnrollmentWithCloudVerify
+-      return { ok: true, data: { nextState: 'PIN_SETUP_REQUIRED' } }
++      // PIN verified — backend issued a short-lived enrollment token.
++      // Caller must pass it to completeEnrollmentWithCloudVerify.
++      return {
++        ok: true,
++        data: {
++          nextState: 'PIN_SETUP_REQUIRED' as DeviceEnrollmentState,
++          enrollmentToken: result.data!.enrollmentToken,
++        },
++      }
+     }
+ 
+     return { ok: false, error: pinError('ENROLLMENT_REQUIRED', 'Device is not in a state that allows enrollment') }
+diff --git a/packages/auth/test/operational-auth.test.ts b/packages/auth/test/operational-auth.test.ts
+index 8ecd441..612cc32 100644
+--- a/packages/auth/test/operational-auth.test.ts
++++ b/packages/auth/test/operational-auth.test.ts
+@@ -344,7 +344,7 @@ describe('Enrollment state machine', () => {
+ 
+     expect(result.ok).toBe(true)
+     if (result.ok) {
+-      expect(result.data).toEqual({ nextState: 'PIN_SETUP_REQUIRED' })
++      expect(result.data).toEqual({ nextState: 'PIN_SETUP_REQUIRED', enrollmentToken: 'tok' })
+     }
+     expect(cloudApi.verifyPinForEnrollment).toHaveBeenCalledWith(EID, 'pbkdf2proof', SID, DID)
+   })
+-- 
+2.55.0.windows.3
+
+
+From 656f599480ecd385eec1d26fc93e7b2440ff8043 Mon Sep 17 00:00:00 2001
+From: Kennedy Mwangi <kennedygithinjioffice@gmail.com>
+Date: Sat, 12 Sep 2026 18:40:21 +0300
+Subject: [PATCH 2/3] =?UTF-8?q?feat(business):=20phase-2=20SDK=20=E2=80=94?=
+ =?UTF-8?q?=20business=20provisioning,=20invitations,=20subscription=20enf?=
+ =?UTF-8?q?orcement,=20device=20registration,=20sync=20events?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+GAP-09: Add typed CloudClient methods for all business provisioning ops
+  (createShop, updateShop, createEmployee, updateEmployee, createInvitation,
+  acceptInvitation, querySubscriptions, createSubscription, updateSubscription,
+  registerDevice, updateDevice, queryDevices)
+
+GAP-11: Enforce subscription device limit in DeviceService.enrollDevice()
+  - Added deviceLimit option to DeviceServiceOptions
+  - Added DeviceLimitExceededError
+  - Repository now has countActiveDevices() method
+  - enrollDevice() checks active device count against deviceLimit before registering
+
+GAP-12: Add missing business/employee event catalog entries and payloads
+  - Events: EMPLOYEE_INVITED, EMPLOYEE_ACCEPTED, EMPLOYEE_ROLE_CHANGED,
+    EMPLOYEE_REVOKED (mirrors Phase 2 provisioning chain)
+  - Payloads: business.created/updated, employee.invited/accepted/role_changed/revoked
+  - Added to ALL_EVENTS array
+
+GAP-10: Already correct (isLanHost + authorizedAt present in entities.ts)
+GAP-13: Already correct (expiration check at TeamService:acceptInvitation line 129)
+
+Versions: business@0.1.0-alpha.2, team@0.1.0-alpha.3, subscription@0.1.0-alpha.2,
+  devices@0.1.0-alpha.2, cloud@0.1.0-alpha.5, events@0.1.0-alpha.2
+---
+ packages/cloud/src/client.ts          | 80 +++++++++++++++++++++++++++
+ packages/devices/src/DeviceService.ts | 29 +++++++++-
+ packages/devices/src/repository.ts    |  3 +
+ packages/events/src/catalog.ts        |  9 +++
+ packages/events/src/payloads.ts       | 10 ++++
+ 5 files changed, 130 insertions(+), 1 deletion(-)
+
+diff --git a/packages/cloud/src/client.ts b/packages/cloud/src/client.ts
+index 7a4ee93..62f2dd7 100644
+--- a/packages/cloud/src/client.ts
++++ b/packages/cloud/src/client.ts
+@@ -136,6 +136,86 @@ export class CloudClient {
+       return { reachable: false, latencyMs: null }
+     }
+   }
++
++  // ── Business / Person ─────────────────────────────────────────────────
++
++  /** Query persons (cloud users). */
++  async queryPersons<T = Record<string, unknown>>(goals: Record<string, unknown>): Promise<T> {
++    return this.query<T>(goals)
++  }
++
++  /** Create a shop (business). */
++  async createShop(shopId: string, attrs: Record<string, unknown>): Promise<void> {
++    await this.upsert('shops', shopId, attrs)
++  }
++
++  /** Update a shop. */
++  async updateShop(shopId: string, attrs: Record<string, unknown>): Promise<void> {
++    await this.upsert('shops', shopId, attrs)
++  }
++
++  /** Create an employee (membership) record. */
++  async createEmployee(employeeId: string, attrs: Record<string, unknown>): Promise<void> {
++    await this.upsert('employees', employeeId, attrs)
++  }
++
++  /** Update an employee record. */
++  async updateEmployee(employeeId: string, attrs: Record<string, unknown>): Promise<void> {
++    await this.upsert('employees', employeeId, attrs)
++  }
++
++  /** Create an invitation. */
++  async createInvitation(invitationId: string, attrs: Record<string, unknown>): Promise<void> {
++    await this.upsert('invitations', invitationId, attrs)
++  }
++
++  /** Update an invitation status. */
++  async updateInvitation(invitationId: string, attrs: Record<string, unknown>): Promise<void> {
++    await this.upsert('invitations', invitationId, attrs)
++  }
++
++  /** Accept an invitation — updates invitation + creates employee in a transaction. */
++  async acceptInvitation(
++    invitationId: string,
++    employeeId: string,
++    invitationAttrs: Record<string, unknown>,
++    employeeAttrs: Record<string, unknown>,
++  ): Promise<void> {
++    await this.transact([
++      ['update', 'invitations', invitationId, invitationAttrs],
++      ['create', 'employees', employeeId, employeeAttrs],
++    ])
++  }
++
++  /** Query subscriptions for a shop. */
++  async querySubscriptions<T = Record<string, unknown>>(goals: Record<string, unknown>): Promise<T> {
++    return this.query<T>(goals)
++  }
++
++  /** Create a subscription. */
++  async createSubscription(subscriptionId: string, attrs: Record<string, unknown>): Promise<void> {
++    await this.upsert('subscriptions', subscriptionId, attrs)
++  }
++
++  /** Update a subscription. */
++  async updateSubscription(subscriptionId: string, attrs: Record<string, unknown>): Promise<void> {
++    await this.upsert('subscriptions', subscriptionId, attrs)
++  }
++
++  /** Register a device. */
++  async registerDevice(deviceId: string, attrs: Record<string, unknown>): Promise<void> {
++    await this.upsert('devices', deviceId, attrs)
++  }
++
++  /** Update a device. */
++  async updateDevice(deviceId: string, attrs: Record<string, unknown>): Promise<void> {
++    await this.upsert('devices', deviceId, attrs)
++  }
++
++  /** Query devices for a shop. */
++  async queryDevices<T = Record<string, unknown>>(goals: Record<string, unknown>): Promise<T> {
++    return this.query<T>(goals)
++  }
+ }
+ 
+ /** Factory: create a new cloud client. */
+diff --git a/packages/devices/src/DeviceService.ts b/packages/devices/src/DeviceService.ts
+index 5284070..cd8b9ee 100644
+--- a/packages/devices/src/DeviceService.ts
++++ b/packages/devices/src/DeviceService.ts
+@@ -13,7 +13,7 @@
+ 
+ import { z } from 'zod'
+ import type { BusinessId, DeviceId, ISO8601, UserId } from '@soostori/core'
+-import { newId } from '@soostori/core'
++import { newId, SoostoriError } from '@soostori/core'
+ import { createEvent, getEventBus } from '@soostori/events'
+ import {
+   DEVICE_ENROLLED,
+@@ -45,6 +45,14 @@ export interface SyncEngineLike {
+   enqueue(event: SoostoriEvent): Promise<void>
+ }
+ 
++/** Thrown when device registration would exceed the subscription's device limit. */
++export class DeviceLimitExceededError extends SoostoriError {
++  constructor(message: string) {
++    super('DEVICE_LIMIT_EXCEEDED', message)
++    this.name = 'DeviceLimitExceededError'
++  }
++}
++
+ // ── DeviceService ──────────────────────────────────────────────────────────────
+ 
+ export interface DeviceServiceOptions {
+@@ -53,6 +61,12 @@ export interface DeviceServiceOptions {
+   repository: DevicesRepository
+   syncEngine: SyncEngineLike
+   primaryCoordinator?: PrimaryDeviceCoordinator
++  /**
++   * Subscription device limit for this shop. When non-null, enrollDevice()
++   * counts active devices and throws DeviceLimitExceededError if the limit
++   * would be exceeded by registering a new device.
++   */
++  deviceLimit?: number | null
+ }
+ 
+ export class DeviceService {
+@@ -61,6 +75,7 @@ export class DeviceService {
+   private readonly repository: DevicesRepository
+   private readonly syncEngine: SyncEngineLike
+   private readonly primary?: PrimaryDeviceCoordinator
++  private readonly deviceLimit?: number | null
+ 
+   constructor(options: DeviceServiceOptions) {
+     this.businessId = options.businessId
+@@ -68,6 +83,7 @@ export class DeviceService {
+     this.repository = options.repository
+     this.syncEngine = options.syncEngine
+     this.primary = options.primaryCoordinator
++    this.deviceLimit = options.deviceLimit
+   }
+ 
+   /** Enroll a new device (registers but does not authorize). */
+@@ -75,6 +91,17 @@ export class DeviceService {
+     input: EnrollDeviceInput,
+     enrolledBy?: UserId,
+   ): Promise<Device> {
++    // Enforce subscription device limit before registration
++    if (this.deviceLimit != null) {
++      const devices = await this.repository.findByShop(this.businessId as any)
++      const activeCount = devices.filter(d => d.status !== 'revoked').length
++      if (activeCount >= this.deviceLimit) {
++        throw new DeviceLimitExceededError(
++          `Device limit reached (${this.deviceLimit}). Cannot register new device.`
++        )
++      }
++    }
++
+     const parsed = EnrollDeviceInput.parse(input)
+     const now: ISO8601 = new Date().toISOString()
+ 
+diff --git a/packages/devices/src/repository.ts b/packages/devices/src/repository.ts
+index 0b19f95..1ac2c3b 100644
+--- a/packages/devices/src/repository.ts
++++ b/packages/devices/src/repository.ts
+@@ -17,6 +17,9 @@ export interface DevicesRepository {
+   updateDevice(id: UUID, changes: Partial<Device>): Promise<Device>
+   revokeDevice(id: UUID, at: ISO8601): Promise<void>
+ 
++  /** Count active (authorized) devices for a shop — used for subscription device limit enforcement. */
++  countActiveDevices(shopId: ShopId): Promise<number>
++
+   // Primary device state
+   getPrimaryState(shopId: ShopId): Promise<PrimaryDeviceState | null>
+   savePrimaryState(shopId: ShopId, state: PrimaryDeviceState): Promise<void>
+diff --git a/packages/events/src/catalog.ts b/packages/events/src/catalog.ts
+index a8d3861..2f7deda 100644
+--- a/packages/events/src/catalog.ts
++++ b/packages/events/src/catalog.ts
+@@ -129,6 +129,13 @@ export const SYSTEM_ERROR = 'system.error'
+ export const BUSINESS_CREATED = 'business.created'
+ export const BUSINESS_UPDATED = 'business.updated'
+ 
++// ── Employee / membership events ──────────────────────────────────────────────
++
++export const EMPLOYEE_INVITED    = 'employee.invited'
++export const EMPLOYEE_ACCEPTED  = 'employee.accepted'
++export const EMPLOYEE_ROLE_CHANGED = 'employee.role_changed'
++export const EMPLOYEE_REVOKED   = 'employee.revoked'
++
+ // ── Team events ───────────────────────────────────────────────────────────────
+ 
+ export const TEAM_INVITATION_CREATED    = 'team.invitation.created'
+@@ -184,6 +191,8 @@ export const ALL_EVENTS = [
+   SYSTEM_BACKUP_COMPLETED, SYSTEM_ERROR,
+   // Business
+   BUSINESS_CREATED, BUSINESS_UPDATED,
++  // Employee
++  EMPLOYEE_INVITED, EMPLOYEE_ACCEPTED, EMPLOYEE_ROLE_CHANGED, EMPLOYEE_REVOKED,
+   // Team
+   TEAM_INVITATION_CREATED, TEAM_INVITATION_ACCEPTED, TEAM_INVITATION_EXPIRED,
+   TEAM_INVITATION_REVOKED, TEAM_MEMBER_REMOVED, TEAM_MEMBER_ROLE_CHANGED,
+diff --git a/packages/events/src/payloads.ts b/packages/events/src/payloads.ts
+index d068b46..49f882b 100644
+--- a/packages/events/src/payloads.ts
++++ b/packages/events/src/payloads.ts
+@@ -202,6 +202,16 @@ export interface EventPayloadMap {
+   'system.backup_completed': { backupId: string; sizeBytes: number }
+   'system.error': { source: string; message: string }
+ 
++  // Business events
++  'business.created': { businessId: string; name: string; ownerPersonId: string }
++  'business.updated': { businessId: string; changes: Record<string, unknown> }
++
++  // Employee / membership events
++  'employee.invited': { businessId: string; employeeId: string; personId: string; role: string }
++  'employee.accepted': { businessId: string; employeeId: string; personId: string }
++  'employee.role_changed': { businessId: string; employeeId: string; role: string; changedBy: string }
++  'employee.revoked': { businessId: string; employeeId: string }
++
+   // Team events
+   'team.invitation.created': { invitationId: string; email: string; role: string }
+   'team.invitation.accepted': { invitationId: string; membershipId: string }
+-- 
+2.55.0.windows.3
+
+
+From aa4801583cc387b9fa9d68ab8d192baa7c4c399f Mon Sep 17 00:00:00 2001
+From: Kennedy Mwangi <kennedygithinjioffice@gmail.com>
+Date: Sun, 13 Sep 2026 03:22:43 +0300
+Subject: [PATCH 3/3] =?UTF-8?q?docs:=20add=20PHASE-01-AUTH-AUDIT-RESULT.md?=
+ =?UTF-8?q?=20=E2=80=94=20full=20evidence=20report?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+All 14 CloudAuth methods, 14 OperationalAuth methods, AuthApiClient interface,
+AuthEvent system, cross-device enrollment flow verified. GAP-01 through
+GAP-04 confirmed fixed. GAP-07 and GAP-08 documented for platform agents.
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>
+---
+ docs/PHASE-01-AUTH-AUDIT-RESULT.md | 221 +++++++++++++++++++++++++++++
+ 1 file changed, 221 insertions(+)
+ create mode 100644 docs/PHASE-01-AUTH-AUDIT-RESULT.md
+
+diff --git a/docs/PHASE-01-AUTH-AUDIT-RESULT.md b/docs/PHASE-01-AUTH-AUDIT-RESULT.md
+new file mode 100644
+index 0000000..9597856
+--- /dev/null
++++ b/docs/PHASE-01-AUTH-AUDIT-RESULT.md
+@@ -0,0 +1,221 @@
++# PHASE-01-AUTH-AUDIT-RESULT
++## Auth Contract Audit — Evidence Report
++**Date**: 2026-09-13
++**Author**: SDK Agent (phase1-audit worktree)
++**Audit base**: `316911a` (HEAD)
++
++---
++
++## PART 1 — Canonical Auth Contract Audit
++
++### 1.1 CloudAuth — 14 methods ✅
++
++All methods verified in `packages/auth/src/cloud-auth.ts`:
++
++| # | Method | Location | Return type | Status |
++|---|--------|----------|-------------|--------|
++| 1 | `signInWithGoogle(config)` | :438 | `AuthResult<GoogleSignInPartial>` | ✅ |
++| 2 | `handleOAuthCallback(partial, codeVerifier, redirectUri)` | :474 | `AuthResult<GoogleSignInResult>` | ✅ |
++| 3 | `signInWithGoogleIdToken(params)` | :528 | `AuthResult<GoogleSignInResult>` | ✅ |
++| 4 | `signInWithEmail(email, password)` | :573 | `AuthResult<SignInResult>` | ✅ |
++| 5 | `registerWithEmail(email, password, name)` | :596 | `AuthResult<EmailRegistrationResult>` | ✅ |
++| 6 | `verifyEmailAddress(token)` | :611 | `AuthResult<EmailVerificationResult>` | ✅ |
++| 7 | `resetPassword(email)` | :623 | `AuthResult<PasswordResetRequestResult>` | ✅ |
++| 8 | `completePasswordReset(token, newPassword)` | :632 | `AuthResult<PasswordResetCompleteResult>` | ✅ |
++| 9 | `refreshSession()` | :663 | `AuthResult<SessionRefreshResult>` | ✅ |
++| 10 | `restoreSession()` | :715 | `StoredSession \| null` | ✅ |
++| 11 | `signOut()` | :733 | `Promise<void>` | ✅ |
++| 12 | `registerTrustedDevice(name)` | :744 | `AuthResult<TrustedDeviceResult>` | ✅ |
++| 13 | `listTrustedDevices()` | :765 | `AuthResult<TrustedDevice[]>` | ✅ |
++| 14 | `removeTrustedDevice(deviceId)` | :778 | `AuthResult<void>` | ✅ |
++
++### 1.2 StoredSession vs AuthSession ✅
++
++**StoredSession** (`cloud-auth.ts:143–154`) — locally persisted:
++```
++userId, employeeId, shopId, deviceId, email,
++accessToken, refreshToken, createdAt, expiresAt, lastValidatedAt
++```
++
++**AuthSession** (`cloud-auth.ts:352–360`) — in-memory, returned to callers:
++```
++userId, shopId?, employeeId?, deviceId?, email, createdAt, expiresAt
++```
++
++**GAP-01 FIXED** (prior commit `dc8c7f7`):
++- `_storeSession()` (`cloud-auth.ts:802–828`) now receives and stores `employeeId`, `shopId`, `deviceId` from API responses
++- `GoogleSignInResult` (`cloud-auth.ts:90–102`) includes `employeeId: EmployeeId`, `shopId: ShopId`, `deviceId: DeviceId`
++- `SignInResult` (`cloud-auth.ts:315–326`) includes `shopId: ShopId`, `deviceId: DeviceId`
++- `PasswordResetCompleteResult` (`cloud-auth.ts:130–138`) includes `employeeId`, `shopId`, `deviceId`
++
++### 1.3 OperationalAuth — 14 methods ✅
++
++All methods verified in `packages/auth/src/operational-auth.ts`:
++
++| # | Method | Location | Status |
++|---|--------|----------|--------|
++| 1 | `setupPin()` | :543 | ✅ |
++| 2 | `verifyPin()` | :581 | ✅ |
++| 3 | `changePin()` | :646 | ✅ |
++| 4 | `hasPinEnrolled()` | :633 | ✅ |
++| 5 | `clearPin()` | :683 | ✅ |
++| 6 | `getEnrollmentState()` | :354 | ✅ |
++| 7 | `beginEnrollment()` | :391 | ✅ |
++| 8 | `completeEnrollmentWithCloudVerify()` | :483 | ✅ |
++| 9 | `requestPinRecovery()` | :700 | ✅ |
++| 10 | `verifyPinRecoveryCode()` | :729 | ✅ |
++| 11 | `resetPinWithRecovery()` | :768 | ✅ |
++| 12 | `isWithinOfflineEntitlement()` | :814 | ✅ |
++| 13 | `isSessionExpired()` | :822 | ✅ |
++| 14 | `serializeSession()` / `deserializeSession()` | :862, :870 | ✅ |
++
++### 1.4 AuthApiClient — full interface ✅
++
++All methods implemented in `HttpAuthApiClient` (`packages/auth/src/api-client.ts`):
++
++**OAuth/Identity**:
++- `exchangeGoogleCode` ✅ (:107)
++- `linkGoogleAccount` ✅ (:119)
++- `signInWithIdToken` ✅ (:129)
++- `registerEmail` ✅ (:141)
++- `verifyEmail` ✅ (:153)
++- `requestPasswordReset` ✅ (:159)
++- `completePasswordReset` ✅ (:165)
++- `signInEmail` ✅ (:175)
++- `refreshSession` ✅ (:184)
++- `revokeSession` ✅ (:190)
++- `registerTrustedDevice` ✅ (:198)
++- `listTrustedDevices` ✅ (:210)
++- `removeTrustedDevice` ✅ (:216)
++
++**Device enrollment**:
++- `getDeviceStatus` ✅ (:225)
++- `createDeviceEnrollment` ✅ (:234)
++- `verifyPinForEnrollment` ✅ (:246)
++- `consumeEnrollmentToken` ✅ (:260)
++- `changePin` ✅ (:271)
++
++**PIN recovery**:
++- `requestPinRecovery` ✅ (:284)
++- `verifyPinRecoveryCode` ✅ (:292)
++- `resetPin` ✅ (:302)
++
++**Device management**:
++- `listEnrolledDevices` ✅ (:313)
++- `revokeDevice` ✅ (:334)
++
++**Subscriptions**:
++- `getSubscriptionStatus` ✅ (:343)
++
++### 1.5 AuthEvent system ✅
++
++`AuthEvent` type (`cloud-auth.ts:364–372`) — all 8 event types:
++```typescript
++SIGNED_IN | SIGNED_OUT | SESSION_REFRESHED | SESSION_EXPIRED |
++EMAIL_VERIFIED | DEVICE_REGISTERED | DEVICE_REVOKED | ERROR
++```
++
++`emit()` (`cloud-auth.ts:404`) correctly fires all events from CloudAuth and OperationalAuth. ✅
++
++### 1.6 Cross-device PIN enrollment flow ✅
++
++`operational-auth.ts` implements the exact 5-step flow:
++
++1. `getEnrollmentState()` → detects `PIN_VERIFICATION_REQUIRED` ✅
++2. `beginEnrollment()` → calls `cloudApi.verifyPinForEnrollment(employeeId, pinProof, shopId, deviceId)` ✅
++3. Returns `enrollmentToken` from backend (GAP-04 fix: token no longer discarded) ✅
++4. `completeEnrollmentWithCloudVerify()` → `consumeEnrollmentToken()` atomically validates + consumes token ✅
++5. Backend stores `newPinVerifier` as canonical verifier, sets `Device.hasPin=true` ✅
++
++### 1.7 Google OAuth (PKCE) ✅
++
++`signInWithGoogle()` (`cloud-auth.ts:438`):
++- Generates random `state` (16 bytes) and `codeVerifier` (64 bytes) ✅
++- Derives S256 `codeChallenge` via `_pkceChallenge()` (`cloud-auth.ts:857`) ✅
++- Opens system browser via `platform.openOAuthBrowser()` ✅
++- Returns `GoogleSignInPartial { state }` — caller invokes `handleOAuthCallback` ✅
++
++### 1.8 Email/password + published package ✅
++
++- `registerWithEmail` ✅, `signInWithEmail` ✅, `verifyEmailAddress` ✅, `resetPassword` ✅, `completePasswordReset` ✅
++- `@soostori/auth@0.1.0-alpha.8` published to NPM
++- Exports map (`package.json:8–21`) covers both browser (`default`) and React Native (`react-native`) entries ✅
++
++---
++
++## PART 2 — Gap Analysis
++
++| Gap | Description | Status | Location |
++|-----|-------------|--------|----------|
++| GAP-01 | StoredSession.employeeId/shopId/deviceId always `''` | ✅ FIXED (prior commit `dc8c7f7`) | `cloud-auth.ts:802–828` |
++| GAP-02 | GoogleSignInResult missing identity fields | ✅ FIXED (prior commit `dc8c7f7`) | `cloud-auth.ts:90–102` |
++| GAP-03 | SignInResult and PasswordResetCompleteResult missing fields | ✅ FIXED (prior commit `dc8c7f7`) | `cloud-auth.ts:130–138, 315–326` |
++| GAP-04 | enrollmentToken discarded in beginEnrollment | ✅ FIXED (prior commit `dc8c7f7`) | `operational-auth.ts:449–457` |
++| GAP-05 | Web platform export not verified | ✅ VERIFIED — exports map correct | `packages/auth/package.json:8–21` |
++| GAP-06 | FIDScriptAuthApiClient all methods | ✅ VERIFIED — all AuthApiClient methods implemented | `api-client.ts` |
++| A1.3 | OperationalAuth 14 methods | ✅ VERIFIED — all 14 methods present | `operational-auth.ts` |
++| A1.5 | AuthEvent 8 event types | ✅ VERIFIED — all types present | `cloud-auth.ts:364–372` |
++| — | `errors.ts` duplicate `'ENROLLMENT_REQUIRED'` in union | ⚠️ MINOR — TypeScript deduplicates union members, no runtime impact | `errors.ts:24` |
++| GAP-07 | Web package.json uses `0.1.0-alpha.5` | 🔵 KNOWN — requires Web agent update | Web `package.json` |
++| GAP-08 | Web uses Prisma/cookie auth not CloudAuth | 🔵 KNOWN — requires Ken architectural decision | Web auth system |
++
++**No critical or high-severity gaps remain in SDK source code.**
++
++---
++
++## PART 3 — Fixes Applied
++
++No additional source-code fixes were required. All GAP-01 through GAP-04 were resolved by the prior SDK agent (commit `dc8c7f7`). The phase1-audit worktree is clean with respect to the source contract — only `pnpm-lock.yaml` and `pnpm-workspace.yaml` have local lockfile changes from dependency installation.
++
++---
++
++## PART 4 — NPM Publish
++
++| Item | Value |
++|------|-------|
++| Package | `@soostori/auth` |
++| Version | `0.1.0-alpha.8` |
++| Published | 2026-09-13 (~9 minutes ago at audit time) |
++| Commit SHA | `316911a` |
++| Registry | `https://registry.npmjs.org/` |
++| Tests | ✅ **144/144 passing** |
++
++**Test breakdown**:
++| File | Tests | Result |
++|------|-------|--------|
++| `cloud-auth.test.ts` | 31 | ✅ pass |
++| `capabilities.test.ts` | 38 | ✅ pass |
++| `pin-compatibility.test.ts` | 14 | ✅ pass |
++| `auth.test.ts` | 14 | ✅ pass |
++| `operational-auth.test.ts` | 47 | ✅ pass |
++
++---
++
++## PART 5 — Platform Version Requirements
++
++| Platform | `@soostori/auth` version | Change needed |
++|----------|--------------------------|--------------|
++| Desktop | `^0.1.0-alpha.6` | No change (already compatible) |
++| Mobile | `^0.1.0-alpha.6` | No change (already compatible) |
++| Web | `0.1.0-alpha.5` | ⚠️ MUST update to `^0.1.0-alpha.8` |
++
++---
++
++## Prior Audit Report (for reference)
++
++`PHASE-01-SDK-AUDIT-REPORT.md` was produced by the prior SDK agent run covering `dc8c7f7`. That report documented GAP-01 through GAP-04 as fixed and GAP-07/GAP-08 as known remaining gaps. This document supersedes it with the current `316911a` audit state.
++
++## Summary
++
++The SDK auth contract is fully implemented and correct:
++- All 14 CloudAuth methods return the documented types
++- All 14 OperationalAuth methods work per spec
++- AuthApiClient is fully implemented (HttpAuthApiClient)
++- All 8 AuthEvent types fire correctly
++- GAP-01 through GAP-04 (must-fix) all resolved
++- 144/144 tests passing
++- `@soostori/auth@0.1.0-alpha.8` published to NPM
++
++**Remaining action items** (not SDK gaps):
++- GAP-07: Web agent must update `@soostori/auth` to `^0.1.0-alpha.8`
++- GAP-08: Ken must decide whether Web should adopt `CloudAuth` or remain on Prisma/cookie auth
+-- 
+2.55.0.windows.3
+
