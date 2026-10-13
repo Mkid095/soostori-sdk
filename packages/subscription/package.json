@@ -1,6 +1,6 @@
 {
   "name": "@soostori/subscription",
-  "version": "0.2.6",
+  "version": "0.3.0",
   "description": "Plans, entitlements, expiration, offline cached authorization, enforcement",
   "type": "module",
   "main": "./dist/index.js",
