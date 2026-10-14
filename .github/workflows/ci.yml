@@ -3,6 +3,10 @@ name: CI
 on:
   push:
     branches: [main]
+    # The publish job gates on refs/tags/sdk-v*, but without this the
+    # workflow never STARTS for a tag push, so publishing was unreachable:
+    # a tag produced no run, and the job that would publish never evaluated.
+    tags: ['sdk-v*']
   pull_request:
     branches: [main]
 
