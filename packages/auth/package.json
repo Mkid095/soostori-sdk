@@ -1,6 +1,6 @@
 {
   "name": "@soostori/auth",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Cloud auth (Google OAuth, email/password, session) + OperationalAuth (device-local PIN, enrollment)",
   "type": "module",
   "main": "./dist/index.js",
@@ -18,6 +18,14 @@
     "./cloud-auth": {
       "types": "./dist/cloud-auth.d.ts",
       "default": "./dist/cloud-auth.js"
+    },
+    "./operational-auth": {
+      "types": "./dist/operational-auth.d.ts",
+      "default": "./dist/operational-auth.js"
+    },
+    "./permissions": {
+      "types": "./dist/permissions.d.ts",
+      "default": "./dist/permissions.js"
     },
     "./api-client": {
       "types": "./dist/api-client.d.ts",

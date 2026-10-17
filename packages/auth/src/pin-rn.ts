@@ -18,6 +18,21 @@
  * brute-force attacks against local credential theft.
  */
 
+/**
+ * Everything except the PIN functions is re-exported from the package entry.
+ *
+ * This file is what the "react-native" export condition resolves to, so it IS
+ * the package as far as a phone is concerned. It previously exported only the
+ * two PIN stubs, which meant every other named import from '@soostori/auth'
+ * was undefined on device — most visibly `hasPermission`/`checkPermission`
+ * from permissions.ts, used by the mobile RBAC bridge. A missing named export
+ * is a hard load failure in a release bundle and a silent undefined in dev.
+ *
+ * The two local PIN declarations below shadow index's, which is the point:
+ * they throw loudly rather than silently returning a wrong hash.
+ */
+export * from './index.js'
+
 export function hashPin(_pin: string, _saltHex?: string): { hash: string; salt: string } {
   throw new Error(
     '@soostori/auth: PIN operations require a platform-specific implementation.\n' +

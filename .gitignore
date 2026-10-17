@@ -37,3 +37,6 @@ dist-tarballs-all/
 verdaccio-db/
 verdaccio/
 .claude/worktrees/
+
+# Live MCP credentials live here; never commit them.
+.mcp.local.json

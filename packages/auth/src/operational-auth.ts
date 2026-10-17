@@ -542,7 +542,7 @@ export class OperationalAuth {
    */
   async setupPin(params: {
     pin: string
-    hashPin: (pin: string, salt?: string) => { hash: string; salt: string }
+    hashPin: (pin: string, salt?: string) => { hash: string; salt: string } | Promise<{ hash: string; salt: string }>
     employeeId: EmployeeId
     shopId: ShopId
     deviceId: DeviceId
@@ -553,7 +553,14 @@ export class OperationalAuth {
 
     const { pin, hashPin, employeeId, shopId, deviceId } = params
 
-    const { hash: verifierHash, salt } = hashPin(pin)
+    // MUST be awaited. `hashPin` may be async — React Native's PBKDF2 is
+    // WebCrypto-based and always returns a Promise. Destructuring a Promise
+    // without awaiting yields undefined for BOTH fields, which was then stored
+    // as the salt and verifier: setupPin reported ok:true, hasPinEnrolled()
+    // returned false, and verifyPin failed forever with PIN_NOT_SET. On a
+    // platform with a synchronous hasher this was correct, so the bug only
+    // appeared on the one platform that matters.
+    const { hash: verifierHash, salt } = await hashPin(pin)
 
     const storage = this.platform.getSecureStorage()
     await storage.set(PIN_SALT_KEY, salt)
@@ -649,7 +656,7 @@ export class OperationalAuth {
     oldPin: string
     newPin: string
     verifyPin: (pin: string, hashHex: string, saltHex: string) => boolean | Promise<boolean>
-    hashPin: (pin: string, salt?: string) => { hash: string; salt: string }
+    hashPin: (pin: string, salt?: string) => { hash: string; salt: string } | Promise<{ hash: string; salt: string }>
     employeeId: EmployeeId
     shopId: ShopId
     deviceId: DeviceId
@@ -772,13 +779,13 @@ export class OperationalAuth {
     recoveryAuthToken: string
     employeeId: EmployeeId
     newPin: string
-    hashPin: (pin: string, salt?: string) => { hash: string; salt: string }
+    hashPin: (pin: string, salt?: string) => { hash: string; salt: string } | Promise<{ hash: string; salt: string }>
     shopId: ShopId
     deviceId: DeviceId
   }): Promise<AuthResult<void>> {
     const { cloudApi, recoveryAuthToken, employeeId, newPin, hashPin, shopId, deviceId } = params
 
-    const { hash: newVerifier, salt: newSalt } = hashPin(newPin)
+    const { hash: newVerifier, salt: newSalt } = await hashPin(newPin)
 
     const result = await cloudApi.resetPin({
       recoveryAuthToken,
