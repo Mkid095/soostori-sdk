@@ -22,6 +22,20 @@ import { WhatsAppError } from './errors.js'
 
 export const VIVENTURE_DEFAULT_URL = 'https://whatsapp.nextmavens.com' as const
 
+/**
+ * The base URL the client builds its paths on.
+ *
+ * Every path in this client already starts with `/api/v1`, so the base has
+ * to be the bare host. The platform's own CLI config spells the base with
+ * the version on the end — `https://whatsapp.nextmavens.com/api/v1` — so a
+ * base URL copied from there would otherwise produce
+ * `/api/v1/api/v1/accounts/…`, which the platform answers with a 404 that
+ * looks like a missing route rather than a mis-shaped URL.
+ */
+export function normaliseBaseUrl(url: string): string {
+  return url.replace(/\/+$/, '').replace(/\/api\/v1$/, '')
+}
+
 export interface ViventureConfig {
   baseUrl?: string
   /** The account that owns the projects, e.g. `acct_…`. */
@@ -66,7 +80,9 @@ export class ViventureClient {
   private readonly fetch: typeof fetch
 
   constructor(config: ViventureConfig = {}) {
-    this.baseUrl = (config.baseUrl ?? process.env.VIVENTURE_API_URL ?? VIVENTURE_DEFAULT_URL).replace(/\/+$/, '')
+    this.baseUrl = normaliseBaseUrl(
+      config.baseUrl ?? process.env.VIVENTURE_API_URL ?? VIVENTURE_DEFAULT_URL,
+    )
     this.accountId = config.accountId ?? process.env.VIVENTURE_ACCOUNT_ID ?? ''
     this.projectId = config.projectId ?? process.env.VIVENTURE_PROJECT_ID ?? ''
     this.apiKey = config.apiKey ?? process.env.VIVENTURE_API_KEY ?? ''

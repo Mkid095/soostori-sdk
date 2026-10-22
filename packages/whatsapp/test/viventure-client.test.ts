@@ -36,6 +36,37 @@ describe('ViventureClient', () => {
     expect((init.headers as Record<string, string>)['X-API-Key']).toBe('key_3')
   })
 
+  it('does not double the /api/v1 when the base URL already carries it', async () => {
+    // The platform's own CLI config spells the base with the version on
+    // the end. Copying that verbatim used to produce /api/v1/api/v1/...,
+    // which the platform answers with a 404 that looks like a missing route.
+    const fetch = vi.fn(async () => new Response('[]', { status: 200 }))
+    const client = new ViventureClient({
+      ...CONFIG,
+      baseUrl: 'https://wa.test/api/v1',
+      fetch: fetch as unknown as typeof fetch,
+    })
+
+    await client.listInstances()
+
+    const [url] = fetch.mock.calls[0]
+    expect(url).toBe('https://wa.test/api/v1/accounts/acct_1/projects/proj_2/instances')
+  })
+
+  it('strips a trailing slash from the base URL', async () => {
+    const fetch = vi.fn(async () => new Response('[]', { status: 200 }))
+    const client = new ViventureClient({
+      ...CONFIG,
+      baseUrl: 'https://wa.test/',
+      fetch: fetch as unknown as typeof fetch,
+    })
+
+    await client.listInstances()
+
+    const [url] = fetch.mock.calls[0]
+    expect(url).toBe('https://wa.test/api/v1/accounts/acct_1/projects/proj_2/instances')
+  })
+
   it('creates an instance by name', async () => {
     const fetch = vi.fn(async () => new Response('{"publicId":"inst_1","name":"Shop","status":"CREATED"}', { status: 201 }))
     const client = new ViventureClient({ ...CONFIG, fetch: fetch as unknown as typeof fetch })

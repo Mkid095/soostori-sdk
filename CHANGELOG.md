@@ -1,6 +1,31 @@
 # Changelog
 
+
 All notable changes to this project will be documented in this file.
+
+## 0.1.4-alpha.4 — 2026-10-22
+
+### Fixed
+- **The Viventure base URL no longer doubles `/api/v1`.** Every path in the client already
+  starts with `/api/v1`, so a base URL that carried the version on the end — which is how
+  the platform's own CLI config spells it — produced
+  `/api/v1/api/v1/accounts/…/webhooks` and the platform answered 404. The 404 reads
+  like a missing route, so the webhook could never be created. The base URL is now
+  normalised, and a trailing slash is trimmed as before.
+
+## [Unreleased]
+
+### Fixed (2026-10-21)
+
+- **`@soostori/tuma` — no payment could actually go through.** The provider
+  answers its authentication request like this:
+  `{ success: true, message: 'Authentication successful', data: { token, expires_in } }`
+  — the token is INSIDE `data`. The client read it from the top level, where
+  it never was, so the token was always undefined and every request
+  afterwards went out as `Bearer undefined`. The provider said
+  "Authentication successful" and then refused everything that followed, so
+  every payment failed while the handshake looked perfectly healthy. Both
+  shapes are now accepted. New test: `packages/tuma/test/auth-token.test.ts`.
 
 ## [Unreleased] — P0-3c SDK Canonical Business Contract (audit 2026-10-05)
 
