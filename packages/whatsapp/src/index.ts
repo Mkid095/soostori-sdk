@@ -1,3 +1,5 @@
 export * from './client.js'
 export * from './channel.js'
+export * from './viventure-client.js'
+export * from './viventure-channel.js'
 export * from './errors.js'
