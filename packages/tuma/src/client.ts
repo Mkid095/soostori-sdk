@@ -38,8 +38,13 @@ export class TumaError extends SoostoriError {
 
 interface TumaAuthResponse {
   success: boolean
-  token: string
-  expires_in: number
+  /** The live API puts the token inside `data`; older shapes had it here. */
+  token?: string
+  expires_in?: number
+  data?: {
+    token?: string
+    expires_in?: number
+  }
   business?: {
     id: string
     name: string
@@ -147,10 +152,23 @@ export class TumaClient {
       { email: this.businessEmail, api_key: this.apiKey },
       false  // no auth header for token request
     )
-    this._token = res.token
+    // The live API answers with the token inside `data`:
+    //
+    //   { success: true, message: "Authentication successful", data: { token, expires_in } }
+    //
+    // It used to be read from the top level, which meant the token was
+    // always undefined and every call went out as `Bearer undefined`. The
+    // provider answered "Authentication successful" and then rejected
+    // everything that followed, so every payment failed while the handshake
+    // looked fine. Accept either shape.
+    const envelope = (res as { data?: { token?: string; expires_in?: number } }).data
+    const token = envelope?.token ?? res.token ?? ''
+    const expiresIn = envelope?.expires_in ?? res.expires_in ?? 3600
+
+    this._token = token
     // Refresh 60s early to avoid edge expiry
-    this._tokenExpiresAt = Date.now() + (res.expires_in - 60) * 1000
-    return res.token
+    this._tokenExpiresAt = Date.now() + (expiresIn - 60) * 1000
+    return token
   }
 
   // ── STK Push ───────────────────────────────────────────────────────
