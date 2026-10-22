@@ -156,6 +156,33 @@ export class ViventureClient {
   }
 
   /**
+   * Creates a webhook bound to one instance.
+   *
+   * The signing secret comes back ONCE, in this response, and cannot be read
+   * again — so the caller has to store it. That is why it is returned
+   * separately rather than hidden behind a getter.
+   */
+  async createWebhook(opts: {
+    instancePublicId: string
+    url: string
+    events: string[]
+  }): Promise<{ publicId: string; secret: string }> {
+    const result = await this.request<{
+      webhook?: { publicId?: string; secret?: string };
+      publicId?: string;
+      secret?: string;
+    }>('POST', `${this.projectPath()}/webhooks`, {
+      instanceId: opts.instancePublicId,
+      url: opts.url,
+      events: opts.events,
+    });
+    return {
+      publicId: result.webhook?.publicId ?? result.publicId ?? '',
+      secret: result.webhook?.secret ?? result.secret ?? '',
+    };
+  }
+
+  /**
    * Queues a text message.
    *
    * The answer is 202: the platform ACCEPTED the message and will send it

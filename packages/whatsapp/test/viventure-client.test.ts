@@ -56,6 +56,24 @@ describe('ViventureClient', () => {
     expect(instance.qrCode?.image).toBe('base64')
   })
 
+  it('creates a webhook and returns the one-time secret', async () => {
+    const fetch = vi.fn(async () => new Response(
+      JSON.stringify({ webhook: { publicId: 'wh_1', secret: 's3cret' } }),
+      { status: 201 },
+    ))
+    const client = new ViventureClient({ ...CONFIG, fetch: fetch as unknown as typeof fetch })
+
+    const webhook = await client.createWebhook({
+      instancePublicId: 'inst_1',
+      url: 'https://app.test/api/whatsapp/webhook',
+      events: ['MESSAGE_DELIVERED'],
+    })
+
+    expect(webhook).toEqual({ publicId: 'wh_1', secret: 's3cret' })
+    const [, init] = fetch.mock.calls[0]
+    expect(JSON.parse(init.body as string).instanceId).toBe('inst_1')
+  })
+
   it('sends a text message with the idempotency header', async () => {
     const fetch = vi.fn(async () => new Response('{"id":"msg_1"}', { status: 202 }))
     const client = new ViventureClient({ ...CONFIG, fetch: fetch as unknown as typeof fetch })

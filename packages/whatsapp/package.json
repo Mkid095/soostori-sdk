@@ -1,6 +1,6 @@
 {
   "name": "@soostori/whatsapp",
-  "version": "0.1.4-alpha.1",
+  "version": "0.1.4-alpha.3",
   "description": "WhatsApp integration — Viventure (the company platform, one instance per shop) and Evolution (self-hosted)",
   "type": "module",
   "main": "./dist/index.js",
