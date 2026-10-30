@@ -14,7 +14,10 @@
  *   amount=0    → (company:500, salesperson:100, influencer:50)
  *   amount=600  → (company:500, salesperson:100, influencer:50)
  *   amount=1000 → (company:600, salesperson:400, influencer:50)
- *   amount=2000 → (company:850, salesperson:700, influencer:50)
+ *   amount=2000 → (company:850, salesperson:1150, influencer:50)
+ *
+ * The examples above are checked against the code by
+ * `test/commission-doc-examples.test.ts` — they cannot drift again.
  *
  * ── Commercial invariants ───────────────────────────────────────────────────
  *
