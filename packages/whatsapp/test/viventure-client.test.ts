@@ -125,6 +125,78 @@ describe('ViventureClient', () => {
     expect(JSON.parse(init.body as string).instancePublicId).toBe('inst_1')
   })
 
+  it('reads the platform state of one of its messages by id', async () => {
+    const fetch = vi.fn(async () =>
+      new Response('{"id":"msg_1","state":"sent","attempts":1,"lastError":null}', { status: 200 }),
+    )
+    const client = new ViventureClient({ ...CONFIG, fetch: fetch as unknown as typeof fetch })
+
+    const status = await client.getMessageStatus('msg_1')
+
+    expect(status.messageId).toBe('msg_1')
+    expect(status.state).toBe('sent')
+    expect(status.attempts).toBe(1)
+    const [url, init] = fetch.mock.calls[0]
+    expect(url).toBe('https://wa.test/api/v1/messages/msg_1')
+    expect((init.headers as Record<string, string>)['X-API-Key']).toBe('key_3')
+  })
+
+  it('reads a message read back under `status` as `state`', async () => {
+    const fetch = vi.fn(async () => new Response('{"messageId":"msg_9","status":"skipped"}', { status: 200 }))
+    const client = new ViventureClient({ ...CONFIG, fetch: fetch as unknown as typeof fetch })
+
+    const status = await client.getMessageStatus('msg_9')
+
+    expect(status.state).toBe('skipped')
+    expect(status.messageId).toBe('msg_9')
+  })
+
+  it('queues a media message with its caption and file name', async () => {
+    const fetch = vi.fn(async () => new Response('{"id":"msg_2"}', { status: 202 }))
+    const client = new ViventureClient({ ...CONFIG, fetch: fetch as unknown as typeof fetch })
+
+    const result = await client.sendMedia({
+      instancePublicId: 'inst_1',
+      number: '+254700000000',
+      type: 'image',
+      media: 'https://shop.test/poster.png',
+      caption: 'The new price list',
+      fileName: 'poster.png',
+      idempotencyKey: 'broadcast-b1:c1',
+    })
+
+    // 202 means ACCEPTED, not delivered.
+    expect(result.status).toBe('accepted')
+    expect(result.messageId).toBe('msg_2')
+    expect(result.type).toBe('image')
+    const [url, init] = fetch.mock.calls[0]
+    expect(url).toBe('https://wa.test/api/v1/messages/send')
+    const body = JSON.parse(init.body as string)
+    // The platform transmits media — `type` is the door, `media` is the body.
+    expect(body.type).toBe('image')
+    expect(body.media).toBe('https://shop.test/poster.png')
+    expect(body.caption).toBe('The new price list')
+    expect(body.fileName).toBe('poster.png')
+    expect((init.headers as Record<string, string>)['Idempotency-Key']).toBe('broadcast-b1:c1')
+  })
+
+  it('omits an absent caption and file name from the media body', async () => {
+    const fetch = vi.fn(async () => new Response('{"id":"msg_3"}', { status: 202 }))
+    const client = new ViventureClient({ ...CONFIG, fetch: fetch as unknown as typeof fetch })
+
+    await client.sendMedia({
+      instancePublicId: 'inst_1',
+      number: '+254700000000',
+      type: 'video',
+      media: 'QUJD',
+    })
+
+    const body = JSON.parse(fetch.mock.calls[0][1].body as string)
+    expect(body.type).toBe('video')
+    expect('caption' in body).toBe(false)
+    expect('fileName' in body).toBe(false)
+  })
+
   it('raises a WhatsAppError when the platform refuses', async () => {
     const fetch = vi.fn(async () => new Response('{"error":"nope"}', { status: 403 }))
     const client = new ViventureClient({ ...CONFIG, fetch: fetch as unknown as typeof fetch })

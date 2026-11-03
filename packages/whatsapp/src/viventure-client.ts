@@ -72,6 +72,37 @@ export interface ViventureSendResult {
   status: 'accepted'
 }
 
+/** The kinds of payload the platform actually transmits. */
+export type ViventureMediaType = 'text' | 'image' | 'video' | 'document' | 'audio'
+
+export interface ViventureMediaSendResult extends ViventureSendResult {
+  type: ViventureMediaType
+}
+
+/**
+ * The platform's own reading of one of its messages.
+ *
+ * A send answers 202 (accepted) and the delivery travels later, at the
+ * platform's own pace. This is the read that says where it is now:
+ * `queued` / `processing` means still in motion, `sent` / `skipped` /
+ * `failed` are where it ended. `attempts` and `lastError` are the shape of
+ * the ending.
+ */
+export type ViventureMessageState = 'queued' | 'processing' | 'sent' | 'failed' | 'skipped'
+
+export interface ViventureMessageStatus {
+  /** The public message id, e.g. `msg_…`. */
+  messageId: string
+  /** `queued` | `processing` | `sent` | `failed` | `skipped`. */
+  state: ViventureMessageState
+  /** How many times the outbox has tried to send it. */
+  attempts?: number
+  /** What the last attempt said, when there was one. */
+  lastError?: string | null
+  /** The receipt the platform recorded, when it has one. */
+  receipt?: string | null
+}
+
 export class ViventureClient {
   private readonly baseUrl: string
   private readonly accountId: string
@@ -225,5 +256,79 @@ export class ViventureClient {
       opts.idempotencyKey ? { 'Idempotency-Key': opts.idempotencyKey } : undefined,
     )
     return { messageId: result.id ?? result.messageId ?? '', status: 'accepted' }
+  }
+
+  /**
+   * Queues a media message (image, video, document or audio).
+   *
+   * The platform transmits media: `media` is an http(s) URL the platform
+   * fetches at send time (preferred — the file is not carried through the
+   * queue), or base64 inline (capped at 16 MB). `caption` is optional text
+   * that travels with the file; `fileName` matters for a document.
+   *
+   * The answer is 202: accepted, not delivered. Watch the webhooks.
+   */
+  async sendMedia(opts: {
+    instancePublicId: string
+    number: string
+    /** image | video | document | audio. */
+    type: 'image' | 'video' | 'document' | 'audio'
+    /** An http(s) URL, or base64 inline (<= 16 MB). */
+    media: string
+    caption?: string
+    fileName?: string
+    mimeType?: string
+    idempotencyKey?: string
+  }): Promise<ViventureMediaSendResult> {
+    const result = await this.request<{ id?: string; messageId?: string }>(
+      'POST',
+      '/api/v1/messages/send',
+      {
+        instancePublicId: opts.instancePublicId,
+        number: opts.number,
+        type: opts.type,
+        media: opts.media,
+        ...(opts.caption !== undefined ? { caption: opts.caption } : {}),
+        ...(opts.fileName !== undefined ? { fileName: opts.fileName } : {}),
+        ...(opts.mimeType !== undefined ? { mimeType: opts.mimeType } : {}),
+      },
+      opts.idempotencyKey ? { 'Idempotency-Key': opts.idempotencyKey } : undefined,
+    )
+    return {
+      messageId: result.id ?? result.messageId ?? '',
+      status: 'accepted',
+      type: opts.type,
+    }
+  }
+
+  /**
+   * The platform's own reading of one of its messages, by its public id.
+   *
+   * A send answers 202 and says nothing more. This is the question the
+   * caller asks when it needs to know where the message is now: is it still
+   * in the outbox, did it go out, or did it fail? The id comes back from
+   * `sendText` / `sendMedia`, so the two are one pair.
+   */
+  async getMessageStatus(messageId: string): Promise<ViventureMessageStatus> {
+    const result = await this.request<{
+      id?: string;
+      messageId?: string;
+      state?: string;
+      status?: string;
+      attempts?: number;
+      lastError?: string | null;
+      receipt?: string | null;
+    }>('GET', `/api/v1/messages/${encodeURIComponent(messageId)}`)
+    // The list route speaks `state`; one read speaks `status`. Both are the
+    // same word in the end, and a body that names neither reads as still
+    // in motion rather than as a guess.
+    const state = (result.state ?? result.status ?? 'queued') as ViventureMessageState
+    return {
+      messageId: result.id ?? result.messageId ?? messageId,
+      state,
+      ...(result.attempts !== undefined ? { attempts: result.attempts } : {}),
+      ...(result.lastError !== undefined ? { lastError: result.lastError } : {}),
+      ...(result.receipt !== undefined ? { receipt: result.receipt } : {}),
+    }
   }
 }
