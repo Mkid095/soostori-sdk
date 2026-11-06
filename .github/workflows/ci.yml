@@ -39,6 +39,16 @@ jobs:
         with:
           version: 9
 
+      - name: Write Verdaccio .npmrc
+        # Without this, pnpm resolves @soostori/* against npmjs.org, where
+        # the scope still holds the old 0.1.0-alpha.* releases from months
+        # ago - so a package that depends on a published version (rather
+        # than a workspace sibling) fails with "no matching version found",
+        # naming versions that are not the ones we publish.
+        run: |
+          echo "@soostori:registry=${{ env.VERDACCIO_URL }}" > .npmrc
+          echo "//registry.fidscript.com/:_authToken=${{ secrets.VERDACCIO_AUTH_TOKEN }}" >> .npmrc
+
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
