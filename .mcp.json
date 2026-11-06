@@ -2,7 +2,7 @@
   "mcpServers": {
     "instant-self": {
       "type": "http",
-      "url": "https://registry.nextmavens.com/instant-mcp",
+      "url": "https://apiinstant.fidscript.com/instant-mcp",
       "headers": {
         "Authorization": "Bearer ${INSTANT_ACCESS_TOKEN}",
         "X-Instant-App-Id": "487be5c5-7615-4bbd-b3b7-3aa97154ca99"

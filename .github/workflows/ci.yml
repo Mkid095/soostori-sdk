@@ -19,7 +19,7 @@ concurrency:
 env:
   NODE_VERSION: '20'
   # Verdaccio is the self-hosted registry for all @soostori/* packages.
-  VERDACCIO_URL: https://registry.nextmavens.com/
+  VERDACCIO_URL: https://registry.fidscript.com/
 
 jobs:
   # ── Build & type-check every package against workspace source ─────────────
@@ -73,7 +73,7 @@ jobs:
       - name: Write Verdaccio .npmrc
         run: |
           echo "@soostori:registry=${{ env.VERDACCIO_URL }}" > .npmrc
-          echo "//registry.nextmavens.com/:_authToken=${{ secrets.VERDACCIO_AUTH_TOKEN }}" >> .npmrc
+          echo "//registry.fidscript.com/:_authToken=${{ secrets.VERDACCIO_AUTH_TOKEN }}" >> .npmrc
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile

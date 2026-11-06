@@ -20,14 +20,14 @@
 
 import { WhatsAppError } from './errors.js'
 
-export const VIVENTURE_DEFAULT_URL = 'https://whatsapp.nextmavens.com' as const
+export const VIVENTURE_DEFAULT_URL = 'https://whatsapp.fidscript.com' as const
 
 /**
  * The base URL the client builds its paths on.
  *
  * Every path in this client already starts with `/api/v1`, so the base has
  * to be the bare host. The platform's own CLI config spells the base with
- * the version on the end — `https://whatsapp.nextmavens.com/api/v1` — so a
+ * the version on the end — `https://whatsapp.fidscript.com/api/v1` — so a
  * base URL copied from there would otherwise produce
  * `/api/v1/api/v1/accounts/…`, which the platform answers with a 404 that
  * looks like a missing route rather than a mis-shaped URL.
